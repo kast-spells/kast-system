@@ -1,0 +1,5 @@
+apiVersion: v2
+name: summon
+version: 1.0.0
+appVersion: "2"
+description: the summon chart of kast to create microservices or run conainers

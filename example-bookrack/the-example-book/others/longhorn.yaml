@@ -1,0 +1,33 @@
+name: longhorn
+repository: https://github.com/longhorn/charts.git
+revision: longhorn-1.7.0
+path: charts/longhorn
+namespace: longhorn-system
+appParams:
+  ignoreDifferences:
+    - kind: Service
+      name: longhorn-frontend
+      jsonPointers:
+        - /spec/ports/0/nodePort
+values:
+  csi:
+    kubeletRootDir: /var/snap/microk8s/common/var/lib/kubelet
+  defaultSettings: 
+    logLevel: Warn
+    defaultDataPath: /mnt/nvme4
+  metrics:
+    serviceMonitor:
+      enabled: false
+  longhornManager:
+    log:
+      format: json
+
+glyphs:
+  istio:
+  - type: virtualService
+    enabled: True
+    subdomain: longhorn
+    host: longhorn-frontend
+    httpRules:
+      - prefix: /
+        port: 80

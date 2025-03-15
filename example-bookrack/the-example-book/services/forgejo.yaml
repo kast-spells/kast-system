@@ -1,0 +1,36 @@
+name: forgejo
+appParams:
+  disableAutoSync: false
+         
+volumes:
+  data:
+    type: pvc
+    size: 5Gi
+    destinationPath: /data
+
+envs:
+  PUID: "1000"
+  PGID: "1000"
+
+image:
+  repository: codeberg.org/forgejo
+  name: forgejo
+  tag: 7.0.12
+
+service:
+  ports: 
+    - port: 3000
+    - port: 2222
+      name: ssh
+      targetPort: 22
+
+istio:
+  internal:
+    type: virtualService
+    enabled: true
+    subdomain: forgejo
+    httpRules:
+      - prefix: /
+        port: 3000
+    tcpRules:
+      - port: 2222

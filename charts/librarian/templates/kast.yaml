@@ -1,0 +1,183 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+ */}}
+{{/*this will create a spellbook configmap */}}
+{{- $spellbook :=  dict "appParams" $.Values.appParams  }}
+{{- $_ := set $spellbook "name" (default $.Release.Name $.Values.name) }}
+
+#se puede agregar un if aca para q si no este definido el libro haga un "ls" y ver q libros hay y haga de multibook on one sweep
+
+{{- $path := printf "bookrack/%s/index.yaml" (default .Release.Name .Values.name) }}
+{{- if .Files.Glob $path }}
+  {{- $default := .Files.Get $path | fromYaml }}
+  {{- $_ := mergeOverwrite $spellbook $default }}
+{{- end }}
+
+## TODO lexicon definition must be from a config map in some place
+{{- $lexiconDefinition := dict }}
+{{- $path := print "bookrack/" $spellbook.name "/_lexicon/*.y*ml"}}
+{{- $lexicon := list }}
+{{- range $lexiconPath, $_ := .Files.Glob $path }}
+  {{- $lexiconDefinitions := ($.Files.Get $lexiconPath | fromYaml).lexicon }}
+  {{- range $lexiconDefinition := $lexiconDefinitions }}
+    {{- $lexicon = append $lexicon $lexiconDefinition }}
+  {{- end }}
+{{- end }}
+##lexicon merge 
+
+{{ range $chapterName := $spellbook.chapters }}
+  {{- $chapter := dict "name" $chapterName }}
+  {{- $pathChapter := print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml" }}
+  {{- if $.Files.Glob $pathChapter }}
+    {{- $chapter = $.Files.Get $pathChapter | fromYaml }}
+    {{- if not $chapter.name }}
+      {{- $_ := set $chapter "name" $chapterName }}
+    {{- end }}
+  {{- end }}
+  {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml"}}
+  {{- range $spellPath, $_ := $.Files.Glob $path }}
+  {{- if not (eq $spellPath (print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml")) }}
+    {{- $appParams := deepCopy $spellbook.appParams }} 
+    {{- $spellDefinition := ($.Files.Get $spellPath | fromYaml) }}
+    {{- $_ := mergeOverwrite $appParams (deepCopy (default dict $chapter.appParams) ) }}
+    {{- $_ := mergeOverwrite $appParams (deepCopy (default dict $spellDefinition.appParams )) }}
+    {{- $spell := (dict "name" $spellDefinition.name ) }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $spellDefinition.name }}
+  namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  {{- with ($spellDefinition.appParams).customFinalizers }}
+  finalizers:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with ($spellDefinition.appParams).annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  project: {{ default (default (default $spellbook.projectName $chapter.projectName ) $spellbook.name ) ($spellDefinition.values).projectName }}
+  {{- $cleanSpellbook := merge (dict "spellbook" (deepCopy $spellbook)) }}
+  {{- $_ =  unset $cleanSpellbook.spellbook "appParams" }}
+  {{- $_ =  unset $cleanSpellbook.spellbook "summon" }}
+  {{- $_ =  unset $cleanSpellbook.spellbook "kaster" }}
+  sources:
+  {{- /* spell */}}
+  {{- if or $spellDefinition.chart $spellDefinition.path }}
+    - repoURL: {{ $spellDefinition.repository }} #usa repo
+      {{- if $spellDefinition.chart }}
+      chart: {{ $spellDefinition.chart }}
+      {{- else }}
+      path: {{ $spellDefinition.path }}
+      {{- end }}
+      targetRevision: {{ $spellDefinition.revision }}
+    {{- if not ($spellDefinition.appParams).noHelm }}
+      helm:
+      {{- if ($spellDefinition.appParams).skipCrds }}
+        skipCrds: true
+      {{- end }}
+      {{- if $spellDefinition.values }}
+        values: |
+          {{- toYaml $spellDefinition.values | nindent 10 }}
+      {{- end }}      
+    {{- end }}
+  {{- else }}
+  {{- /* summon 
+    ##TODO agregar flag para q no se haga el merge de los configs if needed
+  */}}
+    {{- $summon := mergeOverwrite ( deepCopy (default dict $spellbook.summon ) ) ( deepCopy ( default dict $chapter.summon ) ) }}
+    - repoURL: {{ $summon.repository }}
+      path: {{ $summon.path }}
+      targetRevision: {{ $summon.revision }}
+      helm:
+        {{- $values := "" }}
+        {{- $values = mergeOverwrite (default dict (deepCopy (default dict $summon.values)) ) $spellDefinition }}
+        {{- $_ =  unset $values "runes" }}
+        {{- $_ =  unset $values "appParams" }}
+        {{- $_ =  unset $values "glyphs" }}
+        values: |
+          {{- toYaml $values | nindent 10 }}
+          {{- toYaml $cleanSpellbook | nindent 10 }}
+          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
+          lexicon:
+          {{- toYaml $lexicon | nindent 12 }}
+  {{- end }}
+  {{- /* kaster */}}
+  {{- if $spellDefinition.glyphs }} 
+    {{- $kaster := default $spellbook.kaster $chapter.kaster}}
+    - repoURL: {{ $kaster.repository }}
+      path: {{ $kaster.path }}
+      targetRevision: {{ $kaster.revision }}
+      helm:
+        values: |
+          {{- toYaml (dict "glyphs" $spellDefinition.glyphs ) | nindent 10 }}
+          {{- toYaml $cleanSpellbook | nindent 10 }}
+          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
+          lexicon:
+          {{- toYaml $lexicon | nindent 12 }}
+  {{- end }}
+  {{- /* runes */}}
+  {{- $ignoreDiff := (default list $appParams.ignoreDifferences) }}
+  {{- range $rune := $spellDefinition.runes }}
+    {{- $ignoreDiff = concat $ignoreDiff (default list ($rune.appParams).ignoreDifferences) }}
+    {{- if not ($rune.appParams).noOverite }}
+      {{- $_ := mergeOverwrite $appParams (default dict $rune.appParams ) }}
+    {{- end }}
+    - repoURL: {{ $rune.repository }}
+      {{- if $rune.chart }}
+      chart: {{ $rune.chart }}
+        {{- else }}
+      path: {{ $rune.path }}
+      {{- end }}
+      targetRevision: {{ $rune.revision }}
+    {{- if not ($rune.appParams).noHelm }}
+      helm:
+        {{- if ($rune.appParams).skipCrds }}
+        skipCrds: true
+        {{- end }}
+        values: |
+          {{- if $rune.values }}
+          {{- toYaml $rune.values | nindent 10 }}
+          {{- end }}
+    {{- end }}
+  {{- end }}
+  destination:
+    {{- $cluster := "" }}
+    {{- $clusterSelector := default (default $spellbook.clusterSelector $chapter.clusterSelector ) $spellDefinition.clusterSelector }}
+    {{- if $clusterSelector }}
+      {{- $clusters := get (include "glyph.runicIndexer" (list $lexicon $clusterSelector "k8s-cluster" $chapter.name ) | fromJson) "results" }}
+      {{- range $clusters }}
+        {{- $cluster = .clusterURL}}
+      {{- end }}
+    {{- end }}
+    server: {{ default "https://kubernetes.default.svc" $cluster }}
+    namespace: {{ default $spellDefinition.name $spellDefinition.namespace }}
+  syncPolicy:
+    {{- if $appParams.managedNamespaceMetadata }}
+      {{- with $appParams.managedNamespaceMetadata }}
+    managedNamespaceMetadata:
+    {{- toYaml . | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if not $appParams.disableAutoSync }}
+    {{- with $appParams.syncPolicy.automated }}
+    automated:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- with $appParams.syncPolicy.syncOptions }}
+    syncOptions:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $appParams.syncPolicy.retry }}
+    retry:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}  
+  {{- if $ignoreDiff }} ##TODO add ignore differences segun runas
+  ignoreDifferences:
+    {{- toYaml $ignoreDiff | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}

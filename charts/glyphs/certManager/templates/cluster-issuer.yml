@@ -1,0 +1,41 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+
+## TODO static solvers only acme spec
+*/}}
+
+{{- define "certManager.clusterIssuer" }}
+{{- $root := index . 0 -}}
+{{- $glyphDefinition := index . 1}}
+{{- if $glyphDefinition.issuerType }}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ $glyphDefinition.name }}
+spec:
+  acme:
+    email: {{ $glyphDefinition.email }}
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+      - dns01:
+        {{- if eq "linode" $glyphDefinition.issuerType }}
+          webhook:
+            groupName: acme.cluster.local
+            solverName: linode
+            config:
+              apiKey: {{ $glyphDefinition.linode.apiKey }}
+        {{- else if eq "gcp" $glyphDefinition.issuerType }}
+          cloudDNS: 
+            project: {{ $glyphDefinition.gcp.projectID }}
+            serviceAccountSecretRef:
+              name: gcp-creds
+              key: credentials.json
+        {{- else if eq "aws" $glyphDefinition.issuerType }}
+          route53:
+            region: us-east-1
+        {{- end }}
+{{- end }}
+{{- end }}

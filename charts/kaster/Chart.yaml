@@ -1,0 +1,5 @@
+apiVersion: v2
+name: kaster
+version: 1.0.1
+appVersion: "2"
+description: a kaster for the glyphs system.

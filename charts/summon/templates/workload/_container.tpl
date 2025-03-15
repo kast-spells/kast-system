@@ -1,0 +1,83 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+ */}}
+{{- define "common.containerName" -}}
+{{- /*##TODO fix name on the main container (hildy bot example)*/ -}}
+{{- $root := index . 0 -}}
+{{- $container := index . 1 -}}
+{{- $containerName := index . 2 -}}
+{{- $name := include "common.name" $root }}
+{{- $ctName := ""}}
+{{- if typeOf $containerName | eq "int" }}
+{{- $ctName = "main" }}
+{{- else }}
+{{- $ctName = $containerName }}
+{{- end }}
+{{- if $container.name }}
+{{- printf "%s-%s" $name  $container.name  }}
+{{- else }}
+{{- printf "%s-%s" $name  $ctName  }}
+{{- end -}}
+{{- end -}}
+
+{{- define "getImage" -}}
+{{- $root := index . 0 -}}
+{{- $container := index . 1 -}}
+{{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
+{{- $imageName := default (include "common.name" $root) ($container.image).name -}}
+{{- $imageTag := default "latest" ($container.image).tag -}}
+{{- if eq $repository "" }}
+{{- printf "%s:%s" $imageName $imageTag -}}
+{{- else }}
+{{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "common.container" -}}
+{{- $root := index . 0 -}}
+{{- $containers := index . 1 -}}
+{{- range $containerName, $container := $containers }}
+- name: {{ include "common.containerName" (list $root $container $containerName )}}
+  image: {{ include "getImage" (list $root $container ) }}
+  imagePullPolicy: {{ default "IfNotPresent" (default ($root.Values.image).pullPolicy ($container.image).pullPolicy ) }}
+  {{- if $container.command }}
+  {{- if eq ( kindOf $container.command ) "string" }}
+  command: 
+    - {{ $container.command }}
+  {{- else }}
+  command:
+    {{- range $container.command }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if $container.args }}
+  args:
+    {{- range $container.args }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+  {{- include "common.workload.probes" ( default dict $container.probes ) | nindent 2 }}
+    {{- with $container.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- include "common.volumeMounts" $root | nindent 2 }}
+  {{- include "common.envs.envFrom" $root | nindent 2 }}
+  {{- include "common.envs.env" $root | nindent 2 }}
+    {{- end }}
+  {{- if $root.Values.service.enabled }}
+  ports:
+    {{- range $root.Values.service.ports }}
+    - name: {{ default "http" .name }}
+      containerPort: {{ default 80 .targetPort }}
+      protocol: {{ default "TCP" .protocol }}
+    {{- end }}
+{{- end }}
+
+{{- end -}}
+
+
+##hay q definir como se levantan los volume mounts
+
+##hay q definir como se levantan los volume mounts

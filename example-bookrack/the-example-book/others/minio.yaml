@@ -1,0 +1,67 @@
+name: minio
+repository: https://github.com/minio/minio.git
+path: helm/minio
+revision: RELEASE.2024-08-03T04-33-23Z
+appParams:
+  ignoreDifferences:
+    - kind: Secret
+      name: minio
+      jsonPointers:
+        - /data
+    - kind: Deployment
+      name: minio
+      jsonPointers:
+        - /spec/template/metadata/annotations/"checksum/secrets"
+values:
+  mode: standalone
+  extraVolumes:
+    - name: data
+      hostPath:
+        path: /mnt/storage/minio-storage
+        type: Directory
+  extraVolumeMounts:
+    - name: data
+      mountPath: /minio-storage
+  persistence:
+    enabled: false
+  nodeSelector:
+    kubernetes.io/hostname: retriever
+  environment:
+    MINIO_VOLUMES: /minio-storage
+    MINIO_SERVER_URL: "https://s3.example.com.ar"
+    MINIO_BROWSER_REDIRECT_URL: "https://s3-console.example.com.ar"
+  resources:
+    requests:
+      memory: 1Gi
+  image:
+    repository: minio/minio
+    tag: RELEASE.2025-02-07T23-21-09Z
+  mcImage:
+    repository: minio/mc
+    tag: RELEASE.2025-02-08T19-14-21Z
+  metrics:
+    serviceMonitor:
+      enabled: false
+
+glyphs:
+  istio:
+  - type: virtualService
+    nameOverride: minio-s3-external
+    enabled: True
+    subdomain: s3
+    selector:
+      access: external
+    host: minio
+    httpRules:
+      - prefix: /
+        port: 9000
+  - type: virtualService
+    nameOverride: minio-console-external
+    enabled: True
+    subdomain: s3-console
+    selector:
+      access: external
+    host: minio-console
+    httpRules:
+      - prefix: /
+        port: 9001

@@ -1,0 +1,252 @@
+workload:
+  enabled: true
+  type: deployment # [deployment, statefulset, daemonset, cronjob] #default deployment
+  replicas: 1
+  # volumeClaimTemplates: #mandatory on type statefullset
+  #   dastateCacata:
+  #     destinationPath: /data
+  #     storageClass: lala #optional
+  #     size: sor
+  #     accessModes: ReadWriteMany #opcional default: ReadWriteOnce
+  # schedule: "* * * * *" #mandatory if type cronjob
+
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  name: nginx
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  enabled: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+    # pepe: sarasa
+    # algo: aca
+  labels: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  enabled: true
+  annotations: {}
+  labels: {}
+  type: ClusterIP
+  ports: []
+    # - port: 80 #optional, Default 80
+    #   protocol: TCP #optional Default TCP [TCP,UDP]
+    #   name: http #optional, Default http
+    #   nodePort: 30080 #mandatory in case of type NodePort
+
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# probes: 
+#   liveness: # The liveness probe checks if the container is still running
+#     type: httpGet
+#     path: /healthz # The path that the probe should request
+#     port: 80 # The port the probe should use
+#     host: localhost # Optional: The host name to connect to (defaults to the Pod IP)
+#     # scheme: HTTP # Optional: The scheme to use (HTTP or HTTPS, default is HTTP)
+#     # httpHeaders: # Optional: Custom HTTP headers to set in the request
+#     #   - name: X-Custom-Header
+#     #     value: "CustomValue"
+#     # initialDelaySeconds: 5 # Number of seconds after the container starts before the probe runs for the first time
+#     # periodSeconds: 10 # How often (in seconds) to perform the probe
+#     # timeoutSeconds: 1 # Number of seconds after which the probe times out
+#     # successThreshold: 1 # Minimum consecutive successes for the probe to be considered successful
+#     # failureThreshold: 3 # When a probe fails, the Kubernetes restarts the container after this many consecutive failures
+#   readiness: # The readiness probe checks if the container is ready to accept traffic
+#     type: tcpSocket # Using the TCP socket method for the probe
+#     port: 8080 # The port the probe should use
+#   startup: # The startup probe checks if the container has started successfully
+#     type: exec # Using the command execution method for the probe
+#     command: # The command to execute for the probe
+#       - "/bin/check_startup.sh"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+initContainers: {}
+sideCars: {}
+
+# initContainers:
+#   initializer:
+#     command: cosa
+#     args:
+#       - cosa
+#     probes: {}
+#     resources:
+#       limits:
+#         cpu: "500m"
+#         memory: "512M"
+#       requests:
+#         cpu: "250m"
+#         memory: "128M"    
+#   otroPaCommand:
+#     command:
+#       - ls
+#       - "-alh"
+
+# sideCars:
+#   cosa:
+#     image:
+#       tag: saras
+#       name: lslasla
+
+secrets: {}
+
+configMaps: {}
+  # saras2:
+  #   type: file
+  #   mountPath: /defaults.yaml
+  # saras:
+  #   location: local
+  #   type: env
+  # pepe:
+  #   location: local
+  #   type: env
+  #   name: roberto
+  # jorge:
+  #   location: create
+  #   type: file
+  #   name: jorge.conf
+  #   mountPath: /sarlanga
+  #   contentType: json
+  #   content:
+  #     {
+  #       "UTC": "Tiempo Universal Coordinado",
+  #       "GMT": "Tiempo Medio de Greenwich",
+  #       "CET": "Hora de Europa Central",
+  #       "EET": "Hora de Europa del Este",
+  #       "AST": "Hora Estándar del Atlántico",
+  #       "EST": "Hora Estándar del Este de América del Norte",
+  #       "EDT": "Hora de Verano del Este de América del Norte",
+  #       "CST": "Hora Estándar del Centro de América del Norte",
+  #     }
+  # mambru.notrock:
+  #     location: create
+  #     type: file
+  #     mountPath: /mambru.conf
+  #     content: |
+  #       sarasa co
+  # deeppurple.rock:
+  #     location: create
+  #     type: file
+  #     mountPath: /mambru.conf
+  #     contentType: yaml
+  #     content:
+  #       UTC: "Tiempo Universal Coordinado"
+  #       GMT: "Tiempo Medio de Greenwich"
+  #       CET: "Hora de Europa Central"
+  #       EET: "Hora de Europa del Este"
+  #       AST: "Hora Estándar del Atlántico"
+
+##esto genera dinamicamente un pvc ademas de agregar el volumen al pod
+# volumes:
+#   home:
+#     type: hostPath
+#     destinationPath: /home/namen/_home
+#     path: /home/namen/_home
+#   data:
+#     type: pvc
+#     destinationPath: /data
+#     create: true
+#     storageClass: lala
+#     size: sor
+#     pvcName: kara #optional si no existe toma el nombre de la ms-name-$key
+#   laslreaeraw:
+#     destinationPath: /laslreaeraw
+#     create: true
+#   dataLoca:
+#     destinationPath: /data
+#     pvcName: jorge # optional si no existe toma la key
+#     create: false
+#     readOnly: true
+#   nfs:
+#     destinationPath: /data
+#     nfs: 
+#       server: my-nfs-server.example.com
+#       path: /my-nfs-volume
+#       readOnly: true
+#   lala:
+#     emptyDir: true
+#     destination: /lala
+#   otro:
+#     emptyDir:
+#       sizeLimit: 50Mi
+#       medium: memory
+
+# envs:
+#   JORGE: sarasa
+#   DB_USER:
+#     type: secret
+#     name: saladenga
+#     key: kaka
+#   lala: pep
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################
+######################
+# esto es herencia desde kast
+spellbook:
+  name: default
+chapter:
+  name: default
+glyphs: {}

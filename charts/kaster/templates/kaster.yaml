@@ -1,0 +1,12 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+*/}}
+{{- $root := . }} ## esto seria remplazable por $ pero para lectura de codigo
+
+{{- if $root.Values.glyphs }}
+  {{- range $chartName, $_ := $root.Subcharts }}
+    {{- range $glyph:= index $root.Values.glyphs $chartName }}
+      {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyph ) }}
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,21 @@
+glyphs:
+  istio:
+  - type: istio-gw
+    enabled: true
+    selectorLabels:
+      type: istio-gw
+      default: book
+    hosts:
+      - test.example.com
+      - "*.test.example.com"
+    istioSelector:
+      istio: test-int-gw
+    name: test-int-gw
+    noPrefix: True
+    tls:
+      enabled: True
+      issuerName: test-internal
+    ports:
+      - name: http
+        port: 80
+        protocol: HTTP

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: istio
+version: 1.0.0
+description: istio glyphs
+appVersion: "1.0.0"

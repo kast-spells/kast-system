@@ -1,0 +1,1 @@
+this will have a set of specific set of manifests for eazy config of common apps and integrations

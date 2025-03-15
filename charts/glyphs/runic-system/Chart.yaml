@@ -1,0 +1,5 @@
+apiVersion: v2
+name: runicSystem
+version: 1.0.0
+description: indexer of glyphs lexicon based
+appVersion: "1.0.0"

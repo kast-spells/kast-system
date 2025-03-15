@@ -1,0 +1,44 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+
+
+## TODO hardcoded all of it
+*/}}
+
+{{- define "vault.passwordPolicy" }}
+{{- $root := index . 0 -}}
+{{- $glyphDefinition := index . 1}}
+
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: PasswordPolicy
+metadata:
+  name: simple-password-policy
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  # aca va el vault connect de la libreria
+  authentication:
+    path: {{ default $root.Values.spellbook.name ($glyphDefinition.k8sAuth).path  }}
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  passwordPolicy: |
+    length = 36
+    rule "charset" {
+      charset = "abcdefghijklmnopqrstuvwxyz"
+      min-chars = 3
+    }
+    rule "charset" {
+      charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      min-chars = 3
+    }
+    rule "charset" {
+      charset = "0123456789"
+      min-chars = 3
+    }
+{{- end -}}

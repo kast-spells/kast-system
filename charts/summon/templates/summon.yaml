@@ -1,0 +1,49 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+{{- if .Values.debug }}
+root: |
+  {{ toYaml $root | nindent 2 }}
+{{- end }}
+
+{{/* glyph system for summons 
+##TODO no entendi por q no puede ser una lista aun (bug/skill issue)
+*/}} 
+{{- range $chartName, $_ := $root.Subcharts }}
+  {{- range $_, $glyph:= get $root.Values $chartName }}
+    {{if gt (len $glyph) 0 }}
+      {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyph ) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/* default app style */}} 
+{{- if .Values.workload.enabled  -}}
+{{- include ( printf "common.workload.%s" .Values.workload.type ) . }}
+{{- end -}}
+
+{{- if .Values.configMaps -}}
+{{- include "common.configMap" . }}
+{{- end -}}
+
+{{- if .Values.secrets -}}
+{{- include "common.secrets" . }}
+{{- end -}}
+
+{{- if .Values.serviceAccount.enabled -}}
+{{- include "common.serviceAccount" . }}
+{{- end -}}
+
+{{- if .Values.autoscaling.enabled -}}
+{{- include "common.autoscaling" . }}
+{{- end -}}
+
+{{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "deamonset")) }}
+{{- include "common.service" . }}
+{{- end }}
+
+{{- if .Values.volumes -}}
+{{- include "common.persistanteVolumeClaim" . }}
+{{- end }}

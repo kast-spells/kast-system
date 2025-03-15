@@ -1,0 +1,8 @@
+name: the-example-book
+repository: git@github.com:example/example-bookrack.git
+path: libraraian
+namespace: argocd
+revision: master
+cleanDefinition: true
+values:
+  name: the-example-book

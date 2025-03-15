@@ -1,0 +1,10 @@
+
+
+######################
+######################
+# esto es herencia desde kast
+spellbook:
+  name: default
+chapter:
+  name: default
+glyphs: {}

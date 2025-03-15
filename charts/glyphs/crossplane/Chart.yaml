@@ -1,0 +1,5 @@
+apiVersion: v2
+name: crossplane
+version: 1.0.0
+description: crossplane privider glyph
+appVersion: "1.0.0"

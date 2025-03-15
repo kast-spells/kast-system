@@ -1,0 +1,5 @@
+apiVersion: v2
+name: certManager
+version: 1.0.0
+description: certmanager glyphs for kast
+appVersion: "1.0.0"

@@ -1,0 +1,10 @@
+glyphs:
+  istio:
+    pepe:
+      type: virtualService
+      enabled: True
+      subdomain: argocd
+      host: argocd-server
+      httpRules:
+        - prefix: /
+          port: 80

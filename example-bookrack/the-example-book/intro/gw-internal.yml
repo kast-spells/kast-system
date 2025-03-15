@@ -1,0 +1,60 @@
+name: gw-internal
+repository: 'https://github.com/istio/istio.git'
+path: manifests/charts/gateways/istio-ingress
+revision: 1.23.0
+values:
+  global:
+    hub: istio
+    tag: "1.23.0"
+  gateways:
+    istio-ingressgateway:
+      name: istio-internal
+      labels:
+        app: example-internal
+        istio: example-internal
+      type: LoadBalancer
+      ports:
+        - port: 80
+          targetPort: 8080
+          name: http2
+          protocol: TCP
+        - port: 443
+          targetPort: 8443
+          name: https
+          protocol: TCP
+        - port: 2222
+          targetPort: 2222
+          name: git-ssh
+          protocol: TCP
+glyphs:
+  istio:
+    internal:
+      type: istio-gw
+      enabled: true
+      hosts:
+        - int.example.com
+        - "*.int.example.com"
+      istioSelector:
+        istio: example-internal
+      name: example-internal
+      noPrefix: True
+      tls:
+        enabled: True
+        issuerName: example-internal
+      ports:
+        - name: http
+          port: 80
+          protocol: HTTP
+        - name: http
+          port: 443
+          protocol: HTTPS
+        - name: ssh
+          port: 2222
+          protocol: TCP
+  certManager:
+    - type: certificate
+      enabled: true
+      name: example-internal
+      dnsNames:
+        - int.example.com
+        - "*.int.example.com"

@@ -1,0 +1,47 @@
+name: istio-base
+repository: 'https://github.com/istio/istio.git'
+path: manifests/charts/base
+revision: 1.23.0
+namespace: istio-system
+appParams:
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: istio-validator-istio-system
+      jsonPointers:
+        - /webhooks/0/failurePolicy
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: istiod-default-validator
+      jsonPointers:
+        - /webhooks/0/failurePolicy
+values:
+  enableCRDTemplates: true
+
+
+runes: 
+  - name: istio-discovery
+    repository: 'https://github.com/istio/istio.git'
+    path: manifests/charts/istio-control/istio-discovery
+    revision: 1.23.0
+    namespace: istio-system
+    values:
+      meshConfig:
+        defaultConfig:
+          proxyMetadata:
+            ISTIO_META_DNS_CAPTURE: "true"
+            ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+      global:
+        hub: istio 
+        tag: 1.23.0
+        proxy:
+          dnsRefreshRate: 5s
+        # Configura las variables de entorno para el agente de proxy
+        proxy_env:
+          ISTIO_META_DNS_CAPTURE: "true"
+          ISTIO_META_PROXY_XDS_VIA_AGENT: "true"
+      pilot:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi

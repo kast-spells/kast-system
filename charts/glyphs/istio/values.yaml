@@ -1,0 +1,47 @@
+# definition:
+#   - type: istio-gw
+#     enabled: true
+#     selectorLabels:
+#       type: istio-gw
+#       default: book
+#     baseURL: int.fwck.com.ar
+#     istioSelector:
+#       istio: fwck-int-gw
+#     name: fwck-int-gw
+#     noPrefix: True
+#     tls:
+#       enabled: True
+#       issuerName: fwck-internal
+#     ports:
+#       - name: http
+#         port: 80
+#         protocol: HTTP
+#       - name: http
+#         port: 443
+#         protocol: HTTPS
+#       - name: ssh
+#         port: 2222
+#         protocol: TCP
+
+#   - type: virtualService
+#     enabled: True
+#     subdomain: argocd
+#     host: argocd-server
+#     httpRules:
+#       - prefix: /
+#         port: 80
+#   - type: virtualService
+#     selector:
+#       access: external
+#     enabled: True
+#     subdomain: argocd
+#     host: argocd-server
+#     httpRules:
+#       - prefix: /
+#         port: 80
+#   - type: virtualService
+#     enabled: True
+#     notSubdomain: true
+#     httpRules:
+#       - prefix: /weaviate
+#         port: 80
