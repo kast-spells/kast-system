@@ -6,7 +6,7 @@ on:
       - "summon-*" # Se ejecuta cuando hay un nuevo tag en el repo origen
 
 jobs:
-  sync-code:
+  summon-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf summon-repo/!(.git)
-          cp -r charts/summon/* summon-repo/
+          cp -rL charts/summon/* summon-repo/
 
       - name: Create tag in destination repository
         run: |

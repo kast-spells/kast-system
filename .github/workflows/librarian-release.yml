@@ -6,7 +6,7 @@ on:
       - "librarian-*" # Se ejecuta cuando hay un nuevo tag en el repo origen
 
 jobs:
-  sync-code:
+  librarian-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf librarian-repo/!(.git)
-          cp -r librarian/* librarian-repo/
+          cp -rL librarian/* librarian-repo/
 
       - name: Commit and push changes
         run: |

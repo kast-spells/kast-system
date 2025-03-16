@@ -28,7 +28,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf kaster-repo/!(.git)
-          cp -r charts/kaster/* kaster-repo/
+          cp -rL charts/kaster/* kaster-repo/
 
       - name: Create tag in destination repository
         run: |
@@ -42,3 +42,33 @@ jobs:
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME"
           fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          repository: kast-spells/kaster
+          token: ${{ secrets.DEST_REPO_PAT }}
+          generate_release_notes: true
+
+      - name: Package Helm Chart
+        run: |
+          helm package charts/kaster --destination packaged-charts
+          echo "HELM_PACKAGE=$(ls packaged-charts/*.tgz)" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry (GHCR)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Push Helm Chart as OCI image
+        run: |
+          CLEAN_TAG=$(echo "$TAG_NAME" | sed 's/^kaster-//')
+          helm push ${{ env.HELM_PACKAGE }} oci://ghcr.io/${{ github.repository_owner }}/
+          echo "HELM_IMAGE=ghcr.io/${{ github.repository_owner }}/kast-system/kaster:$CLEAN_TAG" >> $GITHUB_ENV
+
+      - name: Upload Helm Chart to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.HELM_PACKAGE }}
+          tag_name: ${{ env.TAG_NAME }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
