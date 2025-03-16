@@ -53,7 +53,7 @@ jobs:
 
       - name: Package Helm Chart
         run: |
-          helm package PATH_CHART --destination packaged-charts
+          helm package charts/kaster --destination packaged-charts
           echo "HELM_PACKAGE=$(ls packaged-charts/*.tgz)" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry (GHCR)
