@@ -30,19 +30,15 @@ jobs:
           rm -rf kaster-repo/!(.git)
           cp -r charts/kaster/* kaster-repo/
 
-      - name: Commit and push changes
-        run: |
-          cd kaster-repo
-          git add .
-          git commit -m "Release - Tag: $TAG_NAME"
-          git push origin master
-
       - name: Create tag in destination repository
         run: |
           cd kaster-repo
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
             echo "Tag $TAG_NAME already exists. Skipping..."
           else
+            git add .
+            git commit -m "Release - Tag: $TAG_NAME"
+            git push origin master
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME"
           fi

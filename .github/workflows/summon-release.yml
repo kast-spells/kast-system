@@ -30,19 +30,15 @@ jobs:
           rm -rf summon-repo/!(.git)
           cp -r charts/summon/* summon-repo/
 
-      - name: Commit and push changes
-        run: |
-          cd summon-repo
-          git add .
-          git commit -m "Release - Tag: $TAG_NAME"
-          git push origin master
-
       - name: Create tag in destination repository
         run: |
           cd summon-repo
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
             echo "Tag $TAG_NAME already exists. Skipping..."
           else
+            git add .
+            git commit -m "Release - Tag: $TAG_NAME"
+            git push origin master
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME"
           fi
