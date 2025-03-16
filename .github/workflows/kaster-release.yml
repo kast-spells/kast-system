@@ -28,7 +28,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf kaster-repo/!(.git)
-          cp -r charts/kaster/* kaster-repo/PATH_DESTINO/
+          cp -r charts/kaster/* kaster-repo/
 
       - name: Commit and push changes
         run: |

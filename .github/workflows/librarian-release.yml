@@ -28,7 +28,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf librarian-repo/!(.git)
-          cp -r librarian/* librarian-repo/PATH_DESTINO/
+          cp -r librarian/* librarian-repo/
 
       - name: Commit and push changes
         run: |
