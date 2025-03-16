@@ -42,11 +42,3 @@ jobs:
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME"
           fi
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.TAG_NAME }}
-          repository: kast-spells/kaster
-          token: ${{ secrets.DEST_REPO_PAT }}
-          generate_release_notes: true
