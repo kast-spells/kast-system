@@ -29,7 +29,9 @@ jobs:
           shopt -s extglob
           rm -rf librarian-repo/!(.git)
           cp -rL librarian/* librarian-repo/
-
+          CHART_VERSION=$(echo $env.TAG_NAME | sed 's/librarian-//')
+          sed -i "s/^version:.*/version: ${CHART_VERSION}/" librarian-repo/Chart.yaml
+      
       - name: Commit and push changes
         run: |
           cd librarian-repo

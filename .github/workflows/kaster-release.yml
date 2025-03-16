@@ -29,6 +29,8 @@ jobs:
           shopt -s extglob
           rm -rf kaster-repo/!(.git)
           cp -rL charts/kaster/* kaster-repo/
+          CHART_VERSION=$(echo $env.TAG_NAME | sed 's/kaster-//')
+          sed -i "s/^version:.*/version: ${CHART_VERSION}/" kaster-repo/Chart.yaml
 
       - name: Create tag in destination repository
         run: |
