@@ -1,0 +1,74 @@
+name: Sync Code to Another Repo and Create Release
+
+on:
+  push:
+    tags:
+      - "kaster-*" # Se ejecuta cuando hay un nuevo tag en el repo origen
+
+jobs:
+  sync-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Extract tag name
+        id: get_tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Clone destination repository
+        run: |
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/kaster.git kaster-repo
+          cd kaster-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Copy files to destination repository
+        run: |
+          shopt -s extglob
+          rm -rf kaster-repo/!(.git)
+          cp -r charts/kaster/* kaster-repo/PATH_DESTINO/
+
+      - name: Commit and push changes
+        run: |
+          cd kaster-repo
+          git add .
+          git commit -m "Release - Tag: $TAG_NAME"
+          git push origin master
+
+      - name: Create tag in destination repository
+        run: |
+          cd kaster-repo
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          repository: kast-spells/kaster
+          token: ${{ secrets.DEST_REPO_PAT }}
+          generate_release_notes: true
+
+      - name: Package Helm Chart
+        run: |
+          helm package PATH_CHART --destination packaged-charts
+          echo "HELM_PACKAGE=$(ls packaged-charts/*.tgz)" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry (GHCR)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Push Helm Chart as OCI image
+        run: |
+          CLEAN_TAG=$(echo "$TAG_NAME" | sed 's/^kaster-//')  # Elimina 'v' si está al inicio
+          helm push ${{ env.HELM_PACKAGE }} oci://ghcr.io/${{ github.repository_owner }}/
+          echo "HELM_IMAGE=ghcr.io/${{ github.repository_owner }}/kaster:$CLEAN_TAG" >> $GITHUB_ENV
+
+      - name: Upload Helm Chart to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.HELM_PACKAGE }}
+          tag_name: ${{ env.TAG_NAME }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true

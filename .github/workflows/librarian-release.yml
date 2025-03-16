@@ -1,0 +1,52 @@
+name: Sync Code to Another Repo and Create Release
+
+on:
+  push:
+    tags:
+      - "librarian-*" # Se ejecuta cuando hay un nuevo tag en el repo origen
+
+jobs:
+  sync-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Extract tag name
+        id: get_tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Clone destination repository
+        run: |
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/librarian.git librarian-repo
+          cd librarian-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Copy files to destination repository
+        run: |
+          shopt -s extglob
+          rm -rf librarian-repo/!(.git)
+          cp -r librarian/* librarian-repo/PATH_DESTINO/
+
+      - name: Commit and push changes
+        run: |
+          cd librarian-repo
+          git add .
+          git commit -m "Release - Tag: $TAG_NAME"
+          git push origin master
+
+      - name: Create tag in destination repository
+        run: |
+          cd librarian-repo
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          repository: kast-spells/librarian
+          token: ${{ secrets.DEST_REPO_PAT }}
+          generate_release_notes: true
