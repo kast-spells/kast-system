@@ -1,5 +1,6 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
 
 name defines a template for the name of the chart. It should be used for the `app` label. 
 This is common practice in many Kubernetes manifests, and is not Helm-specific.

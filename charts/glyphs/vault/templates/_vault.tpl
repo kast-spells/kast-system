@@ -1,10 +1,8 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
-
+Licensed under the GNU GPL v3. See LICENSE file for details.
 ## TODO tecnicamente problemas del secops del maniana, todo se genera en el ns de vault con la sa de vault problema del huevo y la gallina
-
  */}}
-
 {{- define "vault.connect" -}}
   {{- $context := . -}}
   {{- $root := index $context 0 -}}

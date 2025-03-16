@@ -1,9 +1,9 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
 
 ## TODO el selector esta hardcoded lo q evita multiples vaults
  */}}
-
 
 {{- define "vault.prolicy" -}}
 {{- $root := index . 0 -}}

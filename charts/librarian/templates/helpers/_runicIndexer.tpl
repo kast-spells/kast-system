@@ -1,6 +1,7 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
- */}}
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
 {{- define "glyph.runicIndexer" -}}
 {{- $glyphs := index . 0 -}}
 {{- $selectors := index . 1 -}}

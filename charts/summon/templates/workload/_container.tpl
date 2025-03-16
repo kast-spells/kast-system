@@ -1,8 +1,9 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- define "common.containerName" -}}
-{{- /*##TODO fix name on the main container (hildy bot example)*/ -}}
+{{- /*## TODO fix name on the main container (hildy bot example)*/ -}}
 {{- $root := index . 0 -}}
 {{- $container := index . 1 -}}
 {{- $containerName := index . 2 -}}

@@ -2,4 +2,11 @@ apiVersion: v2
 name: common
 version: 1.0.0
 description: kast common templates for names, labels, and annotations
-appVersion: "1.0.0"
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-release
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: laaledesiempre
+    email: laaledesiempre@disroot.org

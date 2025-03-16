@@ -1,15 +1,13 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
-
+Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
-
 {{- define "istio.virtualService" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 {{- if $glyphDefinition.enabled }}
 {{- $gateways := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "istio-gw" $root.Values.chapter.name ) | fromJson) "results" }}
 {{- range $gateway := $gateways }}
-
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService

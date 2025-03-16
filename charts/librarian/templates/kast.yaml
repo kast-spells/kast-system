@@ -1,7 +1,8 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
- */}}
-{{/*this will create a spellbook configmap */}}
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+
 {{- $spellbook :=  dict "appParams" $.Values.appParams  }}
 {{- $_ := set $spellbook "name" (default $.Release.Name $.Values.name) }}
 
