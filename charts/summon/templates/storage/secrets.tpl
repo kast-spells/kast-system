@@ -9,7 +9,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "common.name" $ }}-{{ (default $name $content.name) |  replace "." "-" }}
+  name: {{ (default $name $content.name) |  replace "." "-" }}
 data:
   {{ (default $name $content.name) |  replace "." "-" }}: |
   {{- if eq $content.contentType "yaml" }}
