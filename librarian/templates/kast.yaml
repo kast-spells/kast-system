@@ -89,7 +89,11 @@ spec:
   */}}
     {{- $summon := mergeOverwrite ( deepCopy (default dict $spellbook.summon ) ) ( deepCopy ( default dict $chapter.summon ) ) }}
     - repoURL: {{ $summon.repository }}
+      {{- if $summon.chart }}
+      chart: {{ $summon.chart }}
+      {{- else }}
       path: {{ $summon.path }}
+      {{- end }}
       targetRevision: {{ $summon.revision }}
       helm:
         {{- $values := "" }}
@@ -108,7 +112,11 @@ spec:
   {{- if $spellDefinition.glyphs }} 
     {{- $kaster := default $spellbook.kaster $chapter.kaster}}
     - repoURL: {{ $kaster.repository }}
+      {{- if $kaster.chart }}
+      chart: {{ $kaster.chart }}
+      {{- else }}
       path: {{ $kaster.path }}
+      {{- end }}
       targetRevision: {{ $kaster.revision }}
       helm:
         values: |
