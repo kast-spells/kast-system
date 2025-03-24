@@ -1,0 +1,15 @@
+name: the-developers-book
+chapters:
+  - accounting
+  - integrations
+  - infra
+
+
+kaster:
+  repository: ghcr.io/kast-spells/kaster
+  chart: kaster
+  revision: 1.0.1
+summon:
+  repository: ghcr.io/kast-spells/summon
+  chart: summon
+  revision: 1.0.2
