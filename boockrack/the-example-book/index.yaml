@@ -12,6 +12,3 @@ summon:
   repository: ghcr.io/kast-spells/summon
   chart: summon
   revision: 1.0.2
-  values:
-    image:
-      repository: harbor.int.fwck.com.ar/library
