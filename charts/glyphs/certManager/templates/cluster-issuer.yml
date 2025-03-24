@@ -26,13 +26,21 @@ spec:
             groupName: acme.cluster.local
             solverName: linode
             config:
+            {{- if $glyphDefinition.linode.apiKey }}
               apiKey: {{ $glyphDefinition.linode.apiKey }}
+            {{- else }}
+               apiKeySecretRef:
+                name: {{ $glyphDefinition.linode.secret.name }}
+                key: {{ $glyphDefinition.linode.secret.key }}
+            {{- end }}
         {{- else if eq "gcp" $glyphDefinition.issuerType }}
           cloudDNS: 
             project: {{ $glyphDefinition.gcp.projectID }}
+          {{- if $glyphDefinition.gcp.secret }}
             serviceAccountSecretRef:
-              name: gcp-creds
-              key: credentials.json
+              name: {{ $glyphDefinition.gcp.secret.name }}
+              key: {{ $glyphDefinition.gcp.secret.key }}
+          {{- end }}
         {{- else if eq "aws" $glyphDefinition.issuerType }}
           route53:
             region: us-east-1
