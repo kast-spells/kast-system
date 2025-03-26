@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.persistanteVolumeClaim" -}}
+{{- define "summon.persistanteVolumeClaim" -}}
   {{- range $name, $volume := .Values.volumes }}
     {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
 ---

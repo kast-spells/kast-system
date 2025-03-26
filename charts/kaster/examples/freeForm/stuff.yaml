@@ -1,0 +1,13 @@
+glyphs:
+  freeForm:
+    - type: manifest
+      definition:
+        apiVersion: v42
+        kind: Reality
+        metadata:
+          name: where
+        spec:
+          create: universe
+          dialog:
+            - make-light
+            

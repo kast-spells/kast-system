@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.cronjob" -}}
+{{- define "summon.cronjob" -}}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -25,13 +25,13 @@ spec:
           serviceAccountName: {{ include "common.serviceAccountName" . }}
           initContainers:
           {{- if .Values.initContainers }}
-          {{- include "common.container" (list . .Values.initContainers ) | nindent 12 }}
+          {{- include "summon.container" (list . .Values.initContainers ) | nindent 12 }}
           {{- end }}
           containers:
           {{- if .Values.sideCars }}
-          {{- include "common.container" (list . .Values.sideCars ) | nindent 12 }}
+          {{- include "summon.container" (list . .Values.sideCars ) | nindent 12 }}
           {{- end }}
-          {{- include "common.container" (list . .Values  ) | nindent 12  }}
+          {{- include "summon.container" (list . .Values  ) | nindent 12  }}
           {{- with .nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 8 }}
@@ -52,7 +52,7 @@ spec:
           securityContext:
             {{- toYaml .podSecurityContext | nindent 8 }}
           {{- end }}
-          {{- include "common.volumes" . | nindent 10 }}
+          {{- include "summon.common.volumes" . | nindent 10 }}
 {{- end -}}
 
 #TODO faltan los volumenes

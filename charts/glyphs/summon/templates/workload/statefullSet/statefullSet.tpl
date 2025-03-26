@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.workload.statefulset" -}}
+{{- define "summon.workload.statefulset" -}}
 {{- $root := . -}}
 ---
 apiVersion: apps/v1
@@ -26,14 +26,14 @@ spec:
       serviceAccountName: {{ include "common.serviceAccountName" $root }}
       initContainers:
         {{- if .Values.initContainers }}
-        {{- include "common.container" (list $root .Values.initContainers ) | nindent 8 }}
+        {{- include "summon.common.container" (list $root .Values.initContainers ) | nindent 8 }}
         {{- end }}
       containers:
         {{- if .Values.sideCars }}
-        {{- include "common.container" (list $root .Values.sideCars ) | nindent 8 }}
+        {{- include "summon.common.container" (list $root .Values.sideCars ) | nindent 8 }}
         {{- end }}
         #main Container
-        {{- include "common.container" (list $root (list .Values) ) | nindent 8  }}
+        {{- include "summon.common.container" (list $root (list .Values) ) | nindent 8  }}
         {{- with .Values.nodeSelector }}
       nodeSelector:
           {{- toYaml $root | nindent 8 }}
@@ -51,7 +51,7 @@ spec:
           {{- toYaml $root | nindent 8 }}
         {{- end }}
 
-        {{- include "common.volumes" $root |nindent 6 }}
+        {{- include "summon.common.volumes" $root |nindent 6 }}
   volumeClaimTemplates:
   {{- range $name, $volume := .Values.volumes }}
     {{- if eq $volume.type "claimTemplates" }}

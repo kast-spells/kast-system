@@ -2,21 +2,21 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.volumes"}}
+{{- define "summon.common.volumes"}}
 volumes:
   {{- if .Values.configMaps }}
-    {{- include "common.volumes.configMaps" .Values.configMaps | nindent 2 -}}
+    {{- include "summon.common.volumes.configMaps" .Values.configMaps | nindent 2 -}}
   {{- end }}
   {{- if .Values.secrets }}
-    {{- include "common.volumes.secrets" .Values.secrets | nindent 2 -}}
+    {{- include "summon.common.volumes.secrets" .Values.secrets | nindent 2 -}}
   {{- end }}
   {{- if .Values.volumes }}
-    {{- include "common.volumes.volumes" . | nindent 2 -}}
+    {{- include "summon.common.volumes.volumes" . | nindent 2 -}}
   {{- end }}
 {{- end -}}
 
 
-{{- define "common.volumes.volumes" -}}
+{{- define "summon.common.volumes.volumes" -}}
   {{- range $name, $volume := .Values.volumes }}
 - name: {{ $name }}
   {{- if eq $volume.type "emptyDir" }}
@@ -49,7 +49,7 @@ volumes:
 {{- end }}
 {{- end }}
 
-{{- define "common.volumes.configMaps" -}}
+{{- define "summon.common.volumes.configMaps" -}}
   {{- range $name, $content := .  }}
     {{- if and ( or (eq ( default "local" $content.location ) "local") (eq $content.location "create") ) (eq .type "file") }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
@@ -59,7 +59,7 @@ volumes:
   {{- end }}
 {{- end -}}
 
-{{- define "common.volumes.secrets" -}}
+{{- define "summon.common.volumes.secrets" -}}
   {{- range $name, $content := . }}
     {{- if eq .type "file" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}

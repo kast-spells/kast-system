@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.workload.deployment" -}}
+{{- define "summon.workload.deployment" -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,14 +31,14 @@ spec:
       {{- end }}
       {{- if .Values.initContainers }}
       initContainers:
-        {{- include "common.container" (list . .Values.initContainers ) | nindent 8 }}
+        {{- include "summon.common.container" (list . .Values.initContainers ) | nindent 8 }}
       {{- end }}
       containers:
         {{- if .Values.sideCars }}
-        {{- include "common.container" (list . .Values.sideCars ) | nindent 8 }}
+        {{- include "summon.common.container" (list . .Values.sideCars ) | nindent 8 }}
         {{- end }}
         #main Container
-        {{- include "common.container" (list . (list .Values) ) | nindent 8  }}
+        {{- include "summon.common.container" (list . (list .Values) ) | nindent 8  }}
         {{- with .Values.nodeSelector }}
       nodeSelector:
           {{- toYaml . | nindent 8 }}
@@ -56,7 +56,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
 
-        {{- include "common.volumes" . |nindent 6 }}
+        {{- include "summon.common.volumes" . |nindent 6 }}
 {{- end -}}
 
 ##TODO faltan los volumenes

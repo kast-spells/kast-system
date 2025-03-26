@@ -2,17 +2,17 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.envs.envFrom"}}
+{{- define "summon.common.envs.envFrom"}}
 envFrom:
   {{- if .Values.configMaps }}
-    {{- include "common.envs.configMaps" .Values.configMaps | nindent 2 -}}
+    {{- include "summon.common.envs.configMaps" .Values.configMaps | nindent 2 -}}
   {{- end }}
   {{- if .Values.secrets }}
-    {{- include "common.envs.secrets" .Values.secrets | nindent 2 -}}
+    {{- include "summon.common.envs.secrets" .Values.secrets | nindent 2 -}}
   {{- end }}
 {{- end -}}
 
-{{- define "common.envs.configMaps" -}}
+{{- define "summon.common.envs.configMaps" -}}
   {{- range $name, $content := . -}}
     {{- if eq $content.type "env" }}
   - configMapRef:
@@ -21,7 +21,7 @@ envFrom:
   {{- end }}
 {{- end -}}
 
-{{- define "common.envs.secrets" -}}
+{{- define "summon.common.envs.secrets" -}}
   {{- range $name, $content := . }}
     {{- if eq $content.type "env" }}
   - secretRef:
@@ -30,7 +30,7 @@ envFrom:
   {{- end }}
 {{- end -}}
 
-{{- define "common.envs.env" -}}
+{{- define "summon.common.envs.env" -}}
 env:
   {{- if .Values.spellbook }}
   - name: SPELLBOOK_NAME

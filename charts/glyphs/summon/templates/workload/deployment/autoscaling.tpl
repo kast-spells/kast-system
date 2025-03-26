@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.autoscaling" }}
+{{- define "summon.autoscaling" }}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

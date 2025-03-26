@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.serviceAccount" }}
+{{- define "summon.serviceAccount" }}
 {{- if .Values.serviceAccount.enabled }}
 ---
 apiVersion: v1

@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.containerName" -}}
+{{- define "summon.common.containerName" -}}
 {{- /*## TODO fix name on the main container (hildy bot example)*/ -}}
 {{- $root := index . 0 -}}
 {{- $container := index . 1 -}}
@@ -21,7 +21,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- end -}}
 {{- end -}}
 
-{{- define "getImage" -}}
+{{- define "summon.getImage" -}}
 {{- $root := index . 0 -}}
 {{- $container := index . 1 -}}
 {{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
@@ -34,12 +34,12 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- end -}}
 {{- end -}}
 
-{{- define "common.container" -}}
+{{- define "summon.common.container" -}}
 {{- $root := index . 0 -}}
 {{- $containers := index . 1 -}}
 {{- range $containerName, $container := $containers }}
-- name: {{ include "common.containerName" (list $root $container $containerName )}}
-  image: {{ include "getImage" (list $root $container ) }}
+- name: {{ include "summon.common.containerName" (list $root $container $containerName )}}
+  image: {{ include "summon.getImage" (list $root $container ) }}
   imagePullPolicy: {{ default "IfNotPresent" (default ($root.Values.image).pullPolicy ($container.image).pullPolicy ) }}
   {{- if $container.command }}
   {{- if eq ( kindOf $container.command ) "string" }}
@@ -58,14 +58,14 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     - {{ . }}
     {{- end }}
   {{- end }}
-  {{- include "common.workload.probes" ( default dict $container.probes ) | nindent 2 }}
+  {{- include "summon.common.workload.probes" ( default dict $container.probes ) | nindent 2 }}
     {{- with $container.resources }}
   resources:
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- include "common.volumeMounts" $root | nindent 2 }}
-  {{- include "common.envs.envFrom" $root | nindent 2 }}
-  {{- include "common.envs.env" $root | nindent 2 }}
+  {{- include "summon.common.volumeMounts" $root | nindent 2 }}
+  {{- include "summon.common.envs.envFrom" $root | nindent 2 }}
+  {{- include "summon.common.envs.env" $root | nindent 2 }}
     {{- end }}
   {{- if $root.Values.service.enabled }}
   ports:

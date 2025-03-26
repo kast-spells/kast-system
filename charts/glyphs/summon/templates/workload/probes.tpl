@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "common.workload.probes" -}}
+{{- define "summon.common.workload.probes" -}}
 {{- if gt (len .) 0 -}}
 {{- range $probe, $pDef := . }}
 {{ $probe }}Probe:
