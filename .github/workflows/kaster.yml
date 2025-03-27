@@ -1,21 +1,30 @@
-name: Sync Code to Another Repo and Create Release
+name: kaster-sync
 
 on:
   push:
+    branches:
+      - master
     tags:
-      - "kaster-*" # Se ejecuta cuando hay un nuevo tag en el repo origen
+      - "kaster-*"
 
 jobs:
-  sync-code:
+  sync-kaster:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
 
-      - name: Extract tag name
-        id: get_tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - name: Detect event type
+        id: event_type
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "is_tag=true" >> $GITHUB_OUTPUT
+            echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+            echo "COMMIT_MSG=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+          fi
 
       - name: Clone destination repository
         run: |
@@ -24,15 +33,28 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Copy files to destination repository
+      - name: Copy files to destination repository (branch)
         run: |
           shopt -s extglob
           rm -rf kaster-repo/!(.git)
-          cp -rL charts/kaster/* kaster-repo/
+          cp -r kaster/* kaster-repo/
+
+      - name: Copy files to destination repository (tag)
+        if: steps.event_type.outputs.is_tag == 'true'
+        run: |
           CHART_VERSION=$(echo $TAG_NAME | sed 's/kaster-//')
           sed -i "s/^version:.*/version: ${CHART_VERSION}/" kaster-repo/Chart.yaml
 
-      - name: Create tag in destination repository
+      - name: Commit and push changes (branch)
+        if: steps.event_type.outputs.is_tag == 'false'
+        run: |
+          cd kaster-repo
+          git add .
+          git commit -m "$COMMIT_MSG"
+          git push origin master
+
+      - name: Commit, tag and push changes (tag)
+        if: steps.event_type.outputs.is_tag == 'true'
         run: |
           cd kaster-repo
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
