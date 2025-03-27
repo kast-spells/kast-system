@@ -16,8 +16,8 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- $skipVerify := $vaultConf.skipVerify -}}
   {{- $role := "" -}}
   {{- if $forceVault -}}
-    {{- $role = $vaultConf.role -}}
-    {{- $serviceAccount = $vaultConf.serviceAccount -}}
+    {{- $role = default "vault" $vaultConf.role -}}
+    {{- $serviceAccount =  default "vault" $vaultConf.serviceAccount -}}
   {{- end -}}
 authentication: 
   path: {{ default $root.Values.spellbook.name $vaultConf.authPath }}
