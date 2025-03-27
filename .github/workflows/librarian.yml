@@ -37,7 +37,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf librarian-repo/!(.git)
-          cp -r librarian/* librarian-repo/
+          rsync -av --exclude='Chart.yaml'  librarian/ librarian-repo/
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'
