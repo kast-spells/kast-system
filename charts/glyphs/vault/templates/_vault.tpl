@@ -14,14 +14,13 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- end }}
   {{- $url := $vaultConf.url -}}
   {{- $skipVerify := $vaultConf.skipVerify -}}
-  {{- $path := $vaultConf.path -}}
   {{- $role := "" -}}
   {{- if $forceVault -}}
     {{- $role = $vaultConf.role -}}
     {{- $serviceAccount = $vaultConf.serviceAccount -}}
   {{- end -}}
 authentication: 
-  path: {{ default $root.Values.spellbook.name $vaultConf.path }}
+  path: {{ default $root.Values.spellbook.name $vaultConf.authPath }}
   role: {{ default (include "common.name" $root) $role }}
   serviceAccount:
     name: {{ default (include "common.name" $root) $serviceAccount }}
@@ -34,23 +33,34 @@ connection:
 
 {{- define "generateSecretPath" }}
   {{- $root := index . 0 }}
-  {{- $secretName := index . 1 }}
-  {{- $secret := index . 2 }}
-  {{- $internalPath := default "publics" $secret.source.private }}
-  {{- $path := default "" $secret.source.path }}
-  {{- if eq $path "spellbook" }}
-    {{- printf "secrets/data/%s/%s/%s" $root.Values.spellbook.name $internalPath $secretName }}
+  {{- $glyph := index . 1 }}
+  {{- $vaultConf := index . 2 }}
+  {{- $internalPath := default "publics" $glyph.private }}
+  {{- $path := default "" $glyph.path }}
+  {{- if eq $path "book" }}
+    {{- printf "%s/data/%s/%s/%s" 
+              $vaultConf.secretPath
+              $root.Values.spellbook.name 
+              $internalPath
+              $glyph.name }}
   {{- else if eq $path "chapter" }}
-    {{- printf "secrets/data/%s/%s/%s/%s" $root.Values.spellbook.name $root.Values.chapter.name $internalPath $secretName  }}
+    {{- printf "%s/data/%s/%s/%s/%s"
+                $vaultConf.secretPath
+                $root.Values.spellbook.name
+                $root.Values.chapter.name
+                $internalPath 
+                $glyph.name  }}
   {{- else if hasPrefix "/" $path }}
-    {{- printf "secrets/data%s" $path }}
+    {{- printf "%s/data%s" 
+                $vaultConf.secretPath
+                $path }}
   {{- else }}
-    {{- printf "secrets/data/%s/%s/%s/%s/%s" 
+    {{- printf "%s/data/%s/%s/%s/%s/%s" 
+          $vaultConf.secretPath
           $root.Values.spellbook.name 
           $root.Values.chapter.name 
           $root.Release.Namespace
           $internalPath 
-          $secretName
-     }}
+          $glyph.name  }}
   {{- end }}
 {{- end }}
