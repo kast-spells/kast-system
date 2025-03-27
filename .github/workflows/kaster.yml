@@ -37,7 +37,8 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf kaster-repo/!(.git)
-          cp -rL charts/kaster/* kaster-repo/
+          rsync -avL --exclude='Chart.yaml' charts/kaster/ kaster-repo/
+
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'
