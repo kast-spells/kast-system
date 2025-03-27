@@ -97,9 +97,9 @@ spec:
   {{- include "vault.connect" (list $root $vaultConf  "True") |nindent 2 }}
   path: {{ default $root.Values.spellbook.name $vaultConf.path }}
   policies:
-    -  {{ include "common.name" $root }}
+    - {{ default ( include "common.name" $root ) $glyph.name }}
   targetServiceAccounts:
-    -  {{  default (include "common.name" $root) $glyph.serviceAccount }}
+    - {{  default (include "common.name" $root) $glyph.serviceAccount }}
   targetNamespaces:
     targetNamespaces:
       - {{ $root.Release.Namespace }}
