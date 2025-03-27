@@ -37,7 +37,7 @@ jobs:
         run: |
           shopt -s extglob
           rm -rf summon-repo/!(.git)
-          cp -r charts/summon/* summon-repo/
+          cp -rL charts/summon/* summon-repo/
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'
