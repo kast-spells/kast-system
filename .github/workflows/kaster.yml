@@ -50,8 +50,14 @@ jobs:
         run: |
           cd kaster-repo
           git add .
-          git commit -m "$COMMIT_MSG"
-          git push origin master
+
+          # Verifica si hay cambios antes de hacer commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "$COMMIT_MSG"
+            git push origin master
+          fi
 
       - name: Commit, tag and push changes (tag)
         if: steps.event_type.outputs.is_tag == 'true'
