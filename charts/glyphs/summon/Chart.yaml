@@ -4,7 +4,7 @@ version: 1.0.0
 description: the summon chart of kast to create microservices or run conainers
 home: https://github.com/kast-spells
 sources:
-  - https://github.com/kast-spells/kast-release
+  - https://github.com/kast-spells/kast-system
 maintainers:
   - name: namen malkav
     email: namenmalkav@gmail.com

@@ -35,9 +35,8 @@ jobs:
 
       - name: Copy files to destination repository (branch)
         run: |
-          shopt -s extglob
-          rm -rf summon-repo/!(.git)
-          rsync -avL --exclude='Chart.yaml'  charts/summon/ summon-repo/
+          rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' charts/summon/ summon-repo/
+          rsync -avL --exclude='Chart.yaml' charts/summon/ summon-repo/
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'

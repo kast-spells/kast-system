@@ -35,8 +35,7 @@ jobs:
 
       - name: Copy files to destination repository (branch)
         run: |
-          shopt -s extglob
-          rm -rf kaster-repo/!(.git)
+          rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' charts/kaster/ kaster-repo/
           rsync -avL --exclude='Chart.yaml' charts/kaster/ kaster-repo/
 
 

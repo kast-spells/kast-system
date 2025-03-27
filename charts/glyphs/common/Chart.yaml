@@ -4,7 +4,7 @@ version: 1.0.0
 description: kast common templates for names, labels, and annotations
 home: https://github.com/kast-spells
 sources:
-  - https://github.com/kast-spells/kast-release
+  - https://github.com/kast-spells/kast-system
 maintainers:
   - name: namen malkav
     email: namenmalkav@gmail.com
