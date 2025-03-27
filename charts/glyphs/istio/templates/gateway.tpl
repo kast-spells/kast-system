@@ -4,7 +4,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
 {{- define "istio.istio-gw" }}
 {{- $root := index . 0 -}}
-{{- $glyphDefinition := index . 1}}
+{{- $glyphDefinition := index . 1 }}
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
