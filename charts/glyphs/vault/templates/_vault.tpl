@@ -35,21 +35,26 @@ connection:
   {{- $root := index . 0 }}
   {{- $glyph := index . 1 }}
   {{- $vaultConf := index . 2 }}
+  {{- $create := index . 3 }}
   {{- $internalPath := default "publics" $glyph.private }}
   {{- $path := default "" $glyph.path }}
+  {{- $name := $glyph.name}}
+  {{- if $create }}
+  {{- $name = "" }}
+  {{- end }}
   {{- if eq $path "book" }}
     {{- printf "%s/data/%s/%s/%s" 
               $vaultConf.secretPath
               $root.Values.spellbook.name 
               $internalPath
-              $glyph.name }}
+              $name }}
   {{- else if eq $path "chapter" }}
     {{- printf "%s/data/%s/%s/%s/%s"
                 $vaultConf.secretPath
                 $root.Values.spellbook.name
                 $root.Values.chapter.name
                 $internalPath 
-                $glyph.name  }}
+                $name  }}
   {{- else if hasPrefix "/" $path }}
     {{- printf "%s/data%s" 
                 $vaultConf.secretPath
@@ -61,6 +66,6 @@ connection:
           $root.Values.chapter.name 
           $root.Release.Namespace
           $internalPath 
-          $glyph.name  }}
+          $name  }}
   {{- end }}
 {{- end }}
