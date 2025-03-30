@@ -81,8 +81,8 @@ spec:
     {{- end }}
     {{- if $glyph.extraPolicy }}
     {{- range $glyph.extraPolicy }}
-    path "{{ $glyph.path }}" {
-      capabilities = {{ $glyph.capabilities | toJson }}
+    path "{{ .path }}" {
+      capabilities = {{ .capabilities | toJson }}
     }
     {{- end }}
     {{- end }}
