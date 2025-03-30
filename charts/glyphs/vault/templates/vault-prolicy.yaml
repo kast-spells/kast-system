@@ -28,22 +28,22 @@ spec:
     path "{{ $vaultConf.secretPath }}/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ default $root.Release.Namespace $glyph.nameOverride  }}/*" {
       capabilities = [ "create", "read", "update", "delete", "list"]
     }
-    path "{{ $vaultConf.secretPath }}/metadata/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/public/*" {
+    path "{{ $vaultConf.secretPath }}/metadata/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/publics/*" {
       capabilities = [ "read", "list"]
     }
-    path "{{ $vaultConf.secretPath }}/data/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/public/*" {
+    path "{{ $vaultConf.secretPath }}/data/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/publics/*" {
       capabilities = [ "read", "list"]
     }
-    path "{{ $vaultConf.secretPath }}/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/public/*" {
+    path "{{ $vaultConf.secretPath }}/{{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/publics/*" {
       capabilities = [ "read", "list"]
     }
-    path "{{ $vaultConf.secretPath }}/data/{{ $root.Values.spellbook.name }}/public/*" {
+    path "{{ $vaultConf.secretPath }}/data/{{ $root.Values.spellbook.name }}/publics/*" {
       capabilities = [ "read", "list"]
     }
-    path "{{ $vaultConf.secretPath }}/metadata/{{ $root.Values.spellbook.name }}/public/*" {
+    path "{{ $vaultConf.secretPath }}/metadata/{{ $root.Values.spellbook.name }}/publics/*" {
       capabilities = [ "read", "list"]
     }
-    path "{{ $vaultConf.secretPath }}/{{ $root.Values.spellbook.name }}/public/*" {
+    path "{{ $vaultConf.secretPath }}/{{ $root.Values.spellbook.name }}/publics/*" {
       capabilities = [ "read", "list"]
     }
     path "{{ $vaultConf.secretPath }}/data/{{ $root.Values.spellbook.name }}/pipelines/*" {
