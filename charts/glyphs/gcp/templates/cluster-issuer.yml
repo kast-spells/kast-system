@@ -1,0 +1,49 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+
+## TODO static solvers only acme spec
+*/}}
+{{- define "certManager.clusterIssuer" }}
+{{- $root := index . 0 -}}
+{{- $glyphDefinition := index . 1}}
+{{- if $glyphDefinition.issuerType }}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ $glyphDefinition.name }}
+spec:
+  acme:
+    email: {{ $glyphDefinition.email }}
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+      - dns01:
+        {{- if eq "linode" $glyphDefinition.issuerType }}
+          webhook:
+            groupName: acme.cluster.local
+            solverName: linode
+            config:
+            {{- if $glyphDefinition.linode.apiKey }}
+              apiKey: {{ $glyphDefinition.linode.apiKey }}
+            {{- else }}
+               apiKeySecretRef:
+                name: {{ $glyphDefinition.linode.secret.name }}
+                key: {{ $glyphDefinition.linode.secret.key }}
+            {{- end }}
+        {{- else if eq "gcp" $glyphDefinition.issuerType }}
+          cloudDNS: 
+            project: {{ $glyphDefinition.gcp.projectID }}
+          {{- if $glyphDefinition.gcp.secret }}
+            serviceAccountSecretRef:
+              name: {{ $glyphDefinition.gcp.secret.name }}
+              key: {{ $glyphDefinition.gcp.secret.key }}
+          {{- end }}
+        {{- else if eq "aws" $glyphDefinition.issuerType }}
+          route53:
+            region: us-east-1
+        {{- end }}
+{{- end }}
+{{- end }}

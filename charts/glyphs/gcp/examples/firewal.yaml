@@ -1,0 +1,11 @@
+glyphs:
+  gcp:
+    - type: firewall
+      name: allow-ssh
+      rules:
+        allow:
+          - protocol: tcp
+            ports:
+            - "22"
+            - "42022"
+      networkRef: jorge

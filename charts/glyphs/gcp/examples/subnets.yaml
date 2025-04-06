@@ -1,0 +1,9 @@
+glyphs:
+  gcp:
+    - type: subnet
+      networkRef: jorge
+      name: allow-ssh
+      cidr: 10.12.128.0/22
+      region: us-east1
+      description: a nice long string
+      
