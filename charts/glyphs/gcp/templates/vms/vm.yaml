@@ -61,7 +61,7 @@ spec:
     #     mkdir -p /home/devops/.ssh
     #     ## TODO THIS MUST BE A SECRET
     #     echo "devops ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
-    #     echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO0YmUpRa6SOdpV+TuAkmU+8Ec1YKblbjQyvcTMJVUNX" > /home/devops/.ssh/authorized_keys
+    #     echo "ssh-ed25519 KEY" > /home/devops/.ssh/authorized_keys
     #     chown -r devops:devops /home/devops/.ssh 
     # fi
 
@@ -168,7 +168,7 @@ spec:
     # # export VAULT_TOKEN=$(vault write -tls-skip-verify=true -address="$VAULT_ADDR" -field=token auth/control-plane/login jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token role="vault") \
     # # vault token create -policy="bastion" -renewable=false -field=token -tls-skip-verify=true -address="$VAULT_ADDR" -use-limit=2 -ttl=48h -display-name="bastion"'
     
-    # VAULT_TOKEN="hvs.CAESIOMRd1JSnxpmCTlj2qzzp3qpMkw4kbyA1hwOeJvkNmU5Gh4KHGh2cy5vMDVQaDg1Y1Z1ZDE1RXFSQldLZzlBUGk"
+    # VAULT_TOKEN="hvs.TOKEN"
     
     # VAULT_ADDR="https://vault.int.cp.ligocloud.tech"
     # SECRET=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
