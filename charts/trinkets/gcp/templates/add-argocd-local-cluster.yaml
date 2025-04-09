@@ -1,0 +1,169 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-argocd-cluster-secret
+spec:
+  template:
+    spec:
+      serviceAccountName: argocd-secret-writer
+      restartPolicy: Never
+      containers:
+        - name: generator
+          image: alpine
+          command: ["/bin/sh", "/scripts/generate-secret.sh"]
+          # command: ["sleep", "infinite"]
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: argocd-secret-generator
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-secret-writer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-secret-writer
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-secret-writer-binding
+subjects:
+  - kind: ServiceAccount
+    name: argocd-secret-writer
+    namespace: {{ $root.Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: argocd-secret-writer
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-secret-generator
+data:
+  generate-secret.sh: |
+    #!/bin/sh
+    set -e
+
+
+    SECRET_NAME="{{ $root.Values.projectID}}-{{ $root.Values.projectID}}"
+    NAMESPACE="argocd"
+    CLUSTER_NAME={{ $root.Values.name | quote }}
+    CLUSTER_ZONE={{ $root.Values.zone | quote }}
+    CLOUDSDK_CORE_PROJECT={{ $root.Values.projectID | quote}}
+    CONTEXT_NAME="gke_${CLOUDSDK_CORE_PROJECT}_${CLUSTER_ZONE}_${CLUSTER_NAME}"
+    SA_PATH=/var/run/secrets/kubernetes.io/serviceaccount
+    TOKEN=$(cat ${SA_PATH}/token)
+    CA_CERT=${SA_PATH}/ca.crt
+    KUBE_API="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+
+    # Ruta del kubeconfig generado
+    KUBECONFIG_PATH="/tmp/kubeconfig"
+
+    # Generar el kubeconfig dinámicamente
+    cat > "$KUBECONFIG_PATH" <<EOF
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - cluster:
+        certificate-authority: ${CA_CERT}
+        server: ${KUBE_API}
+      name: in-cluster
+    contexts:
+    - context:
+        cluster: in-cluster
+        user: in-cluster-user
+      name: in-cluster-context
+    current-context: in-cluster-context
+    users:
+    - name: in-cluster-user
+      user:
+        token: ${TOKEN}
+    EOF
+
+    export KUBECONFIG=$KUBECONFIG_PATH
+
+    apk add --no-cache curl jq bash coreutils kubectl openssl
+
+    echo `kubectl get secrets -n cnrm-system "control-plane-gsa" -o json | jq -r .data.\"key.json\"`  | base64 -d > /key.json
+
+    EMAIL=$(jq -r .client_email /key.json)
+    AUD=$(jq -r .token_uri /key.json)
+    NOW=$(date +%s)
+    EXP=$(($NOW + 3600))
+
+    jq -r .private_key /key.json | sed 's/\\n/\n/g' > /tmp/key.pem
+    b64url() {
+      echo -n "$1" | openssl base64 -e | tr -d '\n' | tr '+/' '-_' 
+    }
+
+    HEADER_B64=$(b64url '{"alg":"RS256","typ":"JWT"}')
+    PAYLOAD_B64=$(b64url "{\"iss\":\"$EMAIL\",\"scope\":\"https://www.googleapis.com/auth/cloud-platform\",\"aud\":\"$AUD\",\"exp\":$EXP,\"iat\":$NOW}")
+    JWT_INPUT="$HEADER_B64.$PAYLOAD_B64"
+    SIGNATURE=$(printf '%s' "$JWT_INPUT" | openssl dgst -sha256 -sign /tmp/key.pem | openssl base64 -e | tr -d '\n' | tr '+/' '-_')
+    JWT_FINAL="$JWT_INPUT.$SIGNATURE"
+
+    ACCESS_TOKEN=$(curl -s -X POST -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=$JWT_FINAL" \
+      "$AUD" | jq -r .access_token)
+
+    CLUSTER_INFO=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+      "https://container.googleapis.com/v1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLUSTER_ZONE/clusters/$CLUSTER_NAME")
+
+    ENDPOINT=$(echo "$CLUSTER_INFO" | jq -r .endpoint)
+    CA_CERT=$(echo "$CLUSTER_INFO" | jq -r .masterAuth.clusterCaCertificate)
+
+    cat > /kubeconfig.yaml <<EOF
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - cluster:
+        server: https://$ENDPOINT
+        certificate-authority-data: $CA_CERT
+      name: gke-cluster
+    contexts:
+    - context:
+        cluster: gke-cluster
+        user: gke-user
+      name: $CLUSTER_NAME
+    current-context: $CLUSTER_NAME
+    users:
+    - name: gke-user
+      user:
+        auth-provider:
+          name: gcp
+    EOF
+
+    KUBECONFIG_DATA=$(cat /kubeconfig.yaml | tr -d '\n')
+
+    if kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+      echo "Secret already exists. Deleting to replace."
+      kubectl delete secret "$SECRET_NAME" -n "$NAMESPACE"
+    fi
+
+    kubectl create secret generic "$SECRET_NAME" \
+      --namespace "$NAMESPACE" \
+      --from-literal=name="$CLUSTER_NAME" \
+      --from-literal=server="https://$ENDPOINT" \
+      --from-literal=config="$KUBECONFIG_DATA"
+
+    rm -f /kubeconfig.yaml
+    kubectl label secret "$SECRET_NAME" -n argocd argocd.argoproj.io/secret-type=cluster

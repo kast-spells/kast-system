@@ -1,0 +1,12 @@
+apiVersion: v2
+name: gcp infra-parts
+version: 0.0.1
+description: the gcp infra trinket for kast
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-system
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: laaledesiempre
+    email: laaledesiempre@disroot.org

@@ -61,7 +61,7 @@ spec:
     #     mkdir -p /home/devops/.ssh
     #     ## TODO THIS MUST BE A SECRET
     #     echo "devops ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
-    #     echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO0YmUpRa6SOdpV+TuAkmU+8Ec1YKblbjQyvcTMJVUNX" > /home/devops/.ssh/authorized_keys
+    #     echo "ssh-ed25519 KEY" > /home/devops/.ssh/authorized_keys
     #     chown -r devops:devops /home/devops/.ssh 
     # fi
 
@@ -118,7 +118,7 @@ spec:
 
     # [Peer]
     # PublicKey = $SERVER_PUB_KEY
-    # Endpoint = wire.cp.ligocloud.tech:$SERVER_PORT
+    # Endpoint = wire.yaml.life:$SERVER_PORT
     # AllowedIPs = 10.12.0.0/16
     # PersistentKeepalive = 25
     # EOF
@@ -168,9 +168,9 @@ spec:
     # # export VAULT_TOKEN=$(vault write -tls-skip-verify=true -address="$VAULT_ADDR" -field=token auth/control-plane/login jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token role="vault") \
     # # vault token create -policy="bastion" -renewable=false -field=token -tls-skip-verify=true -address="$VAULT_ADDR" -use-limit=2 -ttl=48h -display-name="bastion"'
     
-    # VAULT_TOKEN="hvs.CAESIOMRd1JSnxpmCTlj2qzzp3qpMkw4kbyA1hwOeJvkNmU5Gh4KHGh2cy5vMDVQaDg1Y1Z1ZDE1RXFSQldLZzlBUGk"
+    # VAULT_TOKEN="hvs.TOKEN"
     
-    # VAULT_ADDR="https://vault.int.cp.ligocloud.tech"
+    # VAULT_ADDR="https://vault.int.yaml.life"
     # SECRET=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
     # PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
     # SECRET_PAYLOAD=$(jq -n --arg secret "$SECRET" '{"data": {"client_secret": $secret}}')
@@ -194,9 +194,9 @@ spec:
     # cd netbird/infrastructure_files/
 
     # cat > setup.env <<EOF
-    # NETBIRD_DOMAIN="bastion.cp.ligocloud.tech"
+    # NETBIRD_DOMAIN="bastion.yaml.life"
     # NETBIRD_LETSENCRYPT_EMAIL="devops@tarjetasperuanas.pe"
-    # NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT="https://keycloak.int.cp.ligocloud.tech/realms/ligo/.well-known/openid-configuration"
+    # NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT="https://keycloak.int.yaml.life/realms/yaml/.well-known/openid-configuration"
     # NETBIRD_USE_AUTH0=false
     # NETBIRD_AUTH_CLIENT_ID="netbird"
     # NETBIRD_AUTH_SUPPORTED_SCOPES="openid profile email offline_access api groups"
@@ -205,10 +205,10 @@ spec:
     # NETBIRD_MGMT_IDP="keycloak"
     # NETBIRD_IDP_MGMT_CLIENT_ID="netbird-backend"
     # NETBIRD_IDP_MGMT_CLIENT_SECRET="$SECRET"
-    # NETBIRD_IDP_MGMT_EXTRA_ADMIN_ENDPOINT="https://keycloak.int.cp.ligocloud.tech/admin/realms/ligo"
+    # NETBIRD_IDP_MGMT_EXTRA_ADMIN_ENDPOINT="https://keycloak.int.yaml.life/admin/realms/yaml"
     # NETBIRD_STORE_CONFIG_ENGINE=postgres
     # # AUTH_CLIENT_SECRET="$SECRET"
-    # NETBIRD_STORE_ENGINE_POSTGRES_DSN="host=netbird.int.cp.ligocloud.tech user=netbird password=$PASSWORD dbname=netbird port=5432"
+    # NETBIRD_STORE_ENGINE_POSTGRES_DSN="host=netbird.int.yaml.life user=netbird password=$PASSWORD dbname=netbird port=5432"
     # EOF
 
     # ./configure.sh

@@ -1,0 +1,221 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+apiVersion: container.cnrm.cloud.google.com/v1beta1
+kind: ContainerCluster
+metadata:
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+    cnrm.cloud.google.com/remove-default-node-pool: "true"
+  name: {{ $root.Values.name }}
+spec:
+  description: {{ $root.Values.name }} cluster
+  location: {{ $root.Values.region }}
+  nodeLocations:
+    - {{ $root.Values.zone }}
+  workloadIdentityConfig:
+    workloadPool: {{ $root.Values.projectID }}.svc.id.goog
+  networkingMode: ROUTES
+  networkRef:
+    name: {{ $root.Values.name }}
+  subnetworkRef:
+    name: {{ $root.Values.name }}-private
+  privateClusterConfig:
+    enablePrivateEndpoint: true
+    enablePrivateNodes: true
+    masterGlobalAccessConfig:
+      enabled: false
+    masterIpv4CidrBlock: {{ $root.Values.cluster.masterCIDR }}
+    # peeringName: string
+    # privateEndpoint: string
+    # privateEndpointSubnetworkRef:
+    #   external: string
+    #   name: string
+    #   namespace: string
+    # publicEndpoint: string
+  masterAuthorizedNetworksConfig:
+    cidrBlocks:
+      - cidrBlock: {{ $root.Values.vpc.subnets.private.cidr }}
+        displayName: private-subnet
+      - cidrBlock: {{ $root.Values.vpc.subnets.public.cidr }}
+        displayName: public-subnet
+      - cidrBlock: {{ $root.Values.cluster.clusterCIDR }}
+        displayName: pods
+    gcpPublicCidrsAccessEnabled: false
+  maintenancePolicy:
+    dailyMaintenanceWindow:
+      startTime: 00:00
+  releaseChannel:
+    channel: STABLE
+  clusterIpv4Cidr: {{ $root.Values.cluster.clusterCIDR }}
+  # loggingService: none
+  # monitoringService: none
+  # servicesIpv4Cidr: 10.201.0.0/16
+  enableBinaryAuthorization: false
+  enableIntranodeVisibility: false
+  enableShieldedNodes: true
+  loggingConfig:
+    enableComponents: []
+  monitoringConfig:
+    advancedDatapathObservabilityConfig:
+    - enableMetrics: false
+    managedPrometheus:
+      enabled: false
+  addonsConfig:
+    networkPolicyConfig:
+      disabled: false
+    dnsCacheConfig:
+      enabled: true
+    configConnectorConfig:
+      enabled: false
+  networkPolicy:
+    enabled: true
+  podSecurityPolicyConfig:
+    enabled: false
+  verticalPodAutoscaling:
+    enabled: true
+  initialNodeCount: 1
+  # clusterAutoscaling:
+  #   enabled: true
+  #   autoscalingProfile: OPTIMIZE_UTILIZATION
+  #   resourceLimits:
+  #   - resourceType: cpu
+  #     maximum: 100
+  #     minimum: 10
+  #   - resourceType: memory
+  #     maximum: 1000
+  #     minimum: 100
+  # nodeConfig: 
+  #   diskSizeGb: 25
+  #   diskType: pd-standard
+  #   machineType: e2-highcpu-2
+  #   spot: true
+
+
+
+
+---
+apiVersion: container.cnrm.cloud.google.com/v1beta1
+kind: ContainerNodePool
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedBy: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  name: basic
+spec:
+  clusterRef:
+    name: {{ $root.Values.name }}
+  location: {{ $root.Values.region }}
+  nodeCount: 2
+  # maxPodsPerNode: 500
+  autoscaling:
+    minNodeCount: 1
+    maxNodeCount: {{ $root.Values.cluster.nodes.basic.max }}
+  networkConfig:
+    # additionalNodeNetworkConfigs:
+    # - networkRef:
+    #     external: string
+    #     name: string
+    #     namespace: string
+    #   subnetworkRef:
+    #     external: string
+    #     name: string
+    #     namespace: string
+    # additionalPodNetworkConfigs:
+    # - maxPodsPerNode: integer
+    #   secondaryPodRange: string
+    #   subnetworkRef:
+    #     external: string
+    #     name: string
+    #     namespace: string
+    # createPodRange: true
+    enablePrivateNodes: true
+    # podCidrOverprovisionConfig:
+    #   disabled: boolean
+    # podIpv4CidrBlock: 10.201.0.0/16
+    # podRange: string
+  management:
+    autoRepair: true
+    autoUpgrade: true
+  nodeConfig:
+    spot: {{ $root.Values.cluster.nodes.basic.spot }}
+    machineType: {{ $root.Values.cluster.nodes.basic.machineType }}
+    diskSizeGb: {{ $root.Values.cluster.nodes.basic.disk.size }}
+    diskType: {{ $root.Values.cluster.nodes.basic.disk.type }}
+    # tags:
+    #   - tagone
+    #   - tagtwo
+    # oauthScopes:
+    #   - "https://www.googleapis.com/auth/logging.write"
+    #   - "https://www.googleapis.com/auth/monitoring"
+    metadata:
+      disable-legacy-endpoints: "true"
+
+---
+apiVersion: container.cnrm.cloud.google.com/v1beta1
+kind: ContainerNodePool
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedBy: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  name: normal
+spec:
+  clusterRef:
+    name: {{ $root.Values.name }}
+  location: {{ $root.Values.region }}
+  nodeCount: 2
+  # maxPodsPerNode: 500
+  autoscaling:
+    minNodeCount: 1
+    maxNodeCount: {{ $root.Values.cluster.nodes.basic.max }}
+  networkConfig:
+    # additionalNodeNetworkConfigs:
+    # - networkRef:
+    #     external: string
+    #     name: string
+    #     namespace: string
+    #   subnetworkRef:
+    #     external: string
+    #     name: string
+    #     namespace: string
+    # additionalPodNetworkConfigs:
+    # - maxPodsPerNode: integer
+    #   secondaryPodRange: string
+    #   subnetworkRef:
+    #     external: string
+    #     name: string
+    #     namespace: string
+    # createPodRange: true
+    enablePrivateNodes: true
+    # podCidrOverprovisionConfig:
+    #   disabled: boolean
+    # podIpv4CidrBlock: 10.201.0.0/16
+    # podRange: string
+  management:
+    autoRepair: true
+    autoUpgrade: true
+  nodeConfig:
+    spot: {{ $root.Values.cluster.nodes.basic.spot }}
+    machineType: e2-standard-8
+    diskSizeGb: {{ $root.Values.cluster.nodes.basic.disk.size }}
+    diskType: {{ $root.Values.cluster.nodes.basic.disk.type }}
+    # tags:
+    #   - tagone
+    #   - tagtwo
+    # oauthScopes:
+    #   - "https://www.googleapis.com/auth/logging.write"
+    #   - "https://www.googleapis.com/auth/monitoring"
+    metadata:
+      disable-legacy-endpoints: "true"

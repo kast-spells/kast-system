@@ -1,0 +1,47 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeFirewall
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  name: allow-all-ssh
+spec:
+  direction: INGRESS
+  allow:
+    - protocol: tcp
+      ports:
+       - "22"
+       - "42022"
+  networkRef:
+    name: {{ $root.Values.name }}
+  sourceTags:
+    - "allow-all-ssh"
+  sourceRanges:
+    - 0.0.0.0/0
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeFirewall
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: allow-internal-{{ $root.Values.name }}
+spec:
+  networkRef:
+    name: {{ $root.Values.name }}
+  direction: INGRESS
+  priority: 65534
+  sourceRanges:
+    - {{ $root.Values.vpc.cidr }}
+  allow:
+    - protocol: all
+  description: "Permitir todo el tráfico interno en la VPC"
+  targetTags: []

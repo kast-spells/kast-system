@@ -1,0 +1,93 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeSubnetwork
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedby: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+    access: private
+  name: {{ $root.Values.name }}-private
+spec:
+  ipCidrRange: {{ $root.Values.vpc.subnets.private.cidr }}
+  region: {{ $root.Values.region }}
+  description: private subnet
+  privateIpGoogleAccess: true
+  networkRef:
+    name: {{ $root.Values.name }}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeSubnetwork
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedby: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+    access: public 
+  name: {{ $root.Values.name }}-public
+spec:
+  ipCidrRange: {{ $root.Values.vpc.subnets.public.cidr }}
+  region: {{ $root.Values.region }}
+  description: public subnet
+  privateIpGoogleAccess: true
+  networkRef:
+    name: {{ $root.Values.name }}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeNetwork
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedby: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  name: {{ $root.Values.name }}
+spec:
+  routingMode: REGIONAL
+  autoCreateSubnetworks: false
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeRouter
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: {{ $root.Values.name }}-router
+spec:
+  region: {{ $root.Values.region }}
+  networkRef:
+    name: {{ $root.Values.name }}
+  description: Router para Cloud NAT en la red del clúster
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeRouterNAT
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: {{ $root.Values.name }}-nat
+spec:
+  region: {{ $root.Values.region }}
+  routerRef:
+    name: {{ $root.Values.name }}-router
+  natIpAllocateOption: AUTO_ONLY
+  sourceSubnetworkIpRangesToNat: LIST_OF_SUBNETWORKS
+  subnetwork:
+    - subnetworkRef:
+        name: {{ $root.Values.name }}-public
+      sourceIpRangesToNat:
+        - ALL_IP_RANGES
+    - subnetworkRef:
+        name: {{ $root.Values.name }}-private
+      sourceIpRangesToNat:
+        - ALL_IP_RANGES
+  minPortsPerVm: 64
+  enableEndpointIndependentMapping: true

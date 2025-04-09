@@ -1,0 +1,265 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo 
+
+esta intsancia deve ser eliminada una ves bastion esta healthy
+
+
+*/}} 
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeInstance
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+    cnrm.cloud.google.com/allow-stopping-for-update: "true"
+  name: wire-control-plane
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-control-plane"
+    project: {{ $root.Values.projectID }}
+spec:
+  machineType: e2-micro
+  zone: us-east5-a
+  canIpForward: true
+  description: vpn wire
+  hostname: wire.yaml.life
+  metadataStartupScript: |
+    apt-get update
+    apt-get install -y wireguard wireguard-tools fish git fail2ban iptables kubectl google-cloud-sdk-gke-gcloud-auth-plugin
+    if id "devops" &>/dev/null; then
+        echo "the user already exists."
+    else
+        useradd -m -s /usr/bin/fish "devops"
+        mkdir -p /home/devops/.ssh
+        ## TODO THIS MUST BE A SECRET
+        echo "devops ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO0YmUpRa6SOdpV+TuAkmU+8Ec1YKblbjQyvcTMJVUNX" > /home/devops/.ssh/authorized_keys
+        chown -r devops:devops /home/devops/.ssh 
+    fi
+    
+    gcloud container clusters get-credentials "{{ $root.Values.name }}" --zone "{{ $root.Values.region }}" --project "{{ $root.Values.projectID }}"
+
+    git clone https://github.com/argoproj/argo-helm.git
+    cd argo-helm
+    git checkout $(cat argocd-spell.yaml | yq .revision)
+    cd charts/argo-cd
+    cat argocd-spell.yaml | yq .values > file.yaml
+    helm install argocd -n argocd -f file.yaml --create-namespace .
+
+
+
+    kubectl create secret generic {{ $root.Values.name }}-github \
+          --from-literal=url=git@github.com/kast-spells/ \
+          --from-file=sshPrivateKey=/home/devops/.ssh/kast-argocd.pub \
+          --namespace=argocd
+    kubectl label secret {{ $root.Values.name }}-github -n argocd argocd.argoproj.io/secret-type=repo-creds 
+
+    cat > "app.yaml" <<EOF
+    ---
+    apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: control-plane
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: git@github.com:kast-spells/bookrack.git
+        targetRevision: master
+        path: librarian
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated: {}
+        retry:
+          limit: 2
+        syncOptions:
+          - CreateNamespace=true
+    EOF
+
+    kubectl apply -f app.yaml
+
+
+    WG_INTERFACE="wg0"
+    SERVER_PRIV_KEY_FILE="/etc/wireguard/server_private.key"
+    SERVER_PUB_KEY_FILE="/etc/wireguard/server_public.key"
+    SERVER_PORT=51820
+    SERVER_IP="192.168.72.1/24"
+    PEER_IP="192.168.72.2/32"
+    WG_CONF="/etc/wireguard/$WG_INTERFACE.conf"
+    PEER_CONF="/etc/wireguard/peer.conf"
+    ACCESS_CIDRS=("10.12.0.0/16" "10.14.0.0/16")
+
+    apt update && apt install -y wireguard
+
+    umask 077
+    wg genkey | tee "$SERVER_PRIV_KEY_FILE" | wg pubkey > "$SERVER_PUB_KEY_FILE"
+    SERVER_PRIV_KEY=$(cat "$SERVER_PRIV_KEY_FILE")
+    SERVER_PUB_KEY=$(cat "$SERVER_PUB_KEY_FILE")
+
+    sysctl -w net.ipv4.ip_forward=1
+    sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+
+    PEER_PRIV_KEY=$(wg genkey)
+    PEER_PUB_KEY=$(echo "$PEER_PRIV_KEY" | wg pubkey)
+
+    cat > "$WG_CONF" <<EOF
+    [Interface]
+    Address = $SERVER_IP
+    ListenPort = $SERVER_PORT
+    PrivateKey = $SERVER_PRIV_KEY
+
+    [Peer]
+    PublicKey = $PEER_PUB_KEY
+    AllowedIPs = $PEER_IP
+    EOF
+
+    chmod 600 "$WG_CONF"
+
+    for cidr in "${ACCESS_CIDRS[@]}"; do
+        iptables -A FORWARD -i $WG_INTERFACE -d "$cidr" -j ACCEPT
+        iptables -A FORWARD -o $WG_INTERFACE -s "$cidr" -d "${PEER_IP%/32}" -j ACCEPT
+        iptables -t nat -A POSTROUTING -s "${PEER_IP%/32}" -d "$cidr" -j MASQUERADE
+    done
+
+    systemctl enable wg-quick@$WG_INTERFACE
+    systemctl start wg-quick@$WG_INTERFACE
+
+    cat > "$PEER_CONF" <<EOF
+    [Interface]
+    PrivateKey = $PEER_PRIV_KEY
+    Address = $PEER_IP
+    DNS = 1.1.1.1
+
+    [Peer]
+    PublicKey = $SERVER_PUB_KEY
+    Endpoint = wire.yaml.life:$SERVER_PORT
+    AllowedIPs = 10.12.0.0/16
+    PersistentKeepalive = 25
+    EOF
+    
+    sed -i 's/^#Port .*/Port 42022/' /etc/ssh/sshd_config
+    sed -i 's/^#PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+    sed -i 's/^#PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+
+    # Restart SSH service
+    systemctl restart sshd
+
+    # Install and configure fail2ban
+    cat > /etc/fail2ban/jail.d/sshd.conf <<EOF
+    [sshd]
+    enabled = true
+    port = 42022
+    EOF
+
+    systemctl enable fail2ban
+    systemctl restart fail2ban
+
+  bootDisk:
+    autoDelete: true #change to false in prod
+    initializeParams:
+      size: 10
+      type: pd-ssd
+      sourceImageRef:
+        external: debian-cloud/debian-12
+  networkInterface:
+    - accessConfig:
+        - networkTier: PREMIUM
+          natIpRef:
+            name: wire-control-plane
+      stackType: IPV4_ONLY
+      subnetworkRef:
+        name: control-plane-public
+  scheduling:
+    automaticRestart: true
+  tags:
+    - allow-all-ssh
+    - allow-wireguard
+  serviceAccount:
+    serviceAccountRef:
+      name: wire-{{ $root.Values.name }}
+    scopes:
+      - https://www.googleapis.com/auth/cloud-platform
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: wire-control-plane
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-control-plane"
+    project: {{ $root.Values.projectID }}
+    ownedby: wire-control-plane
+spec:
+  addressType: EXTERNAL
+  description: wire-control-plane
+  location: us-east5
+  ipVersion: IPV4
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: wire-yaml-life
+spec:
+  name: wire.yaml.live.
+  type: A
+  ttl: 30
+  managedZoneRef:
+    name: yaml-life
+  rrdatasRefs:
+    - name: wire-control-plane
+      kind: ComputeAddress
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeFirewall
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-control-plane"
+    project: {{ $root.Values.projectID }}
+    owner: wire
+  name: allow-wireguard
+spec:
+  allow:
+    - protocol: udp
+      ports:
+       - "51820"
+  networkRef:
+    name: control-plane
+  sourceTags:
+    - "allow-wireguard"
+  direction: INGRESS
+  sourceRanges:
+    - 0.0.0.0/0
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: wire-{{ $root.Values.name }}
+spec:
+  displayName: Service account for VM to access cluster {{ $root.Values.name }}
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: wire-{{ $root.Values.name }}
+spec:
+  member: serviceAccount:wire-{{ $root.Values.name }}@{{ $root.Values.projectID }}.iam.gserviceaccount.com
+  role: roles/container.developer
+  resourceRef:
+    kind: Project
+    apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+    name: {{ $root.Values.projectID }}

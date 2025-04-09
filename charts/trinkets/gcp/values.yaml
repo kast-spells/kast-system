@@ -1,0 +1,52 @@
+projectID: control-plane
+name: control-plane
+orgID: "453161324249"
+folderID: "92800044539"
+environment: prod
+region: us-east5
+zone: us-east5-a
+hostedZone:
+  ref: yaml-life
+  url: yaml.life
+  ns: e
+
+
+labels:
+  labels:
+    project: control-plane
+    owner: bastion
+    default: book
+    environment: control-plane
+    createdby: "config-connector"
+    managedBy: "kast-control-plane"
+
+
+vpc:
+  cidr: 10.69.0.0/16
+  subnets: 
+    private:
+      cidr: 10.69.0.0/17
+      access: private
+    public: 
+      cidr: 10.69.128.0/22
+      access: public
+
+cluster:
+  masterCIDR: 10.12.250.0/28
+  clusterCIDR: 10.200.0.0/16
+  nodes:
+    basic:
+      max: 10
+      spot: true
+      machineType: e2-highcpu-4
+      disk: 
+        type: pd-standard
+        size: 50
+
+bastion: #enabled true viene por default
+  machineType: e2.micro
+  type: netbird #[netbird, wire, ssh]
+  subdomain: bastion
+  vault: hvs.CAESI
+  disk:
+    size: 10

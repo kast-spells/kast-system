@@ -1,0 +1,61 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: kast-control-plane-editor
+spec:
+  member: "kast-control-plane@{{ $root.Values.projectID }}.iam.gserviceaccount.com"
+  role: roles/editor
+  resourceRef:
+    apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+    kind: Project
+    name: {{ $root.Values.projectID }}
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: cert-manager-wi-binding
+spec:
+  member: "serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[cert-manager/cert-manager]"
+  role: "roles/iam.workloadIdentityUser"
+  resourceRef:
+    apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+    kind: Project
+    name: {{ $root.Values.projectID }}
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata:
+  annotations:
+      cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: {{ $root.Values.projectID }}-cert-mgr
+spec:
+  member: "serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[cert-manager/cert-manager]"
+  role: roles/dns.admin
+  resourceRef:
+    apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+    kind: Project
+    name: {{ $root.Values.projectID }}
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: allow-kcc-to-assume-gsa
+spec:
+  member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[cnrm-system/cnrm-controller-manager]
+  role: roles/iam.workloadIdentityUser
+  resourceRef:
+    apiVersion: iam.cnrm.cloud.google.com/v1beta1
+    kind: IAMServiceAccount
+    name: kast-control-plane

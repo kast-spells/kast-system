@@ -1,0 +1,79 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSManagedZone
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedby: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  name: {{ $root.Values.hostedZone.ref }}
+spec:
+  description: "{{ $root.Values.name }} dns-zone"
+  dnsName: "{{ $root.Values.hostedZone.url }}."
+  visibility: public
+  dnssecConfig:
+    state: "on"
+    kind: "dns#managedZoneDnsSecConfig"
+    nonExistence: "nsec3"
+    defaultKeySpecs:
+      - algorithm: "rsasha256"
+        keyLength: 2048
+        keyType: "keySigning"
+        kind: "dns#dnsKeySpec"
+      - algorithm: "rsasha256"
+        keyLength: 2048
+        keyType: "zoneSigning"
+        kind: "dns#dnsKeySpec"
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSManagedZone
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    createdby: "config-connector"
+    managedby: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+  name: int-{{ $root.Values.hostedZone.ref }}
+spec:
+  description: int-{{ $root.Values.hostedZone.ref }}
+  dnsName: "int.{{ $root.Values.hostedZone.url }}."
+  visibility: public ## TODO testear si podemos pasarlo a internal sin romper todo
+  dnssecConfig:
+    state: "on"
+    kind: "dns#managedZoneDnsSecConfig"
+    nonExistence: "nsec3"
+    defaultKeySpecs:
+      - algorithm: "rsasha256"
+        keyLength: 2048
+        keyType: "keySigning"
+        kind: "dns#dnsKeySpec"
+      - algorithm: "rsasha256"
+        keyLength: 2048
+        keyType: "zoneSigning"
+        kind: "dns#dnsKeySpec"
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: int-{{ $root.Values.hostedZone.ref }}
+spec:
+  name: "int.{{ $root.Values.hostedZone.url }}."
+  type: "NS"
+  ttl: 30
+  managedZoneRef:
+    name: {{ $root.Values.hostedZone.ref }}
+  rrdatas:
+  - "ns-cloud-{{ $root.Values.hostedZone.ns }}1.googledomains.com."
+  - "ns-cloud-{{ $root.Values.hostedZone.ns }}2.googledomains.com."
+  - "ns-cloud-{{ $root.Values.hostedZone.ns }}3.googledomains.com."
+  - "ns-cloud-{{ $root.Values.hostedZone.ns }}4.googledomains.com."

@@ -1,0 +1,182 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeInstance
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+    cnrm.cloud.google.com/allow-stopping-for-update: "true"
+  name: bastion-{{ $root.Values.name }}
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+spec:
+  machineType: e2-micro
+  zone: {{ $root.Values.zone }}
+  canIpForward: true
+  description: vpn {{ $root.Values.bastion.subdomain }}
+  hostname: {{ $root.Values.bastion.subdomain }}.{{ $root.Values.hostedZone.url }}
+  metadataStartupScript: |
+    #!/bin/bash
+    for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
+    apt-get update
+    apt-get install ca-certificates curl
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/trusted.gpg.d/docker.asc
+    chmod a+r /etc/apt/trusted.gpg.d/docker.asc
+
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/docker.asc] https://download.docker.com/linux/debian \
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+      tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin jq
+
+    ## TODO segurizar esto mejor por q queda en el codigo un meme para fetchear el oidc secret de keycloak
+    ## en gcp se puede usar el gcpauth en vault
+    ## https://github.com/redhat-cop/vault-config-operator/blob/main/docs/auth-engines.md#gcpauthengineconfig
+    # kubectl exec -n vault vault-0 -- /bin/sh -c '\
+    # VAULT_ADDR="http://localhost:8200" \
+    # VAULT_SKIP_VERIFY=true \
+    # export VAULT_TOKEN=$(vault write -tls-skip-verify=true -address="$VAULT_ADDR" -field=token auth/{{ $root.Values.name }}/login jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token role="vault") \
+    # vault token create -policy="bastion" -renewable=false -field=token -tls-skip-verify=true -address="$VAULT_ADDR" -use-limit=2 -ttl=48h -display-name="bastion"'
+    
+    VAULT_TOKEN={{ $root.Values.bastion.vault }} ## TODO vault token 
+    
+    VAULT_ADDR="https://vault.int.{{ $root.Values.hostedZone.url }}"
+    SECRET=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
+    PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
+    SECRET_PAYLOAD=$(jq -n --arg secret "$SECRET" '{"data": {"client_secret": $secret}}')
+    curl -s --request POST \
+        --header "X-Vault-Token: ${VAULT_TOKEN}" \
+        --data "${SECRET_PAYLOAD}" \
+        "${VAULT_ADDR}/v1/secret/data/{{ $root.Values.name }}/publics/netbird-oidc-client"
+
+    PASSWORD_PAYLOAD=$(jq -n --arg password "$PASSWORD" '{"data": {"password": $password}}')
+    curl -s --request POST \
+        --header "X-Vault-Token: ${VAULT_TOKEN}" \
+        --data "${PASSWORD_PAYLOAD}" \
+        "${VAULT_ADDR}/v1/secret/data/{{ $root.Values.name }}/iac/netbird/publics/netbird-server-pg"
+
+    cd /opt
+    REPO="https://github.com/netbirdio/netbird/"
+    LATEST_TAG=$(basename $(curl -fs -o/dev/null -w %{redirect_url} ${REPO}releases/latest))
+    echo $LATEST_TAG
+    git clone --depth 1 --branch $LATEST_TAG $REPO
+
+    cd netbird/infrastructure_files/
+
+    cat > setup.env <<EOF
+    NETBIRD_DOMAIN="{{ $root.Values.bastion.subdomain}}.{{ $root.Values.hostedZone.url }}"
+    NETBIRD_LETSENCRYPT_EMAIL="devops@tarjetasperuanas.pe"
+    NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT="https://keycloak.int.{{ $root.Values.hostedZone.url }}/realms/yaml/.well-known/openid-configuration"
+    NETBIRD_USE_AUTH0=false
+    NETBIRD_AUTH_CLIENT_ID="netbird"
+    NETBIRD_AUTH_SUPPORTED_SCOPES="openid profile email offline_access api groups"
+    NETBIRD_AUTH_AUDIENCE="netbird"
+    NETBIRD_AUTH_DEVICE_AUTH_CLIENT_ID="netbird"
+    NETBIRD_MGMT_IDP="keycloak"
+    NETBIRD_IDP_MGMT_CLIENT_ID="netbird-backend"
+    NETBIRD_IDP_MGMT_CLIENT_SECRET="$SECRET"
+    NETBIRD_IDP_MGMT_EXTRA_ADMIN_ENDPOINT="https://keycloak.int.{{ $root.Values.hostedZone.url }}/admin/realms/yaml"
+    NETBIRD_STORE_CONFIG_ENGINE=postgres
+    # AUTH_CLIENT_SECRET="$SECRET"
+    NETBIRD_STORE_ENGINE_POSTGRES_DSN="host=netbird.int.{{ $root.Values.hostedZone.url }} user=netbird password=$PASSWORD dbname=netbird port=5432"
+    EOF
+
+    ./configure.sh
+    cd artifacts
+    docker compose up -d
+  bootDisk:
+    autoDelete: {{ default false $root.Values.bastion.disk.autoDelete }} #change to false in prod
+    initializeParams:
+      size: {{ $root.Values.bastion.disk.size }}
+      type: pd-ssd
+      sourceImageRef:
+        external: debian-cloud/debian-12
+  networkInterface:
+    - accessConfig:
+        - networkTier: {{ default "PREMIUM" $root.Values.bastion.netTier }}
+          natIpRef:
+            name: bastion-{{ $root.Values.name }}
+      stackType: IPV4_ONLY
+      subnetworkRef:
+        name: {{ $root.Values.name }}-public
+  scheduling:
+    automaticRestart: true
+  tags:
+    - allow-all-ssh
+    - allow-all-netbird
+  {{- range $root.Values.bastion.networkTags }}
+    - {{ . }}
+  {{- end }}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: bastion-{{ $root.Values.name }}
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+    ownedby: bastion-{{ $root.Values.name }}
+spec:
+  addressType: {{ default "EXTERNAL" $root.Values.bastion.addressType }}
+  description: bastion-{{ $root.Values.name }}
+  location: {{ $root.Values.region }}
+  ipVersion: IPV4
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  name: bastion-yaml-life
+spec:
+  name: {{ $root.Values.bastion.subdomain }}.{{ $root.Values.hostedZone.url }}.
+  type: A
+  ttl: 30
+  managedZoneRef:
+    name: {{ $root.Values.hostedZone.ref }}
+  rrdatasRefs:
+    - name: bastion-{{ $root.Values.name }}
+      kind: ComputeAddress
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeFirewall
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+  labels:
+    created-by: "config-connector"
+    managed-by: "kast-{{ $root.Values.name }}"
+    project: {{ $root.Values.projectID }}
+    owner: bastion
+  name: allow-all-netbird
+spec:
+  allow:
+    - protocol: udp
+      ports:
+       - "3478"
+       - "49152-65535"
+    - protocol: tcp
+      ports:
+       - "80"
+       - "443"
+       - "33073"
+       - "10000"
+       - "33080"
+  networkRef:
+    name: {{ $root.Values.name }}
+  sourceTags:
+    - "allow-all-netbird"
+  direction: INGRESS
+  sourceRanges:
+    - 0.0.0.0/0
