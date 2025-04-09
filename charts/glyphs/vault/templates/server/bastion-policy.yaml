@@ -1,0 +1,29 @@
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: Policy
+metadata:
+  name: bastion
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  policy: |
+    path "secret/data/control-plane/iac/netbird/publics/netbird-server-pg" {
+      capabilities = [ "create"]
+    }
+    path "secret/data/control-plane/publics/netbird-oidc-client" {
+      capabilities = [ "create"]
+    }
+
+# kubectl exec -n vault vault-0 -- /bin/sh -c '
+# VAULT_ADDR="http://localhost:8200"
+# VAULT_SKIP_VERIFY=true
+# export VAULT_TOKEN=$(vault write -tls-skip-verify=true -address="$VAULT_ADDR" -field=token auth/control-plane/login jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token role="vault")
+# vault token create -policy="bastion" -renewable=false -field=token -tls-skip-verify=true -address="$VAULT_ADDR" -use-limit=2 -ttl=48h -display-name="bastion"'

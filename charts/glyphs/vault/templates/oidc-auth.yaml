@@ -1,0 +1,121 @@
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: AuthEngineMount
+metadata:
+  name: oidc
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  type: oidc
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: JWTOIDCAuthEngineConfig
+metadata:
+  name: keycloak-oidc
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  OIDCCredentials:
+    secret:
+      name: keycloak-oidc-client
+    usernameKey: username
+    passwordKey: password
+  path: oidc
+  OIDCDiscoveryURL: https://keycloak.com/realms/realmName
+  defaultRole: developer
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: JWTOIDCAuthEngineRole
+metadata:
+  name: keycloak-oidc-admins
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  name: admin
+  path: oidc
+  roleType: oidc
+  userClaim: "preferred_username"
+  groupsClaim: "groups"
+  tokenPolicies:
+    - "admin"
+    - "vault"
+  allowedRedirectURIs:
+    - "https://vault.com/ui/vault/auth/oidc/oidc/callback"
+  boundClaims:
+    groups:
+      - "vault-admins"
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: JWTOIDCAuthEngineRole
+metadata:
+  name: keycloak-oidc-devs
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  path: oidc
+  name: developer
+  roleType: oidc
+  userClaim: "preferred_username"
+  groupsClaim: "groups"
+  tokenPolicies:
+    - "developer"
+  allowedRedirectURIs:
+    - "https://vault.com/ui/vault/auth/oidc/oidc/callback"
+  boundClaims:
+    groups:
+      - "developers"
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: Policy
+metadata:
+  name: developer
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  policy: |
+    path "secret/data/control-plane/publics/*" {
+      capabilities = [ "read", "list"]
+    }
+    path "secret/data/develop/**/publics/*" {
+      capabilities = [ "read", "list"]
+    }

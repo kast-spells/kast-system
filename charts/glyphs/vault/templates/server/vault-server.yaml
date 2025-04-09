@@ -1,0 +1,131 @@
+apiVersion: "vault.banzaicloud.com/v1alpha1"
+kind: Vault
+metadata:
+  name: vault
+spec:
+  size: 2
+  image: hashicorp/vault:1.19
+  bankVaultsImage: ghcr.io/bank-vaults/bank-vaults:latest
+  annotations:
+    common/annotation: "true"
+
+  # Vault Pods , Services and TLS Secret annotations
+  vaultAnnotations:
+    type/instance: "vault"
+
+  # Vault Configurer Pods and Services annotations
+  vaultConfigurerAnnotations:
+    type/instance: "vaultconfigurer"
+
+  # Vault Pods , Services and TLS Secret labels
+  vaultLabels:
+    example.com/log-format: "json"
+
+  # Vault Configurer Pods and Services labels
+  vaultConfigurerLabels:
+    example.com/log-format: "string"
+
+  serviceAccount: vault
+
+  serviceType: ClusterIP
+
+  unsealConfig:
+    options:
+      preFlightChecks: true
+      storeRootToken: true
+    google:
+      kmsKeyRing: vault-keyring
+      kmsCryptoKey: vault-unseal-key
+      kmsLocation: global
+      kmsProject: control-plane
+      storageBucket: vault-unseal-bucket
+  config:
+    storage:
+      postgresql:
+        ha_enabled: "true"
+        max_idle_connections: 10
+    listener:
+      tcp:
+        address: "0.0.0.0:8200"
+        tls_disable: true
+    # telemetry:
+    #   statsd_address: localhost:9125
+    ui: true
+    cluster_addr: "http://${.Env.POD_NAME}:8201"
+    api_addr: http://vault:8200
+  externalConfig:
+    policies:
+      - name: allow_secrets
+        rules: path "secret/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+      - name: allow_database
+        rules: path "database/creds/*" { capabilities = ["read"] }
+      - name: vault
+        rules: 
+          path "sys/mounts/*" { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
+          path "sys/*" { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
+          path "auth/*" { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
+          path "secret/*" { capabilities = [ "create", "read", "update", "delete", "list"] }
+          
+    auth:
+      - type: kubernetes
+        path:  control-plane
+        roles:
+          - name: vault
+            bound_service_account_names: vault
+            bound_service_account_namespaces: vault
+            policies: vault
+            ttl: 30m
+    secrets:
+      - path: secret
+        type: kv
+        description: General secrets.
+        options:
+          version: 2
+# vault write database/config/my-postgresql-database \
+#     plugin_name="postgresql-database-plugin" \
+#     allowed_roles="my-role" \
+#     connection_url="postgresql://{{username}}:{{password}}@localhost:5432/database-name" \
+#     username="vaultuser" \
+#     password="vaultpass" \
+#     password_authentication="scram-sha-256"
+# vault write database/roles/my-role \
+#     db_name="my-postgresql-database" \
+#     creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
+#         GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
+#     default_ttl="1h" \
+#     max_ttl="24h"
+
+      # - type: database
+      #   description: MySQL Database secret engine.
+      #   configuration:
+      #     config:
+      #       - name: my-mysql
+      #         plugin_name: "mysql-database-plugin"
+      #         connection_url: "{{username}}:{{password}}@tcp(mysql:3306)/"
+      #         allowed_roles: [app]
+      #         username: "root"
+      #         password: "${env `MYSQL_ROOT_PASSWORD`}" # Example how to read environment variables, with the env function
+      #         rotate: true # Ask bank-vaults to ask Vault to rotate the root credentials of MySQL
+      #     roles:
+      #       - name: app
+      #         db_name: my-mysql
+      #         creation_statements: "CREATE USER '{{name}}'@'%' IDENTIFIED BY '{{password}}'; GRANT ALL ON `app\_%`.* TO '{{name}}'@'%';"
+      #         default_ttl: "2m"
+      #         max_ttl: "10m"
+
+
+  secretInitsConfig:
+    - name: VAULT_PG_CONNECTION_URL
+      valueFrom:
+        secretKeyRef:
+          name: vault-pg-cluster-app
+          key: uri
+
+  envsConfig:
+    - name: VAULT_PG_CONNECTION_URL
+      valueFrom:
+        secretKeyRef:
+          name: vault-pg-cluster-app
+          key: uri
+  # Marks presence of Istio, which influences things like port namings
+  istioEnabled: false

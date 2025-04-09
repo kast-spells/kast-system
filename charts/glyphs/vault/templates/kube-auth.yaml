@@ -1,0 +1,68 @@
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: AuthEngineMount
+metadata:
+  name: cluster-dev
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  type: kubernetes
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineConfig
+metadata:
+  name: cluster-dev
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  # path: cluster-dev
+  tokenReviewerServiceAccount:
+    name: vault
+  kubernetesHost: https://10.42.0.1.4
+  kubernetesCACert: |
+    -----BEGIN CERTIFICATE-----
+    MIID==
+    -----END CERTIFICATE-----
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineRole
+metadata:
+  name: cluster-dev
+  namespace: vault
+spec:
+  authentication:
+    path: control-plane
+    role: vault
+    serviceAccount:
+      name: vault
+  connection:
+    address: http://vault.vault.svc:8200
+    tLSConfig:
+      skipVerify: true
+  path: cluster-dev
+  policies:
+    - vault
+  targetServiceAccounts: 
+    - vault
+  targetNamespaces:
+    targetNamespaces:
+      - vault
+  # targetNamespaceSelector:
+  #   matchLabels:
+  #     postgresql-enabled: "true"

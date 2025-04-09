@@ -1,0 +1,80 @@
+# ---
+# apiVersion: redhatcop.redhat.io/v1alpha1
+# kind: DatabaseSecretEngineConfig
+# metadata:
+#   name: vault
+#   namespace: vault
+# spec:
+#   authentication:
+#     path: control-plane
+#     role: vault
+#     serviceAccount:
+#       name: vault
+#   connection:
+#     address: http://vault.vault.svc:8200
+#     tLSConfig:
+#       skipVerify: true
+#   pluginName: postgresql-database-plugin
+#   allowedRoles:
+#     - read-write
+#     - read-only
+#   connectionURL: postgresql://{{username}}:{{password}}@vault-pg-cluster-rw.keycloak:5432/*
+#   # username: admin
+#   rootCredentialsFromSecret:
+#     name: vault-pg-cluster-superuser
+#   path: control-plane/base-system/vault/
+#   rootPasswordRotation:
+#     enable: true
+#     # rotationPeriod: 2m 
+# ---
+# apiVersion: redhatcop.redhat.io/v1alpha1
+# kind: DatabaseSecretEngineConfig
+# metadata:
+#   name: mongo-db
+#   namespace: mongo-db
+# spec:
+#   authentication:
+#     path: control-plane
+#     role: mongo-db
+#     serviceAccount:
+#       name: mongo-db
+#   connection:
+#     address: http://vault.vault.svc:8200
+#     tLSConfig:
+#       skipVerify: true
+#   pluginName: mongo-database-plugin
+#   allowedRoles:
+#     - read-write
+#     - read-only
+#   connectionURL: postgresql://{{username}}:{{password}}@mongo-db-pg-cluster-rw.mongo-db:5432/*
+#   rootCredentialsFromSecret:
+#     name: mongo-db-pg-cluster-superuser
+#   path: control-plane/base-system/mongo-db/
+#   rootPasswordRotation:
+#     enable: true
+# ---
+# apiVersion: redhatcop.redhat.io/v1alpha1
+# kind: DatabaseSecretEngineRole
+# metadata:
+#   name: read-write
+# spec:
+#   authentication: 
+#     path: kubernetes
+#     role: database-engine-admin
+#   path: control-plane/base-system/yaml-mongodb/
+#   dBName: dbyaml
+#   creationStatements:
+#     - '{ "db": "admin", "roles": [{ "role": "readWrite" }, {"role": "read", "db": "foo"}] }' 
+# ---
+# apiVersion: redhatcop.redhat.io/v1alpha1
+# kind: DatabaseSecretEngineRole
+# metadata:
+#   name: read-only
+# spec:
+#   authentication: 
+#     path: kubernetes
+#     role: database-engine-admin
+#   path: control-plane/base-system/
+#   dBName: control-plane/base-system/keycloak/vault
+#   creationStatements:
+#     - CREATE ROLE "{{name}}" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO "{{name}}";
