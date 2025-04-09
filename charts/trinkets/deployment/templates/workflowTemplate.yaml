@@ -1,64 +1,53 @@
- 
-{{/*kast - Kubernetes arcane spelling technology
+ {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
 
-{{- if $root.Values.template.enabled }}
+{{- if $root.Values.sentence.enabled }}
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: {{ $root.Values.name }}-{{ $root.Values.sericeAccountName }}-template
+  name: {{ $root.Values.name }}-{{ $root.Values.serviceAccount.name }}-template
 spec:
-  entrypoint: clone-and-list
+  entrypoint: deploy
   arguments:
     parameters:
     {{- range $root.Values.parameters }}
-    - {{ . }}
+      {{-  . | toYaml| nindent 6 }}
     {{- end }}
   templates:
-    - name: clone-and-list
+    - name: deploy
       volumes:
-      {{- include "summon.volumes" -}}
-      - name: repo-volume
-        emptyDir:
-          sizeLimit: 1Gi
-      - name: ssh-key-volume
-        secret:
-          secretName: kast01-ssh
-          defaultMode: 0600
+      {{- range $cantrip := $root.Values.sentence.cantrips }}
+      {{- include "summon.common.volumes" $root | nindent 8}}
+      {{- end}}
+        - name: repo-volume
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: ssh-key-volume
+          secret:
+            secretName: kast01-ssh
+            defaultMode: 0600
       containerSet:
         volumeMounts:
           - name: repo-volume
             mountPath: /repo
         containers:
-        {{- range $root.Values.containers}}
-          - {{- include "summon.container" . }}
-          {{- with .dependencies}}
-            dependencies:
-              - {{ . }}
+        {{- range $cantripName, $cantrip := $root.Values.sentence.cantrips }}
+          {{- if $cantrip.verb }}
+          {{- $content := include (printf "default-verbs.%s" $cantrip.verb ) (list $root $cantripName $cantrip ) }}
+          {{ tpl $content $ }}
+            {{- include (printf "default-verbs.%s" $cantrip.verb ) (list $root $cantripName $cantrip ) | tpl | nindent 8 }}
+            {{- include "summon.common.container" (list $root $cantripName $cantrip ) | toYaml | nindent 8 }}
+          {{ else }}
+            {{- include "summon.common.container" (list $root $cantripName $cantrip ) | nindent 8 }}
+          {{- end }}
+          {{- with $cantrip.dependencies }}
+          dependencies:
+            - {{ . }}
           {{- end }}
         {{- end }}
-        - name: clone-repo
-          image: alpine/git
-          env:
-            - name: GITHUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: kast01-gh-token
-                  key: git-token
-            - name: GITHUB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: kast01-gh-token
-                  key: git-user
-          volumeMounts:
-            - name: ssh-key-volume
-              mountPath: /root/.ssh/id_rsa
-              subPath: ssh-privatekey
-          command: [sh, -c]
-          args: ["ssh-keyscan github.com > /root/.ssh/known_hosts && git clone --depth 1 --branch {{workflow.parameters.branch}} {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.repo}}.git /repo"]
         - name: container-build
           image: noenv/buildah
           command: [sh, -c]
@@ -78,33 +67,4 @@ spec:
                 secretKeyRef:
                   name: harbor-creds
                   key: host
-          args: ["buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASS $REGISTRY_HOST && 
-                  cd /repo && buildah build -f Containerfile -t $REGISTRY_HOST/{{workflow.parameters.repo}} -t $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}}  &&
-                  buildah push $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}} docker://$REGISTRY_HOST/{{workflow.parameters.repo}}&&
-                  buildah push $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}} docker://$REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}}"]
-          dependencies:
-            - clone-repo
-        - name: tests
-          image: busybox
-          command: [sh, -c]
-          args: ["sleep 10 && ls /repo"]
-          dependencies:
-            - clone-repo
-        - name: deploy-argocd-wft
-          image: dellnoantechnp/git-yq
-          volumeMounts:
-            - name: ssh-key-volume
-              mountPath: /root/.ssh/id_rsa
-              subPath: ssh-privatekey
-          command: [sh, -c]
-          args: ["ssh-keyscan github.com > /root/.ssh/known_hosts &&
-                  git clone --depth 1 --branch {{workflow.parameters.spellbookBranch}} {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.spellbookRepo}}.git /repo/library && 
-                  cd /repo/library && yq -i '.workload.image.tag=\"{{workflow.parameters.branch}}\"' library/{{workflow.parameters.spellbook}}/{{workflow.parameters.chapterName}}/{{workflow.parameters.spellName}}.yaml &&
-                  git config --local user.email 'kaster@kast.io' &&
-                  git config --local user.name 'kaster' &&
-                  git add . &&
-                  git commit -m 'automagic cd {{workflow.parameters.spellName}} {{workflow.parameters.spellbookBranch}} ' || exit 0 &&
-                  git push "]
-          dependencies:
-            - container-build
-            - tests
+{{- end }}

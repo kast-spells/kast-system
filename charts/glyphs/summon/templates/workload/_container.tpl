@@ -9,7 +9,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- $containerName := index . 2 -}}
 {{- $name := include "common.name" $root }}
 {{- $ctName := ""}}
-{{- if typeOf $containerName | eq "int" }}
+{{- if eq (typeOf $containerName) "int" }}
 {{- $ctName = "main" }}
 {{- else }}
 {{- $ctName = $containerName }}
@@ -34,10 +34,19 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- end -}}
 {{- end -}}
 
-{{- define "summon.common.container" -}}
+{{- define "summon.common.containers" -}}
 {{- $root := index . 0 -}}
 {{- $containers := index . 1 -}}
 {{- range $containerName, $container := $containers }}
+{{- include "summon.common.container" (list $root $containerName $container ) }}
+{{- end }}
+{{- end -}}
+
+
+{{- define "summon.common.container" -}}
+{{- $root := index . 0 -}}
+{{- $containerName := index . 1 -}}
+{{- $container := index . 2 -}}
 - name: {{ include "summon.common.containerName" (list $root $container $containerName )}}
   image: {{ include "summon.getImage" (list $root $container ) }}
   imagePullPolicy: {{ default "IfNotPresent" (default ($root.Values.image).pullPolicy ($container.image).pullPolicy ) }}
@@ -66,17 +75,17 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- include "summon.common.volumeMounts" $root | nindent 2 }}
   {{- include "summon.common.envs.envFrom" $root | nindent 2 }}
   {{- include "summon.common.envs.env" $root | nindent 2 }}
-    {{- end }}
-  {{- if $root.Values.service.enabled }}
+  {{- if ($root.Values.service).enabled }}
   ports:
     {{- range $root.Values.service.ports }}
     - name: {{ default "http" .name }}
       containerPort: {{ default 80 .targetPort }}
       protocol: {{ default "TCP" .protocol }}
     {{- end }}
+    {{- end }}
+
 {{- end }}
 
-{{- end -}}
 
 
 ##hay q definir como se levantan los volume mounts

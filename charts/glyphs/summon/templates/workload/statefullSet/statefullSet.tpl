@@ -26,14 +26,14 @@ spec:
       serviceAccountName: {{ include "common.serviceAccountName" $root }}
       initContainers:
         {{- if .Values.initContainers }}
-        {{- include "summon.common.container" (list $root .Values.initContainers ) | nindent 8 }}
+        {{- include "summon.common.containers" (list $root .Values.initContainers ) | nindent 8 }}
         {{- end }}
       containers:
         {{- if .Values.sideCars }}
-        {{- include "summon.common.container" (list $root .Values.sideCars ) | nindent 8 }}
+        {{- include "summon.common.containers" (list $root .Values.sideCars ) | nindent 8 }}
         {{- end }}
         #main Container
-        {{- include "summon.common.container" (list $root (list .Values) ) | nindent 8  }}
+        {{- include "summon.common.containers" (list $root (list .Values) ) | nindent 8  }}
         {{- with .Values.nodeSelector }}
       nodeSelector:
           {{- toYaml $root | nindent 8 }}

@@ -45,13 +45,9 @@ spec:
 {{- end }}
 
 
-{{/* ## TODO ver de migrar lo q falta a glyph compatible y si hace falta capas rompe muchas cosas*/}} 
 
 
-{{/* default app style */}} 
-{{- if .Values.workload.enabled  -}}
-{{- include ( printf "summon.workload.%s" .Values.workload.type ) . }}
-{{- end -}}
+
 
 {{- range $name, $content := .Values.configMaps }}
   {{- if eq $content.location "create" }}
@@ -70,14 +66,6 @@ spec:
 {{- if .Values.serviceAccount.enabled -}}
 {{- include "summon.serviceAccount" . }}
 {{- end -}}
-
-{{- if .Values.autoscaling.enabled -}}
-{{- include "summon.autoscaling" . }}
-{{- end -}}
-
-{{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "deamonset")) }}
-{{- include "summon.service" . }}
-{{- end }}
 
 {{- if .Values.volumes -}}
 {{- include "summon.persistanteVolumeClaim" . }}

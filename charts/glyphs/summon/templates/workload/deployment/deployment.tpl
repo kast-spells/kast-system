@@ -31,14 +31,14 @@ spec:
       {{- end }}
       {{- if .Values.initContainers }}
       initContainers:
-        {{- include "summon.common.container" (list . .Values.initContainers ) | nindent 8 }}
+        {{- include "summon.common.containers" (list . .Values.initContainers ) | nindent 8 }}
       {{- end }}
       containers:
         {{- if .Values.sideCars }}
-        {{- include "summon.common.container" (list . .Values.sideCars ) | nindent 8 }}
+        {{- include "summon.common.containers" (list . .Values.sideCars ) | nindent 8 }}
         {{- end }}
         #main Container
-        {{- include "summon.common.container" (list . (list .Values) ) | nindent 8  }}
+        {{- include "summon.common.containers" (list . (list .Values) ) | nindent 8  }}
         {{- with .Values.nodeSelector }}
       nodeSelector:
           {{- toYaml . | nindent 8 }}

@@ -3,10 +3,14 @@
 
 
 
-
+name: pepe
 eventBusName: magic-bus
 eventBusreplicaCount: 1
+sensor:
+  enabld: false
 
+rbac:
+  enabled: true
 parameters:
   - name: branch
     value: hello world
@@ -30,27 +34,150 @@ parameters:
     value: ms-default-landing
 
 
-workflow:
-  containerName:
-    image: 
-  otherContainer:
-    verbs: git-clone
-    values:
-      secrets:
-        git-key:
-          path:
-  cursedContainer:
-    values:
-      commands:
-      args:
+
+sentence:
+  enabled: true
+  volumes:
+    data:
+      type: pvc
+      destinationPath: /data
+      create: true
+      storageClass: lala
+      size: sor
+  cantrips:
+    isContainer:
+      image: 
+        name: alpine # es el default
+    canHaveAVerb:
+      verbs: clone-repo #is a predefined container with an simple task like clone the repo in the pod
+      values:
+        secrets:
+          git-key:
+            path:
+    # ownVolume:
+    #   volumes:
+    #     data:
+    #       type: emptyDir
+    #       destinationPath: /data
+    curses:
+      dependancies: #they can have dependancies to set complex of the cantrip sentence
+        - canHaveAVerb
       image:
-    
+        name: busybox #or have full custom container configuration
+      command: [sh, -c]
+      args: ["sleep 10 && ls /repo"]
+      probes: {}
+      resources:
+        limits:
+          cpu: "10m"
+          memory: "20M"
+        requests:
+          cpu: "10m"
+          memory: "10M"
 
+serviceAccount:
+  # Specifies whether a service account should be created
+  enabled: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+    # pepe: sarasa
+    # algo: aca
+  labels: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
 
+secrets: {}
+configMaps: {}
+  # saras2:
+  #   type: file
+  #   mountPath: /defaults.yaml
+  # saras:
+  #   location: local
+  #   type: env
+  # pepe:
+  #   location: local
+  #   type: env
+  #   name: roberto
+  # jorge:
+  #   location: create
+  #   type: file
+  #   name: jorge.conf
+  #   mountPath: /sarlanga
+  #   contentType: json
+  #   content:
+  #     {
+  #       "UTC": "Tiempo Universal Coordinado",
+  #       "GMT": "Tiempo Medio de Greenwich",
+  #       "CET": "Hora de Europa Central",
+  #       "EET": "Hora de Europa del Este",
+  #       "AST": "Hora Estándar del Atlántico",
+  #       "EST": "Hora Estándar del Este de América del Norte",
+  #       "EDT": "Hora de Verano del Este de América del Norte",
+  #       "CST": "Hora Estándar del Centro de América del Norte",
+  #     }
+  # mambru.notrock:
+  #     location: create
+  #     type: file
+  #     mountPath: /mambru.conf
+  #     content: |
+  #       sarasa co
+  # deeppurple.rock:
+  #     location: create
+  #     type: file
+  #     mountPath: /mambru.conf
+  #     contentType: yaml
+  #     content:
+  #       UTC: "Tiempo Universal Coordinado"
+  #       GMT: "Tiempo Medio de Greenwich"
+  #       CET: "Hora de Europa Central"
+  #       EET: "Hora de Europa del Este"
+  #       AST: "Hora Estándar del Atlántico"
 
+##esto genera dinamicamente un pvc ademas de agregar el volumen al pod
+# volumes:
+#   home:
+#     type: hostPath
+#     destinationPath: /home/namen/_home
+#     path: /home/namen/_home
+#   data:
+#     type: pvc
+#     destinationPath: /data
+#     create: true
+#     storageClass: lala
+#     size: sor
+#     pvcName: kara #optional si no existe toma el nombre de la ms-name-$key
+#   laslreaeraw:
+#     destinationPath: /laslreaeraw
+#     create: true
+#   dataLoca:
+#     destinationPath: /data
+#     pvcName: jorge # optional si no existe toma la key
+#     create: false
+#     readOnly: true
+#   nfs:
+#     destinationPath: /data
+#     nfs: 
+#       server: my-nfs-server.example.com
+#       path: /my-nfs-volume
+#       readOnly: true
+#   lala:
+#     emptyDir: true
+#     destination: /lala
+#   otro:
+#     emptyDir:
+#       sizeLimit: 50Mi
+#       medium: memory
 
-
-
+# envs:
+#   JORGE: sarasa
+#   DB_USER:
+#     type: secret
+#     name: saladenga
+#     key: kaka
+#   lala: pep
 
 
 

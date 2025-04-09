@@ -25,13 +25,13 @@ spec:
           serviceAccountName: {{ include "common.serviceAccountName" . }}
           initContainers:
           {{- if .Values.initContainers }}
-          {{- include "summon.container" (list . .Values.initContainers ) | nindent 12 }}
+          {{- include "summon.containers" (list . .Values.initContainers ) | nindent 12 }}
           {{- end }}
           containers:
           {{- if .Values.sideCars }}
-          {{- include "summon.container" (list . .Values.sideCars ) | nindent 12 }}
+          {{- include "summon.containers" (list . .Values.sideCars ) | nindent 12 }}
           {{- end }}
-          {{- include "summon.container" (list . .Values  ) | nindent 12  }}
+          {{- include "summon.containers" (list . .Values  ) | nindent 12  }}
           {{- with .nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 8 }}
