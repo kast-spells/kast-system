@@ -1,0 +1,84 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+{{- if .Values.debug }}
+root: |
+  {{ toYaml $root | nindent 2 }}
+{{- end }}
+
+
+{{- if $root.Values.eventBusName }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: {{ $root.eventBusName }}
+spec:
+  nats:
+    native:
+      replicas: {{ $root.eventBusreplicaCount }}
+{{- end }}
+
+
+
+
+
+
+
+
+
+
+
+
+{{/* glyph system for summons 
+## TODO no entendi por q no puede ser una lista aun (bug/skill issue)
+*/}} 
+{{- range $chartName, $_ := $root.Subcharts }}
+  {{- range $_, $glyph:= get $root.Values $chartName }}
+    {{- if and (gt (len $glyph) 0) (ne $chartName "summon") }}
+      {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyph ) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+
+{{/* ## TODO ver de migrar lo q falta a glyph compatible y si hace falta capas rompe muchas cosas*/}} 
+
+
+{{/* default app style */}} 
+{{- if .Values.workload.enabled  -}}
+{{- include ( printf "summon.workload.%s" .Values.workload.type ) . }}
+{{- end -}}
+
+{{- range $name, $content := .Values.configMaps }}
+  {{- if eq $content.location "create" }}
+  {{- $glyph := dict "name" $name "definition" $content  }}
+    {{- include "summon.configMap" (list $root $glyph )  }}
+  {{- end -}}
+{{- end -}}
+
+{{- range $name, $content := .Values.secrets }}
+  {{- if eq $content.location "create" }}
+  {{- $glyph := dict "name" $name "definition" $content  }}
+    {{- include "summon.secrets" (list $root $glyph )  }}
+  {{- end -}}
+{{- end -}}
+
+{{- if .Values.serviceAccount.enabled -}}
+{{- include "summon.serviceAccount" . }}
+{{- end -}}
+
+{{- if .Values.autoscaling.enabled -}}
+{{- include "summon.autoscaling" . }}
+{{- end -}}
+
+{{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "deamonset")) }}
+{{- include "summon.service" . }}
+{{- end }}
+
+{{- if .Values.volumes -}}
+{{- include "summon.persistanteVolumeClaim" . }}
+{{- end }}

@@ -1,0 +1,71 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+# Info on GitHub Webhook: https://developer.github.com/v3/repos/hooks/#create-a-hook
+{{- if $root.Values.eventSourceName }}
+
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: {{ $root.Values.eventBusName }}
+spec:
+  eventBusName: {{ $root.Values.eventBusName }}
+  service:
+    ports:
+      - name: githook
+        port: 12000
+        targetPort: 12000
+  github: #esto era un algo random??
+    githook: #o era este?
+      repositories:
+        - owner: kast-spells
+          # names:
+          #   - argo-events
+          #   - argo-workflows
+      webhook:
+        endpoint: /{{ $root.eventSource.endoint}}
+        port: "12000"
+        method: POST
+        url: {{ $root.eventSource.url }}/{{ $root.eventSource.endoint}}
+      {{- with $root.eventSource.events }}
+        - {{ . }}
+      {{- else }} 
+      events:
+        - "*"
+      {{- end }}
+      # insecure: false
+      active: {{ $root.eventSource.active }}
+      contentType: {{ default "json" $root.eventSource.contentType }}
+
+      webhookSecret:
+       # Name of the K8s secret that contains the hook secret
+       name: {{ $root.Values.eventBusName }}-webhook-auth
+       # Key within the K8s secret whose corresponding value (must be base64 encoded) is hook secret
+       key: password
+
+{{- include "vault.randomSecret" }}
+{{- include "istio.virtualService" }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: github-sarasa-svc
+spec:
+  gateways:
+    - yaml-gw/yaml-external
+    - mesh
+  hosts:
+    - yaml.life
+  http:
+    - match:
+        - uri:
+            prefix: /push
+      route:
+        - destination:
+            host: github-eventsource-svc
+            port:
+              number: 12000
+

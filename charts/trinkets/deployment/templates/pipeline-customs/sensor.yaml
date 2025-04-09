@@ -1,0 +1,59 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-webhook
+spec:
+  eventBusName: pipeline
+  template:
+    serviceAccountName: default
+    container:
+      resources:
+        requests:
+          memory: "16Mi"
+          cpu: "10m"
+        limits:
+          memory: "32Mi"
+          cpu: "20m"
+  dependencies:
+    - name: test-dep
+      eventSourceName: github
+      eventName: githook
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: github-
+              spec:
+                entrypoint: whalesay
+                arguments:
+                  parameters:
+                  - name: id
+                    value: hello world
+                  - name: name
+                    value: hello world
+                templates:
+                - name: whalesay
+                  inputs:
+                    parameters:
+                    - name: id
+                    - name: name     
+                  container:
+                    image: dellnoantechnp/git-yq
+                    command: [sh, -c]
+                    args: ["echo 'data: {{inputs.parameters.id}} {{inputs.parameters.name}}'"]
+          parameters:
+            - src:
+                dependencyName: test-dep
+                dataKey: body.head_commit.id
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: test-dep
+                dataKey: body.repository.name
+              dest: spec.arguments.parameters.1.value

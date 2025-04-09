@@ -1,0 +1,193 @@
+
+
+
+
+
+
+eventBusName: magic-bus
+eventBusreplicaCount: 1
+
+parameters:
+  - name: branch
+    value: hello world
+  - name: gitURL
+    value: git@github.com
+  - name: orgName
+    value: kast-spells
+  - name: repo
+    value: ACAA
+  - name: containerFileName
+    value: Containerfile
+  - name: spellbook
+    value: summon2
+  - name: spellbookRepo
+    value: spellbooks-library
+  - name: spellbookBranch
+    value: master
+  - name: chapterName
+    value: testing
+  - name: spellName
+    value: ms-default-landing
+
+
+workflow:
+  containerName:
+    image: 
+  otherContainer:
+    verbs: git-clone
+    values:
+      secrets:
+        git-key:
+          path:
+  cursedContainer:
+    values:
+      commands:
+      args:
+      image:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# el glyphs es inopinado
+# el trinket es opinado
+# el spell es una suma de todo #q como base puede ser summon como trinket o un external repo
+# la runa son external repos
+
+
+book:
+  labels:
+    spellbook: name
+    environment: control-plane
+chapters:
+  base-system:
+    type: chapters
+    labels:
+      default: book
+
+lexicon:
+  certManager: 
+    defaultIssuer:
+      type: clusterIssuer
+      labels:
+        default: book
+      email: devops@tarjetasperuanas.com.pe
+      issuerType: gcp
+      gcp:
+        projectID: "@gcpProject.labels.projectID" #apunta al valor de un label haciendo get($key."labels".$value)
+
+    zeroIsuer:
+      type: zerossl-clusterIssuer
+      namespaced: true # namespaced issuer
+      labels:
+        provider: zerossl
+      issuerType: zerossl
+      fileRef: base-system/zerossl.yaml
+  istio:
+    internal:
+      type: istio-ingressgateway
+      labels:
+        default: book
+      name: pepe
+      hostedZone:
+        hosts:
+          - int.fwck.com.ar
+          - "*.int.fwck.com.ar"
+    external:
+      type: istio-ingressgateway
+      labels:
+        default: book
+      hostedZone:
+        type: hostedZone
+        labels:
+          access: public
+        hosts:
+          - fwck.com.ar
+      tls:
+        certificate:
+          issuer:
+            selector:
+              provider: zerossl
+  gcp:
+    control-plane:
+      type: gcpProject
+      fileRef: base-system/control-plane.yaml ## optional mergea el contenido con lo definido en la entrada
+      #implica q todo esto de abajo se puede ir a ese file o mega complicarlo de ese lado
+      labels:
+        projectID: "@book.labels.environment"
+        defaultRegion: us-east5
+        defaultZone: us-east5a
+        default: book
+      userManagent:
+        type: userManagment
+        fileRef: security/users.yaml
+    control-plane-vpc:
+      name: control-plane
+      type: vpc
+      labels:
+        default: book
+      subnets:
+        private:
+          type: subnet
+          cidr: 10.42.0.0/24
+          labels:
+            access: private
+            default: book
+        public:
+          type: subnet
+          access: public
+          cidr: 10.42.2.0/24
+          labels:
+            access: public
+        otraZona:
+          type: subnet
+          cidr: 10.42.1.0/24
+          location: us-east5b
+          labels:
+            usedFor: integration
+            client: brando
+      clusters:
+        type: gke
+        fileRef: base-system/control-plane-cluster.yaml
+        labels:
+          default: book
+        nodes:
+          basics:
+            type: gke-node
+            machineType: t2.micro
+            subnetsRef:
+              path: control-plane.network.subnet.private
+      vms:
+        bastion:
+          type: vm
+          access: public
+          configuration: netbird
+          subdomain: bastion
+          sudomaiDocument: select * where type=hostedzone and access=public
+          ports:
+            - port: 22
+              access: 0.0.0.0/0
+        jenkins-slave:
+          type: vm
+          configuration: jenkins-slave #este puede tener manejo de recusos y conf extra como sus propias reglas de fw
+          subdomain: jk-slaves
+          sudomaiDocument: select * where type=hostedzone and default=book
+    

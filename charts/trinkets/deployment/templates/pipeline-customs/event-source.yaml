@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: webhook-sarasa
+spec:
+  eventBusName: pipeline
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  webhook:
+    # event-source can run multiple HTTP servers. Simply define a unique port to start a new HTTP server
+    example:
+      # port to run HTTP server on
+      port: "12000"
+      # endpoint to listen to
+      endpoint: /pepe
+      # HTTP request method to allow. In this case, only POST requests are accepted
+      method: POST
+  # github:
+  #   githook:
+  #     repositories:
+  #       - owner: kast-spells
+  #         # names:
+  #         #   - argo-events
+  #         #   - argo-workflows
+  #     webhook:
+  #       endpoint: /push
+  #       port: "12000"
+  #       method: POST
+  #       url: https://fwck.com.ar/push
+  #     events:
+  #       - "*"
+  #     # insecure: false
+  #     active: true
+  #     contentType: json
+
+  #     webhookSecret:
+  #      # Name of the K8s secret that contains the hook secret
+  #      name: github-secret
+  #      # Key within the K8s secret whose corresponding value (must be base64 encoded) is hook secret
+  #      key: password
+#    example-foo:
+#      port: "12000"
+#      endpoint: /example2
+#      method: POST
+
+# Uncomment to use secure webhook
+#    example-secure:
+#      port: "13000"
+#      endpoint: "/secure"
+#      method: "POST"
+#      # k8s secret that contains the cert
+#      serverCertSecret:
+#        name: my-secret
+#        key: cert-key
+#      # k8s secret that contains the private key
+#      serverKeySecret:
+#        name: my-secret
+#        key: pk-key

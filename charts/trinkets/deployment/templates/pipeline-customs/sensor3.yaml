@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook-git-clone-wf
+spec:
+  eventBusName: pipeline
+  template:
+    serviceAccountName: default
+    container:
+      resources:
+        requests:
+          memory: "16Mi"
+          cpu: "10m"
+        limits:
+          memory: "32Mi"
+          cpu: "20m"
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook-sarasa
+      eventName: example
+      filters:
+        exprs:
+          - expr: name == "pepe"
+            fields:
+              - name: name
+                path: body.nombre
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: webhook-git-wft
+              spec:
+                workflowTemplateRef:
+                  name: webhook-git-clone-template
+                arguments:
+                  parameters:
+                  - name: branch
+                    value: hello world
+                  - name: gitURL
+                    value: git@github.com
+                  - name: orgName
+                    value: kast-spells
+                  - name: repo
+                    value: ACAA
+                  - name: containerFileName
+                    value: Containerfile
+                  - name: spellbook
+                    value: summon2
+                  - name: spellbookRepo
+                    value: spellbooks-library
+                  - name: spellbookBranch
+                    value: master
+                  - name: chapterName
+                    value: testing
+                  - name: spellName
+                    value: ms-default-landing
+          parameters:
+            - src:
+                dependencyName: test-dep
+                dataKey: body.branch
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: test-dep
+                dataKey: body.repo
+              dest: spec.arguments.parameters.3.value
+            - src:
+                dependencyName: test-dep
+                dataKey: body.wf
+              dest: spec.workflowTemplateRef.name

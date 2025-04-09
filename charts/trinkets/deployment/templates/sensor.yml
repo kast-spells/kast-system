@@ -1,0 +1,67 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+{{- if $root.Values.sensor.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook-git-clone-wf
+spec:
+  eventBusName: {{ $root.eventBusName }}
+  template:
+    serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.sericeAccountName }}-sensor
+    container:
+      resources:
+        requests:
+          memory: "16Mi"
+          cpu: "10m"
+        limits:
+          memory: "32Mi"
+          cpu: "20m"
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook-sarasa
+      eventName: example
+      filters:
+        exprs:
+          - expr: name == "pepe"
+            fields:
+              - name: name
+                path: body.nombre
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: {{ $root.Values.name }}-{{ $root.Values.workflowName }}-workflow
+              spec:
+                workflowTemplateRef:
+                  name: {{ $root.Values.name }}-{{ $root.Values.workflowName }}-template
+                arguments:
+                  parameters:
+                  {{- range $root.Values.parameters }}
+                  - {{ . }}
+                  {{- end }}
+          parameters:
+            - src:
+                dependencyName: test-dep
+                dataKey: body.branch
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: test-dep
+                dataKey: body.repo
+              dest: spec.arguments.parameters.3.value
+            - src:
+                dependencyName: test-dep
+                dataKey: body.wf
+              dest: spec.workflowTemplateRef.name
+{{- end }}

@@ -1,0 +1,158 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook-git-clone
+spec:
+  eventBusName: pipeline
+  template:
+    serviceAccountName: default
+    container:
+      resources:
+        requests:
+          memory: "16Mi"
+          cpu: "10m"
+        limits:
+          memory: "32Mi"
+          cpu: "20m"
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook-sarasa
+      eventName: example
+      filters:
+        exprs:
+          - expr: name == "jose"
+            fields:
+              - name: name
+                path: body.nombre
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: webhook-git-
+              spec:
+                entrypoint: clone-and-list
+                arguments:
+                  parameters:
+                  - name: branch
+                    value: hello world
+                  - name: gitURL
+                    value: git@github.com
+                  - name: orgName
+                    value: kast-spells
+                  - name: repo
+                    value: ACAA
+                  - name: containerFileName
+                    value: Containerfile
+                  - name: spellbook
+                    value: summon2
+                  - name: spellbookRepo
+                    value: spellbooks-library
+                  - name: spellbookBranch
+                    value: master
+                  - name: chapterName
+                    value: testing
+                  - name: spellName ##remplazar en ves de repo
+                    value: ms-default-landing
+                templates:
+                  - name: clone-and-list
+                    volumes:
+                    - name: repo-volume
+                      emptyDir:
+                        sizeLimit: 1Gi
+                    - name: ssh-key-volume
+                      secret:
+                        secretName: kast01-ssh
+                        defaultMode: 0600
+                    containerSet:
+                      volumeMounts:
+                        - name: repo-volume
+                          mountPath: /repo
+                      containers:
+                      - name: clone-repo
+                        image: alpine/git
+                        env:
+                          - name: GITHUB_TOKEN
+                            valueFrom:
+                              secretKeyRef:
+                                name: kast01-gh-token
+                                key: git-token
+                          - name: GITHUB_USER
+                            valueFrom:
+                              secretKeyRef:
+                                name: kast01-gh-token
+                                key: git-user
+                        volumeMounts:
+                          - name: ssh-key-volume
+                            mountPath: /root/.ssh/id_rsa
+                            subPath: ssh-privatekey
+                        # command: [git]
+                        # args: ["mkdir -p ~/.ssh/ && clone", "--depth", "1", "--branch", "{{workflow.parameters.branch}}", "{{workflow.parameters.repo}}", "/repo"]
+                        command: [sh, -c]
+                        # args: ["sleep 1000000"]
+                        args: ["ssh-keyscan github.com > /root/.ssh/known_hosts && git clone --depth 1 --branch {{workflow.parameters.branch}} {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.repo}}.git /repo"]
+                        # args: ["echo {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.repo}}.git"]
+                      - name: container-build
+                        image: noenv/buildah
+                        command: [sh, -c]
+                        env:
+                          - name: REGISTRY_PASS
+                            valueFrom:
+                              secretKeyRef:
+                                name: harbor-creds
+                                key: password
+                          - name: REGISTRY_USER
+                            valueFrom:
+                              secretKeyRef:
+                                name: harbor-creds
+                                key: user
+                          - name: REGISTRY_HOST
+                            valueFrom:
+                              secretKeyRef:
+                                name: harbor-creds
+                                key: host
+                        # args: ["sleep 10000"]
+                        args: ["buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASS $REGISTRY_HOST && 
+                                cd /repo && buildah build -f Containerfile -t $REGISTRY_HOST/{{workflow.parameters.repo}} -t $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}}  &&
+                                buildah push $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}} docker://$REGISTRY_HOST/{{workflow.parameters.repo}}&&
+                                buildah push $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}} docker://$REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}}"]
+                        dependencies:
+                          - clone-repo
+                      - name: tests
+                        image: busybox
+                        command: [sh, -c]
+                        args: ["sleep 10 && ls /repo"] #aca hay q pensar tests
+                        dependencies:
+                          - clone-repo
+                      - name: deploy-argocd
+                        image: dellnoantechnp/git-yq
+                        volumeMounts:
+                          - name: ssh-key-volume
+                            mountPath: /root/.ssh/id_rsa
+                            subPath: ssh-privatekey
+                        command: [sh, -c]
+                        args: ["ssh-keyscan github.com > /root/.ssh/known_hosts &&
+                                git clone --depth 1 --branch {{workflow.parameters.spellbookBranch}} {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.spellbookRepo}}.git /repo/library && 
+                                cd /repo/library && yq -i '.workload.image.tag=\"{{workflow.parameters.branch}}\"' library/{{workflow.parameters.spellbook}}/{{workflow.parameters.chapterName}}/{{workflow.parameters.spellName}}.yaml &&
+                                git config --local user.email 'kaster@kast.io' &&
+                                git config --local user.name 'kaster' &&
+                                git add . &&
+                                git commit -m 'automagic cd {{workflow.parameters.spellName}} {{workflow.parameters.spellbookBranch}} ' || exit 0 &&
+                                git push "]
+                        dependencies:
+                          - container-build
+                          - tests
+          parameters:
+            - src:
+                dependencyName: test-dep
+                dataKey: body.branch
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: test-dep
+                dataKey: body.repo
+              dest: spec.arguments.parameters.3.value

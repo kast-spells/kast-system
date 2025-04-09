@@ -1,0 +1,110 @@
+ 
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+{{- if $root.Values.template.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: {{ $root.Values.name }}-{{ $root.Values.sericeAccountName }}-template
+spec:
+  entrypoint: clone-and-list
+  arguments:
+    parameters:
+    {{- range $root.Values.parameters }}
+    - {{ . }}
+    {{- end }}
+  templates:
+    - name: clone-and-list
+      volumes:
+      {{- include "summon.volumes" -}}
+      - name: repo-volume
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: ssh-key-volume
+        secret:
+          secretName: kast01-ssh
+          defaultMode: 0600
+      containerSet:
+        volumeMounts:
+          - name: repo-volume
+            mountPath: /repo
+        containers:
+        {{- range $root.Values.containers}}
+          - {{- include "summon.container" . }}
+          {{- with .dependencies}}
+            dependencies:
+              - {{ . }}
+          {{- end }}
+        {{- end }}
+        - name: clone-repo
+          image: alpine/git
+          env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: kast01-gh-token
+                  key: git-token
+            - name: GITHUB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kast01-gh-token
+                  key: git-user
+          volumeMounts:
+            - name: ssh-key-volume
+              mountPath: /root/.ssh/id_rsa
+              subPath: ssh-privatekey
+          command: [sh, -c]
+          args: ["ssh-keyscan github.com > /root/.ssh/known_hosts && git clone --depth 1 --branch {{workflow.parameters.branch}} {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.repo}}.git /repo"]
+        - name: container-build
+          image: noenv/buildah
+          command: [sh, -c]
+          env:
+            - name: REGISTRY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-creds
+                  key: password
+            - name: REGISTRY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-creds
+                  key: user
+            - name: REGISTRY_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: harbor-creds
+                  key: host
+          args: ["buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASS $REGISTRY_HOST && 
+                  cd /repo && buildah build -f Containerfile -t $REGISTRY_HOST/{{workflow.parameters.repo}} -t $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}}  &&
+                  buildah push $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}} docker://$REGISTRY_HOST/{{workflow.parameters.repo}}&&
+                  buildah push $REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}} docker://$REGISTRY_HOST/{{workflow.parameters.repo}}:{{workflow.parameters.branch}}"]
+          dependencies:
+            - clone-repo
+        - name: tests
+          image: busybox
+          command: [sh, -c]
+          args: ["sleep 10 && ls /repo"]
+          dependencies:
+            - clone-repo
+        - name: deploy-argocd-wft
+          image: dellnoantechnp/git-yq
+          volumeMounts:
+            - name: ssh-key-volume
+              mountPath: /root/.ssh/id_rsa
+              subPath: ssh-privatekey
+          command: [sh, -c]
+          args: ["ssh-keyscan github.com > /root/.ssh/known_hosts &&
+                  git clone --depth 1 --branch {{workflow.parameters.spellbookBranch}} {{workflow.parameters.gitURL}}:{{workflow.parameters.orgName}}/{{workflow.parameters.spellbookRepo}}.git /repo/library && 
+                  cd /repo/library && yq -i '.workload.image.tag=\"{{workflow.parameters.branch}}\"' library/{{workflow.parameters.spellbook}}/{{workflow.parameters.chapterName}}/{{workflow.parameters.spellName}}.yaml &&
+                  git config --local user.email 'kaster@kast.io' &&
+                  git config --local user.name 'kaster' &&
+                  git add . &&
+                  git commit -m 'automagic cd {{workflow.parameters.spellName}} {{workflow.parameters.spellbookBranch}} ' || exit 0 &&
+                  git push "]
+          dependencies:
+            - container-build
+            - tests
