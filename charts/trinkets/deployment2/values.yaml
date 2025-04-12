@@ -1,15 +1,14 @@
-
-
 eventBus:
   enabled: true
   name: control-plane-default
   repicas: 1
-rbacs:
+rbac:
   enabled: true
 seviceAccount:
   name: github
 
-
+sensor:
+  enabled: true
 configMaps: {}
 workflow:
   enabled: true
@@ -35,13 +34,9 @@ eventSource:
   enabled: true
   name: github
   endpoint: ""
-  url: cosa.the.yaml.life
+  url: cosa.the.yaml.com
 
 parameters:
-  - name: branch
-    value: hello world
-  - name: repo
-    value: ACAA
   - name: gitURL
     value: git@github.com
   - name: orgName
@@ -58,10 +53,3 @@ parameters:
     value: testing
   - name: spellName
     value: ms-default-landing
-
-
-name: pepe
-eventBusName: magic-bus
-eventBusreplicaCount: 1
-sensor:
-  enabld: false

@@ -37,34 +37,13 @@ spec:
         {{- range $cantripName, $cantrip := $root.Values.sentence.cantrips }}
           {{- if $cantrip.verb }}
           {{- $content := include (printf "default-verbs.%s" $cantrip.verb ) (list $root $cantripName $cantrip ) }}
-          {{ tpl $content $ }}
-            {{- include (printf "default-verbs.%s" $cantrip.verb ) (list $root $cantripName $cantrip ) | tpl | nindent 8 }}
-            {{- include "summon.common.container" (list $root $cantripName $cantrip ) | toYaml | nindent 8 }}
+          {{- include "summon.common.container" (list $root $cantripName $content ) | nindent 8 }}
+            
           {{ else }}
+        - print: MALLLLAAA
             {{- include "summon.common.container" (list $root $cantripName $cantrip ) | nindent 8 }}
           {{- end }}
-          {{- with $cantrip.dependencies }}
-          dependencies:
-            - {{ . }}
-          {{- end }}
+
         {{- end }}
-        - name: container-build
-          image: noenv/buildah
-          command: [sh, -c]
-          env:
-            - name: REGISTRY_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: harbor-creds
-                  key: password
-            - name: REGISTRY_USER
-              valueFrom:
-                secretKeyRef:
-                  name: harbor-creds
-                  key: user
-            - name: REGISTRY_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: harbor-creds
-                  key: host
+
 {{- end }}

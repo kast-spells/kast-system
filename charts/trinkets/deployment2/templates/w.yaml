@@ -1,0 +1,47 @@
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+{{- if $root.Values.workflow.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: {{ $root.Values.name }}-template
+spec:
+  entrypoint: deploy
+  arguments:
+    parameters:
+      - name: branch
+        value: hello world
+      - name: repo
+        value: ACAA
+  {{- $root.Values.parameters | toYaml| nindent 6 }}
+  templates:
+    - name: deploy
+      volumes:
+      {{- range $containerName, $container  := $root.Values.workflow.containers }}
+      {{- include "summon.common.volumes" $root | nindent 8}}
+      {{- end}}
+        - name: repo-volume
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: ssh-key-volume
+          secret:
+            secretName: kast01-ssh
+            defaultMode: 0600
+      containerSet:
+        volumeMounts:
+          - name: repo-volume
+            mountPath: /repo
+        containers:
+        {{- range $containerName, $container := $root.Values.workflow.containers }}
+          {{- if $container.verb }}
+          {{- $content := include (printf "default-verbs.%s" $container.verb ) (list $root $containerName $container ) }}
+          {{- include "summon.common.container" (list $root $containerName $content ) | nindent 8 }}
+            
+          {{ else }}
+        - print: MALLLLAAA
+            {{- include "summon.common.container" (list $root $containerName $container ) | nindent 8 }}
+          {{- end }}
+
+        {{- end }}
+
+{{- end }}
