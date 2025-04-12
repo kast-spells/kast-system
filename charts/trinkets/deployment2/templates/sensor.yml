@@ -43,7 +43,7 @@ spec:
                 parameters:
                   - name: branch
                     value: hello world
-                  - name: gitURL
+                  - name: repo
                     value: git@github.com
                 {{- $root.Values.parameters | toYaml| nindent 18 }}
         parameters:
