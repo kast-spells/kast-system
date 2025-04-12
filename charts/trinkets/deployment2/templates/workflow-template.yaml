@@ -2,9 +2,9 @@
 
 {{- if $root.Values.workflow.enabled }}
 apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
+kind: ClusterWorkflowTemplate
 metadata:
-  name: {{ $root.Values.name }}-template
+  name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
 spec:
   entrypoint: deploy
   arguments:

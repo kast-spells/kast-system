@@ -35,10 +35,10 @@ spec:
             apiVersion: argoproj.io/v1alpha1
             kind: Workflow
             metadata:
-              generateName: {{ $root.Values.name }}-{{ $root.Values.workflowName }}-
+              generateName: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-
             spec:
               workflowTemplateRef:
-                name: {{ $root.Values.name }}-{{ $root.Values.workflowName }}-template
+                name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
               arguments:
                 parameters:
                   - name: branch
