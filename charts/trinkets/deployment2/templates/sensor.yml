@@ -21,16 +21,15 @@ spec:
        
   dependencies:
     - name: github-push
-      eventSourceName: github
-      eventName: my-github-listener
+      eventSourceName: {{ $root.Values.eventSource.name }}
+      eventName: githook
 
   triggers:
     # PUSH: Cualquier push excepto develop
     - template:
         name: trigger-on-push
         operation: create
-        conditions: |
-          conditions: "github-push.payload.ref != 'refs/heads/develop' && github-push.payload.head_commit != nil"
+        conditions: "github-push.payload.ref != 'refs/heads/{{ $root.Values.sensor.branch }}' && github-push.payload.head_commit != nil"
         source:
           resource:
             apiVersion: argoproj.io/v1alpha1

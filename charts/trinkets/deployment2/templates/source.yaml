@@ -24,10 +24,10 @@ spec:
         port: "12000"
         method: POST
         url: {{ $root.Values.eventSource.url }}/{{ $root.Values.eventSource.endpoint}}
+      events:
       {{- with $root.Values.eventSource.events }}
         - {{ . }}
       {{- else }} 
-      events:
         - "*"
       {{- end }}
       # insecure: false

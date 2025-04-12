@@ -33,12 +33,11 @@ spec:
             mountPath: /repo
         containers:
         {{- range $containerName, $container := $root.Values.workflow.containers }}
-          {{- if $container.verb }}
-          {{- $content := include (printf "default-verbs.%s" $container.verb ) (list $root $containerName $container ) }}
-          {{- include "summon.common.container" (list $root $containerName $content ) | nindent 8 }}
-            
+          {{- if $container.card }}
+          {{- $content := include (printf "default-card.%s" $container.card ) (list $root $containerName $container ) }} 
+          ## TODO esto tiene q ser solo un merge pero un runic selector desde otro lexicon o algo asi con todas las card definition
+          {{- include "summon.common.container" (list $root $containerName $content ) | nindent 8 }}  
           {{ else }}
-        - print: MALLLLAAA
             {{- include "summon.common.container" (list $root $containerName $container ) | nindent 8 }}
           {{- end }}
 
