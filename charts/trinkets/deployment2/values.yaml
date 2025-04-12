@@ -1,7 +1,7 @@
 eventBus:
   enabled: true
   name: control-plane-default
-  repicas: 1
+  replicas: 1
 rbac:
   enabled: true
 seviceAccount:

@@ -19,7 +19,7 @@ metadata:
 spec:
   nats:
     native:
-      replicas: {{ $root.eventBusreplicaCount }}
+      replicas: {{ $root.eventBus.replicas }}
 {{- end }}
 
 
