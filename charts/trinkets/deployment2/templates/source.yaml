@@ -39,23 +39,23 @@ spec:
        name: {{ $root.Values.eventSource.name }}-webhook-auth
        # Key within the K8s secret whose corresponding value (must be base64 encoded) is hook secret
        key: password
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: github-sarasa-svc
-spec:
-  gateways:
-    - yaml-gw/yaml-external
-  hosts:
-    - yaml.life
-  http:
-    - match:
-        - uri:
-            prefix: /push
-      route:
-        - destination:
-            host: github-eventsource-svc
-            port:
-              number: 12000
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: VirtualService
+# metadata:
+#   name: github-sarasa-svc
+# spec:
+#   gateways:
+#     - yaml-gw/yaml-external
+#   hosts:
+#     - yaml.life
+#   http:
+#     - match:
+#         - uri:
+#             prefix: /push
+#       route:
+#         - destination:
+#             host: github-eventsource-svc
+#             port:
+#               number: 12000
 {{- end }}
