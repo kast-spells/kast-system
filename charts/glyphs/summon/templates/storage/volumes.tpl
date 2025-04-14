@@ -12,7 +12,7 @@ volumes:
     {{- include "summon.common.volumes.secrets" $container.secrets | nindent 2 -}}
   {{- end }}
   {{- if $container.volumes }}
-    {{- include "summon.common.volumes.volumes" $container.volumes | nindent 2 -}}
+    {{- include "summon.common.volumes.volumes" $container | nindent 2 -}}
   {{- end }}
 {{- end -}}
 
