@@ -46,6 +46,7 @@ spec:
               kind: Workflow
               metadata:
                 generateName: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-
+                namespace: {{ default $root.Release.Namespace $root.Values.workflow.namespace }}
               spec:
                 workflowTemplateRef:
                   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
