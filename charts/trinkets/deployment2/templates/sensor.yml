@@ -7,7 +7,7 @@ kind: Sensor
 metadata:
   name: github-deploy-sensor
 spec:
-  eventBusName: {{ $root.eventBus.name }}
+  eventBusName: {{ $root.Values.eventBus.name }}
   template:
     serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.sericeAccountName }}-sensor
     container:

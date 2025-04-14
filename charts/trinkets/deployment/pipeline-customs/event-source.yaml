@@ -28,7 +28,7 @@ spec:
   #       endpoint: /push
   #       port: "12000"
   #       method: POST
-  #       url: https://fwck.com.ar/push
+  #       url: https://the.yaml.life/push
   #     events:
   #       - "*"
   #     # insecure: false

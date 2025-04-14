@@ -21,7 +21,7 @@ spec:
         endpoint: /push
         port: "12000"
         method: POST
-        url: https://fwck.com.ar/push
+        url: https://the.yaml.life/push
       events:
         - "*"
       # insecure: false
@@ -40,10 +40,10 @@ metadata:
   name: github-sarasa-svc
 spec:
   gateways:
-    - fwck-gw/fwck-external
+    - yaml-gw/yaml-external
     - mesh
   hosts:
-    - fwck.com.ar
+    - the.yaml.life
   http:
     - match:
         - uri:

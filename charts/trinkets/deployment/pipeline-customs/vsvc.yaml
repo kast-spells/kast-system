@@ -4,10 +4,10 @@ metadata:
   name: webhook-sarasa-svc
 spec:
   gateways:
-    - fwck-int-gw/fwck-int-gw
+    - yaml-life-int-gw/yaml-life-int-gw
     - mesh
   hosts:
-    - int.fwck.com.ar
+    - int.the.yaml.life
   http:
     - match:
         - uri:
@@ -21,13 +21,13 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: argocd-fwck-int-gw
+  name: argocd-yaml-life-int-gw
 spec:
   gateways:
-    - fwck-int-gw/fwck-int-gw
+    - yaml-life-int-gw/yaml-life-int-gw
     - mesh
   hosts:
-    - pepe.int.fwck.com.ar
+    - pepe.int.the.yaml.life
   http:
     - match:
         - uri:
