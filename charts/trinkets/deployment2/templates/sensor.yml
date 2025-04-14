@@ -7,7 +7,7 @@ kind: Sensor
 metadata:
   name: github-deploy-sensor
 spec:
-  eventBusName: {{ $root.eventBusName }}
+  eventBusName: {{ $root.eventBus.name }}
   template:
     serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.sericeAccountName }}-sensor
     container:
@@ -48,11 +48,11 @@ spec:
                 {{- $root.Values.parameters | toYaml| nindent 18 }}
         parameters:
           - src:
-              dependencyName: test-dep
+              dependencyName: github-push
               dataKey: body.branch
             dest: spec.arguments.parameters.0.value
           - src:
-              dependencyName: test-dep
+              dependencyName: github-push
               dataKey: body.repo
             dest: spec.arguments.parameters.1.value
           # - src:
