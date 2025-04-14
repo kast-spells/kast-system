@@ -49,6 +49,7 @@ spec:
               spec:
                 workflowTemplateRef:
                   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
+                  clusterScope: true
                 arguments:
                   parameters:
                     - name: branch
