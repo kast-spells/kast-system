@@ -69,7 +69,7 @@ spec:
           #     dependencyName: test-dep
           #     dataKey: body.wf
           #   dest: spec.workflowTemplateRef.name
-
+{{- end }}
 
 
 
@@ -195,4 +195,3 @@ spec:
 #             dependencyName: test-dep
 #             dataKey: body.wf
 #           dest: spec.workflowTemplateRef.name
-{{- end }}
