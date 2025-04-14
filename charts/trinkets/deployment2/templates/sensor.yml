@@ -55,7 +55,7 @@ spec:
                       value: hello world
                     - name: repo
                       value: git@github.com
-                  {{- $root.Values.parameters | toYaml| nindent 8 }}
+                    {{- $root.Values.parameters | toYaml| nindent 10 }}
         parameters:
           - src:
               dependencyName: github-push
