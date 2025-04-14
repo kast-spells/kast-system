@@ -16,9 +16,8 @@ spec:
   {{- $root.Values.parameters | toYaml| nindent 6 }}
   templates:
     - name: deploy
-      volumes:
       {{- range $containerName, $container  := $root.Values.workflow.containers }}
-      {{- include "summon.common.volumes" $root | nindent 8}}
+      {{- include "summon.common.volumes" $container | nindent 6}}
       {{- end}}
         - name: repo-volume
           emptyDir:

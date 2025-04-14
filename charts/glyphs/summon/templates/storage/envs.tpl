@@ -3,12 +3,14 @@ Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- define "summon.common.envs.envFrom"}}
+  {{- if .envFrom -}}
 envFrom:
-  {{- if .Values.configMaps }}
-    {{- include "summon.common.envs.configMaps" .Values.configMaps | nindent 2 -}}
-  {{- end }}
-  {{- if .Values.secrets }}
-    {{- include "summon.common.envs.secrets" .Values.secrets | nindent 2 -}}
+    {{- if .configMaps }}
+      {{- include "summon.common.envs.configMaps" .configMaps | nindent 2 -}}
+    {{- end }}
+    {{- if .secrets }}
+      {{- include "summon.common.envs.secrets" .secrets | nindent 2 -}}
+    {{- end }}
   {{- end }}
 {{- end -}}
 

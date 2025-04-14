@@ -31,8 +31,16 @@ workflow:
         requests:
           cpu: "10m"
           memory: "10M"
-
-
+      volumes:
+        config:
+          type: hostPath
+          destinationPath: /config
+          path: /mnt/storage/cargo-hold/retriever/transmission-config
+      secrets:
+        kast01-ssh:
+          type: file
+          mountPath: /key.pem
+          defaultMode: 0600
 eventSource:
   enabled: true
   name: github

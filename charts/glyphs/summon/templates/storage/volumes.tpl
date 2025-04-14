@@ -3,24 +3,23 @@ Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- define "summon.common.volumes"}}
-{{- $root := . }}
+{{- $container := . }}
 volumes:
-  {{- if $root.Values.configMaps }}
-    {{- include "summon.common.volumes.configMaps" $root.Values.configMaps | nindent 2 -}}
+  {{- if $container.configMaps }}
+    {{- include "summon.common.volumes.configMaps" $container.configMaps | nindent 2 -}}
   {{- end }}
-  {{- if $root.Values.secrets }}
-    {{- include "summon.common.volumes.secrets" $root.Values.secrets | nindent 2 -}}
+  {{- if $container.secrets }}
+    {{- include "summon.common.volumes.secrets" $container.secrets | nindent 2 -}}
   {{- end }}
-  {{- if $root.Values.volumes }}
-    {{- include "summon.common.volumes.volumes" $root | nindent 2 -}}
+  {{- if $container.volumes }}
+    {{- include "summon.common.volumes.volumes" $container.volumes | nindent 2 -}}
   {{- end }}
 {{- end -}}
 
 
 {{- define "summon.common.volumes.volumes" -}}
-{{- $root := . }}
-
-  {{- range $name, $volume := $root.Values.volumes }}
+{{- $container := . }}
+  {{- range $name, $volume := $container.volumes }}
 - name: {{ $name }}
   {{- if eq $volume.type "emptyDir" }}
   emptyDir:

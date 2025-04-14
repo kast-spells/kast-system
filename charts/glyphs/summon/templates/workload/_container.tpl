@@ -72,8 +72,8 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   resources:
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- include "summon.common.volumeMounts" $root | nindent 2 }}
-  {{- include "summon.common.envs.envFrom" $root | nindent 2 }}
+  {{- include "summon.common.volumeMounts" $container | nindent 2 }}
+  {{- include "summon.common.envs.envFrom" $container | nindent 2 }}
   {{- include "summon.common.envs.env" $root | nindent 2 }}
   {{- if ($root.Values.service).enabled }}
   ports:
