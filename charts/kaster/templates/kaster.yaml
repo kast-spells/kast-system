@@ -2,7 +2,8 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
-{{- $root := . }} ## esto seria remplazable por $ pero para lectura de codigo
+---
+{{- $root := . }}
 
 {{- if $root.Values.glyphs }}
   {{- range $chartName, $_ := $root.Subcharts }}
