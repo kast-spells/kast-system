@@ -23,15 +23,20 @@ spec:
     - name: github-push
       eventSourceName: {{ $root.Values.eventSource.name }}
       eventName: githook
-
+      # filters:
+      #   exprs:
+      #     - expr: name == "pepe"
+      #       fields:
+      #         - name: name
+      #           path: body.nombre
   triggers:
     # PUSH: Cualquier push excepto develop
     - template:
         name: trigger-on-push
         operation: create
-        conditions: >-
-          parseJSON(github-push.payload).ref != 'refs/heads/{{ $root.Values.sensor.branch }}' &&
-          parseJSON(github-push.payload).head_commit != null
+        # conditions: >-
+        #   parseJSON(github-push.payload).ref != 'refs/heads/{{ $root.Values.sensor.branch }}' &&
+        #   parseJSON(github-push.payload).head_commit != null
         source:
           resource:
             apiVersion: argoproj.io/v1alpha1
