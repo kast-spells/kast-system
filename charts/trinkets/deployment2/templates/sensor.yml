@@ -29,7 +29,9 @@ spec:
     - template:
         name: trigger-on-push
         operation: create
-        conditions: "github-push.payload.ref != 'refs/heads/{{ $root.Values.sensor.branch }}' && github-push.payload.head_commit != nil"
+        conditions: >-
+          parseJSON(github-push.payload).ref != 'refs/heads/{{ $root.Values.sensor.branch }}' &&
+          parseJSON(github-push.payload).head_commit != null
         source:
           resource:
             apiVersion: argoproj.io/v1alpha1
