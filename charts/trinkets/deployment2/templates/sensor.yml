@@ -9,7 +9,7 @@ metadata:
 spec:
   eventBusName: {{ $root.Values.eventBus.name }}
   template:
-    serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.sericeAccountName }}-sensor
+    serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
     container:
       resources:
         requests:

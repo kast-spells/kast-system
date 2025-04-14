@@ -6,11 +6,14 @@ rbac:
   enabled: true
 seviceAccount:
   name: github
-
+name: github
 sensor:
   enabled: true
+  branch: main
+ 
 configMaps: {}
 workflow:
+  name: github
   enabled: true
   containers:
     cursed:
