@@ -19,9 +19,15 @@ spec:
           memory: "32Mi"
           cpu: "20m"
   dependencies:
+    # - name: github-push
+    #   eventSourceName: {{ $root.Values.eventSource.name }}
+    #   eventName: githook
     - name: github-push
       eventSourceName: {{ $root.Values.eventSource.name }}
       eventName: githook
+      filters:
+        exprs:
+          - expr: "split(parseJSON(body).ref, '/')[2] == 'main'"
       # filters:
       #   exprs:
       #     - expr: name == "pepe"
@@ -56,36 +62,29 @@ spec:
                     - name: branch
                       value: hello world
                     - name: repo
-                      value: git@github.com
-                    - name: gitURL
-                      value: git@github.com
+                      value: defaultLanding
                     - name: orgName
                       value: the-yaml-life
-                    - name: containerFileName
-                      value: Containerfile
-                    - name: spellbook
-                      value: the-recolection-of-BOBs-spells
-                    - name: spellbookRepo
-                      value: https://github.com/the-yaml-life/the-recolection-of-BOBs-spells
-                    - name: spellbookBranch
-                      value: master
-                    - name: chapterName
-                      value: testing
-                    - name: spellName
-                      value: ms-default-landing
+                    - name: eventType
+                      value: push
         parameters:
           - src:
               dependencyName: github-push
-              dataKey: body.branch
+              dataKey: body.ref
             dest: spec.arguments.parameters.0.value
+            # Este valor será 'refs/heads/develop'
           - src:
               dependencyName: github-push
-              dataKey: body.repo
+              dataKey: body.repository.name
             dest: spec.arguments.parameters.1.value
-          # - src:
-          #     dependencyName: test-dep
-          #     dataKey: body.wf
-          #   dest: spec.workflowTemplateRef.name
+          - src:
+              dependencyName: github-push
+              dataKey: body.repository.owner.name
+            dest: spec.arguments.parameters.2.value
+          - src:
+              dependencyName: github-push
+              dataKey: header.X-Github-Event
+            dest: spec.arguments.parameters.3.value
 {{- end }}
 
 
