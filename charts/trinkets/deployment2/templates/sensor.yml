@@ -60,24 +60,24 @@ spec:
                       value: the-life
                     - name: eventType
                       value: push
-          parameters:
-            - src:
-                dependencyName: github-push
-                dataKey: body.ref
-              dest: spec.arguments.parameters[?(@.name=="revision")].value
-              # Este valor será 'refs/heads/develop'
-            - src:
-                dependencyName: github-push
-                dataKey: body.repository.name
-              dest: spec.arguments.parameters.1.value
-            - src:
-                dependencyName: github-push
-                dataKey: body.repository.owner.name
-              dest: spec.arguments.parameters.2.value
-            - src:
-                dependencyName: github-push
-                dataKey: header.X-Github-Event
-              dest: spec.arguments.parameters.3.value
+      parameters:
+        - src:
+            dependencyName: github-push
+            dataKey: body.ref
+          dest: spec.arguments.parameters[?(@.name=="revision")].value
+          # Este valor será 'refs/heads/develop'
+        - src:
+            dependencyName: github-push
+            dataKey: body.repository.name
+          dest: spec.arguments.parameters.1.value
+        - src:
+            dependencyName: github-push
+            dataKey: body.repository.owner.name
+          dest: spec.arguments.parameters.2.value
+        - src:
+            dependencyName: github-push
+            dataKey: header.X-Github-Event
+          dest: spec.arguments.parameters.3.value
 {{- end }}
 
 
