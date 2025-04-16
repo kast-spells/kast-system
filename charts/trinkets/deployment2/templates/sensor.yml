@@ -57,7 +57,7 @@ spec:
                 workflowTemplateRef:
                   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
                   clusterScope: true
-                inputs:
+                arguments:
                   parameters:
                     - name: revision
                       value: hello world
