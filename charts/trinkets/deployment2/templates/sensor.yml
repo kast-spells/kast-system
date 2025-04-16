@@ -70,7 +70,7 @@ spec:
         parameters:
           - src:
               dependencyName: github-push
-              dataKey: ref
+              dataKey: body.ref
             dest: spec.arguments.parameters[?(@.name=="revision")].value
             # Este valor será 'refs/heads/develop'
           - src:
