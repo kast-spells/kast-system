@@ -76,7 +76,7 @@ spec:
           dest: spec.arguments.parameters.2.value
         - src:
             dependencyName: github-push
-            dataKey: header.X-Github-Event
+            dataKey: headers.X-GitHub-Event
           dest: spec.arguments.parameters.3.value
 {{- end }}
 
