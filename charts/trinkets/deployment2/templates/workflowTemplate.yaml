@@ -7,8 +7,8 @@ spec:
   entrypoint: clone-and-list
   arguments:
     parameters:
-      - name: branch
-        value: hello world
+      - name: revision
+        value: develop
       - name: repo
         value: defaultLanding
       - name: orgName

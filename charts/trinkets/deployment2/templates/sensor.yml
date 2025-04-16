@@ -64,7 +64,7 @@ spec:
                     - name: repo
                       value: defaultLanding
                     - name: orgName
-                      value: the-yaml-life
+                      value: the-life
                     - name: eventType
                       value: push
         inputs:
