@@ -14,7 +14,7 @@ sensor:
 configMaps: {}
 workflow:
   name: github
-  enabled: true
+  enabled: false
   containers:
     cursed:
       dependancies: #they can have dependancies to set complex of the cantrip sentence
