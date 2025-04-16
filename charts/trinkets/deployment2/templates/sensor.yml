@@ -68,7 +68,7 @@ spec:
                     - name: eventType
                       value: push
                     - name: gitURL
-                      value: git@github.com
+                      value: git@github.comsarasa
                     - name: containerFileName
                       value: Containerfile
                     - name: spellbook
