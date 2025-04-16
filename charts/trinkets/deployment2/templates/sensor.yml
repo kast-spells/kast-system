@@ -27,6 +27,7 @@ spec:
           - expr: split(parseJSON(body).ref, '/')[2] == 'main'
             fields:
               - name: body
+                path: body
   triggers:
     - template:
         name: trigger-on-push
