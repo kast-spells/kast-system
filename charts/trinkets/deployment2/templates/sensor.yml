@@ -74,10 +74,10 @@ spec:
             dependencyName: github-push
             dataKey: body.repository.owner.name
           dest: spec.arguments.parameters.2.value
-        - src:
-            dependencyName: github-push
-            dataKey: headers.X-GitHub-Event
-          dest: spec.arguments.parameters.3.value
+        # - src:
+        #     dependencyName: github-push
+        #     dataKey: headers.X-GitHub-Event
+        #   dest: spec.arguments.parameters.3.value
 {{- end }}
 
 
