@@ -22,12 +22,12 @@ spec:
     - name: github-push
       eventSourceName: {{ $root.Values.eventSource.name }}
       eventName: githook
-      filters:
-        exprs:
-          - expr: split(parseJSON(body).ref, '/')[2] == 'main'
-            fields:
-              - name: body
-                path: body
+      # filters:
+      #   exprs:
+      #     - expr: split(parseJSON(body).ref, '/')[2] == 'main'
+      #       fields:
+      #         - name: body
+      #           path: body3
   triggers:
     - template:
         name: trigger-on-push
