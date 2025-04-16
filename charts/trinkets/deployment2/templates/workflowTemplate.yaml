@@ -7,14 +7,14 @@ spec:
   entrypoint: clone-and-list
   arguments:
     parameters:
-      - name: branch
-        value: hello world
-      - name: repo
-        value: defaultLanding
-      - name: orgName
-        value: the-yaml-life
-      - name: eventType
-        value: push
+      # - name: branch
+      #   value: hello world
+      # - name: repo
+      #   value: defaultLanding
+      # - name: orgName
+      #   value: the-yaml-life
+      # - name: eventType
+      #   value: push
       - name: gitURL
         value: git@github.com
       - name: containerFileName
@@ -54,7 +54,7 @@ spec:
                   key: gh_token
           command: [sh, -c]
           args: ["git clone --depth 1 --branch {{`{{workflow.parameters.branch}}`}} git:$GH_TOKEN@{{`{{workflow.parameters.gitURL}}`}}:{{`{{workflow.parameters.orgName}} `}}/{{ `{{workflow.parameters.repo}} `}}.git /repo"]
-          args: ["ssh-keyscan github.com > /root/.ssh/known_hosts && git clone --depth 1 --branch {{ `{{workflow.parameters.branch}} `}} {{ `{{workflow.parameters.gitURL}} `}}:{{ `{{workflow.parameters.orgName}} `}}/{{ `{{workflow.parameters.repo}} `}}.git /repo"]
+          # args: ["ssh-keyscan github.com > /root/.ssh/known_hosts && git clone --depth 1 --branch {{ `{{workflow.parameters.branch}} `}} {{ `{{workflow.parameters.gitURL}} `}}:{{ `{{workflow.parameters.orgName}} `}}/{{ `{{workflow.parameters.repo}} `}}.git /repo"]
         - name: container-build
           image: noenv/buildah
           command: [sh, -c]
