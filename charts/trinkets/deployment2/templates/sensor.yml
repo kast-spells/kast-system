@@ -75,11 +75,11 @@ spec:
             # Este valor será 'refs/heads/develop'
           - src:
               dependencyName: github-push
-              dataKey: repository.name
+              dataKey: body.repository.name
             dest: spec.arguments.parameters.1.value
           - src:
               dependencyName: github-push
-              dataKey: repository.owner.name
+              dataKey: body.repository.owner.name
             dest: spec.arguments.parameters.2.value
           - src:
               dependencyName: github-push
