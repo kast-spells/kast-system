@@ -67,6 +67,20 @@ spec:
                       value: the-yaml-life
                     - name: eventType
                       value: push
+                    - name: gitURL
+                      value: git@github.com
+                    - name: containerFileName
+                      value: Containerfile
+                    - name: spellbook
+                      value: summon2
+                    - name: spellbookRepo
+                      value: spellbooks-library
+                    - name: spellbookBranch
+                      value: master
+                    - name: chapterName
+                      value: testing
+                    - name: spellName
+                      value: ms-default-landing
         parameters:
           - src:
               dependencyName: github-push
