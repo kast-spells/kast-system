@@ -61,7 +61,7 @@ spec:
                   parameters:
                     - name: revision
                       value: hello world
-                    - name: repo
+                    - name: repository
                       value: defaultLanding
                     - name: orgName
                       value: the-life

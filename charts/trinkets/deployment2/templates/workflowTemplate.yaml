@@ -9,7 +9,7 @@ spec:
     parameters:
       - name: revision
         value: develop
-      - name: repo
+      - name: repository
         value: defaultLanding
       - name: orgName
         value: the-yaml-life
@@ -40,8 +40,8 @@ spec:
                   key: gh_token
           command: [sh, -c] ## hay q agregar un cat al index del book y el chapter
           args: ["git clone --depth 1 --branch {{ $root.Values.spellbook.revision }} git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}:{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
-                  cat $(grep -R {{`{{workflow.parameters.repo}}`}}) | tee /repo/spellFile.yaml |yq .name
-                  git clone --depth 1 --branch {{`{{workflow.parameters.revision}}`}} git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}:{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repo}}`}}.git /repo &&
+                  cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | tee /repo/spellFile.yaml |yq .name
+                  git clone --depth 1 --branch {{`{{workflow.parameters.revision}}`}} git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}:{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo &&
                   
                 "]
         - name: container-build
@@ -73,10 +73,10 @@ spec:
           command: [sh, -c]
           args: ["export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
-                  cat $(grep -R {{`{{workflow.parameters.repo}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.revision}} `}}\"'
+                  cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.revision}} `}}\"'
                   git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' &&
                   git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' &&
-                  git add $(grep -R {{`{{workflow.parameters.repo}}`}}) &&
+                  git add $(grep -R {{`{{workflow.parameters.repository}}`}}) &&
                   git commit -m '{{ default "automagic cd " ($root.Values.workflow.git).message }} {{ `{{workflow.parameters.spellName}} `}} {{ $root.Values.spellbook.revision }}' &&
                   git push "]
           dependencies:
