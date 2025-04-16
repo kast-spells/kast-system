@@ -77,7 +77,8 @@ spec:
                   git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' &&
                   git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' &&
                   git add $(grep -R {{`{{workflow.parameters.repository}}`}}) &&
-                  git commit -m '{{ default "automagic cd " ($root.Values.workflow.git).message }} {{ `{{workflow.parameters.spellName}} `}} {{ $root.Values.spellbook.revision }}' &&
+                  export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
+                  git commit -m '{{ default "automagic cd " ($root.Values.workflow.git).message }} $spellName {{ $root.Values.spellbook.revision }}' &&
                   git push "]
           dependencies:
             - container-build
