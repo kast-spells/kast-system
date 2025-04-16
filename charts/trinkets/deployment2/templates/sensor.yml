@@ -59,7 +59,7 @@ spec:
                   clusterScope: true
                 inputs:
                   parameters:
-                    - name: branch
+                    - name: revision
                       value: hello world
                     - name: repo
                       value: defaultLanding
@@ -67,20 +67,6 @@ spec:
                       value: the-yaml-life
                     - name: eventType
                       value: push
-                    - name: gitURL
-                      value: git@github.comsarasa
-                    - name: containerFileName
-                      value: Containerfile
-                    - name: spellbook
-                      value: summon2
-                    - name: spellbookRepo
-                      value: spellbooks-library
-                    - name: spellbookBranch
-                      value: master
-                    - name: chapterName
-                      value: testing
-                    - name: spellName
-                      value: ms-default-landing
         inputs:
           - src:
               dependencyName: github-push

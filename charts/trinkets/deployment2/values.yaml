@@ -47,20 +47,15 @@ eventSource:
   endpoint: ""
   url: cosa.the.yaml.com
 
-parameters:
-  - name: gitURL
-    value: git@github.com
-  - name: orgName
-    value: the-yaml-life
-  - name: containerFileName
-    value: Containerfile
-  - name: spellbook
-    value: the-recolection-of-BOBs-spells
-  - name: spellbookRepo
-    value: the-library
-  - name: spellbookBranch
-    value: master
-  - name: chapterName
-    value: testing
-  - name: spellName
-    value: ms-default-landing
+# parameters:
+#   - name: gitURL
+#     value: git@github.com
+
+
+
+
+
+####### vienen de spellbook
+spellbook:
+  name: the-recolection-of-BOBs-spells
+  revision: default
