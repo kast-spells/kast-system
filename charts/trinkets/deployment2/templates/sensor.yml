@@ -19,23 +19,15 @@ spec:
           memory: "32Mi"
           cpu: "20m"
   dependencies:
-    # - name: github-push
-    #   eventSourceName: {{ $root.Values.eventSource.name }}
-    #   eventName: githook
     - name: github-push
       eventSourceName: {{ $root.Values.eventSource.name }}
       eventName: githook
       filters:
         exprs:
-          - expr: "split(parseJSON(body).ref, '/')[2] == 'main'"
-      # filters:
-      #   exprs:
-      #     - expr: name == "pepe"
-      #       fields:
-      #         - name: name
-      #           path: body.nombre
+          - expr: split(parseJSON(body).ref, '/')[2] == 'main'
+            fields:
+              - name: body
   triggers:
-    # PUSH: Cualquier push excepto develop
     - template:
         name: trigger-on-push
         # conditions: >-
