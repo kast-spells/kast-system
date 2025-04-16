@@ -10,7 +10,7 @@ spec:
       - name: revision
         value: develop
       - name: repository
-        value: defaultLanding
+        value: landing
       - name: orgName
         value: the-yaml-life
       - name: eventType
