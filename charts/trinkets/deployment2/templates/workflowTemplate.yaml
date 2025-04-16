@@ -5,16 +5,16 @@ metadata:
   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
 spec:
   entrypoint: clone-and-list
-  # arguments:
-  #   parameters:
-      # - name: branch
-      #   value: hello world
-      # - name: repo
-      #   value: defaultLanding
-      # - name: orgName
-      #   value: the-yaml-life
-      # - name: eventType
-      #   value: push
+  arguments:
+    parameters:
+      - name: branch
+        value: hello world
+      - name: repo
+        value: defaultLanding
+      - name: orgName
+        value: the-yaml-life
+      - name: eventType
+        value: push
   templates:
     - name: clone-and-list
       volumes:
