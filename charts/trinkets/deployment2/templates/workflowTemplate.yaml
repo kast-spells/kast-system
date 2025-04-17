@@ -47,7 +47,7 @@ spec:
           command: [sh, -c] ## hay q agregar un cat al index del book y el chapter ## TODO aca hay un apk add --no-cache optimizacion
           args: ["git clone --depth 1 --branch {{  $root.Values.spellbook.revision }} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}/{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
                   apk add --no-cache yq grep &&
-                  cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | tee /repo/spellFile.yaml |yq .name &&
+                  cat $(grep -R {{`{{workflow.parameters.repository}}`}} "\*" ) | tee /repo/spellFile.yaml |yq .name &&
                   git clone --depth 1 --branch {{`{{workflow.parameters.revision}}`}} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo/spell
                 "]
         - name: container-build
@@ -59,7 +59,7 @@ spec:
                   export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
                   export spellContainername=$(cat /repo/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') && 
-                  buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry &&
+                  buildah login --username=oauth2accesstoken --password=$(cdeployment-github-wg2lvat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry &&
                   cd /repo/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}  &&
                   buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest &&
                   buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
