@@ -46,14 +46,17 @@ spec:
                   key: ghGithub
           command: [sh, -c] ## hay q agregar un cat al index del book y el chapter ## TODO aca hay un apk add --no-cache optimizacion
           args: ["git clone --depth 1 --branch {{  $root.Values.spellbook.revision }} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}/{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
-                  apk add --no-cache yq
+                  apk add --no-cache yq cat grep tee &&
                   cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | tee /repo/spellFile.yaml |yq .name &&
                   git clone --depth 1 --branch {{`{{workflow.parameters.revision}}`}} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo
                 "]
         - name: container-build
           image: noenv/buildah
           command: [sh, -c]
-          args: ["export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
+          args: ["apk add --no-cache curl &&
+                  curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/bin/yq &&
+                  chmod +x /usr/bin/yq &&         
+                  export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
                   export spellContainername=$(cat /repo/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') && 
                   buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry &&
@@ -77,7 +80,9 @@ spec:
                   name: gh-token
                   key: ghGithub
           command: [sh, -c]
-          args: ["apk add --no-cache yq &&
+          args: ["apk add --no-cache curl &&
+                  curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/bin/yq &&
+                  chmod +x /usr/bin/yq &&
                   export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
                   cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.revision}}` }}\"'
