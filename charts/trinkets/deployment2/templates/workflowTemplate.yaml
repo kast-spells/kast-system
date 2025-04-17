@@ -45,10 +45,13 @@ spec:
                   name: gh-token
                   key: ghGithub
           command: [sh, -c] ## hay q agregar un cat al index del book y el chapter ## TODO aca hay un apk add --no-cache optimizacion
-          args: ["git clone --depth 1 --branch {{  $root.Values.spellbook.revision }} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}/{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
-                  apk add --no-cache yq grep &&
-                  cat $(grep -Rl {{`{{workflow.parameters.repository}} /repo/spellbook/bookrack/*`}} ) | tee /repo/spellFile.yaml |yq .name &&
-                  git clone --depth 1 --branch $( echo \"{{`{{workflow.parameters.revision}}`}}\" | sed 's#refs/heads/##' ) https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo/spell
+          args: ["git clone --depth 1 --branch {{  $root.Values.spellbook.revision }} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}/{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook 
+                  && apk add --no-cache yq grep 
+                  && ls -l /repo/spellbook/bookrack/ 
+                  && echo $(grep -Rl {{`{{workflow.parameters.repository}} /repo/spellbook/bookrack/*`}} )  
+                  && cat $(grep -Rl {{`{{workflow.parameters.repository}} /repo/spellbook/bookrack/*`}} ) | tee /repo/spellFile.yaml |yq .name 
+                  && git clone --depth 1 --branch $( echo \"{{`{{workflow.parameters.revision}}`}}\" | sed 's#refs/heads/##' ) https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo/spell
+                  && ls -l /repo/spell
                 "]
         - name: container-build
           image: noenv/buildah
