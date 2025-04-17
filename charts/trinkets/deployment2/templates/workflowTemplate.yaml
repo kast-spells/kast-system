@@ -56,14 +56,15 @@ spec:
         - name: container-build
           image: alpine:latest
           command: [sh, -c]
-          args: ["apk add --no-cache curl buildah yq &&     
-                  export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
-                  export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
-                  export spellContainername=$(cat /repo/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') && 
-                  buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry &&
-                  cd /repo/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}  &&
-                  buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest &&
-                  buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
+          args: ["apk add --no-cache curl buildah yq
+                  && export spellName=$(cat /repo/spellFile.yaml |yq .name)
+                  && export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository)
+                  && export spellContainername=$(cat /repo/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
+                  && cat /var/run/secrets/kubernetes.io/serviceaccount/token
+                  && buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry
+                  && cd /repo/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} 
+                  && buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest
+                  && buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
           dependencies:
             - clone-repo
         - name: tests
