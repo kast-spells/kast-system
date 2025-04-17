@@ -1,10 +1,16 @@
 {{- $root := . }}
+{{- if $root.Values.workflow.enabled }}
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterWorkflowTemplate
 metadata:
   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
 spec:
+  activeDeadlineSeconds: 600 #espera 10 mins
+  ttlStrategy:
+    secondsAfterSuccess: 604800 #estos dos borran
+    secondsAfterFailure: 604800 #7 dias ## TODO testear y si borra y eso
   entrypoint: clone-and-list
+  serviceAccount: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
   arguments:
     parameters:
       - name: revision
@@ -42,15 +48,14 @@ spec:
           args: ["git clone --depth 1 --branch {{ $root.Values.spellbook.revision }} git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}:{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
                   cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | tee /repo/spellFile.yaml |yq .name
                   git clone --depth 1 --branch {{`{{workflow.parameters.revision}}`}} git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}:{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo &&
-                  
                 "]
         - name: container-build
           image: noenv/buildah
           command: [sh, -c]
-          args: ["buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry &&
-                  export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
+          args: ["export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
                   export spellContainername=$(cat /repo/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') && 
+                  buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry &&
                   cd /repo && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}  &&
                   buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest &&
                   buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
@@ -73,7 +78,7 @@ spec:
           command: [sh, -c]
           args: ["export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
-                  cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.revision}} `}}\"'
+                  cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.revision}}` }}\"'
                   git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' &&
                   git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' &&
                   git add $(grep -R {{`{{workflow.parameters.repository}}`}}) &&
@@ -84,7 +89,7 @@ spec:
             - container-build
             - tests
 
-    - name: after-deploy-validations
+    - name: after-deploy-validations ## este es otro template q no se si ejecuta paralelo o hay q trigerear o serial
       volumes:
       - name: repo-volume
         emptyDir:
@@ -101,4 +106,8 @@ spec:
         - name: check-status-or-fail
           image: busybox
           command: [sh, -c]
-          args: ["sleep 10 && ls /repo"]
+          args: ["sleep 10 && echo 'debuging' && ls /repo"]
+## agregar los acceos a la policy? como una funcion de addendum indexado?
+## el runic indexer es la funcion de addendum indexado
+
+{{- end }}
