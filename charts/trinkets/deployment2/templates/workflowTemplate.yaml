@@ -43,7 +43,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: gh-token
-                  key: gh_token
+                  key: gh-token
           command: [sh, -c] ## hay q agregar un cat al index del book y el chapter
           args: ["git clone --depth 1 --branch {{ $root.Values.spellbook.revision }} git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}:{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
                   cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | tee /repo/spellFile.yaml |yq .name
@@ -74,7 +74,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: gh-token
-                  key: gh_token
+                  key: gh-token
           command: [sh, -c]
           args: ["export spellName=$(cat /repo/spellFile.yaml |yq .name) &&
                   export spellRegistry=$(cat /repo/spellFile.yaml |yq .image.repository) &&
