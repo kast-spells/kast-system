@@ -48,7 +48,7 @@ spec:
           args: ["git clone --depth 1 --branch {{  $root.Values.spellbook.revision }} https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl}}/{{ `{{workflow.parameters.orgName}}`}}/{{ $root.Values.spellbook.repository }}.git /repo/spellbook && 
                   apk add --no-cache yq grep &&
                   cat $(grep -R {{`{{workflow.parameters.repository}} *`}} ) | tee /repo/spellFile.yaml |yq .name &&
-                  git clone --depth 1 --branch $(echo \"{{`{{workflow.parameters.revision}}`}}| sed 's#refs/heads/##' )\" https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo/spell
+                  git clone --depth 1 --branch $(echo \"{{`{{workflow.parameters.revision}}`}}| sed 's#refs/heads/##' ) https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /repo/spell
                 "]
         - name: container-build
           image: noenv/buildah
