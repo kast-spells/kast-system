@@ -4,7 +4,7 @@
 # confirmar q la ksa de la app pueda  pulleawer
 
 # gcp.sa-asoc
-{{- define "gsa.inline" }}
+{{- define "iamBind.inline" }}
 name: my-binding-name
 member: serviceAccount:my-sa@project.iam.gserviceaccount.com
 role: roles/my.customRole
@@ -16,7 +16,7 @@ resourceRef:
   kind: Project
 {{- end }}
 
-{{- $gsaDefinition := include "gsa.inline" . | fromYaml }}
+{{- $gsaDefinition := include "iamBind.inline" . | fromYaml }}
 {{- include "gcp.iamBind" (list $root $gsaDefinition ) }}
 
 # sa for workflow
