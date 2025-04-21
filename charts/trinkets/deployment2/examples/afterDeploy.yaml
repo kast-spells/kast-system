@@ -1,0 +1,28 @@
+name: deployment-afterDeploy
+
+parameters:
+  environment:
+  cluster: name
+  spellName:
+
+deckReadout:
+  volumes:
+  deckVolume:
+    worldDefinitions:
+      type: emptyDir
+      size: 1Gb
+      path: /worldDefinitions
+  sealedDeck: 
+    # - card: git-clone
+    #   base: git
+    #   command: |
+    #     git clone spellbook
+    #     git clone repo
+    maxErrors: 3 
+    whle true:
+      - wait 10 seconds
+      - check how many replicasSet with pods currently active
+      - if != 1:
+          echo alert green
+      - if maxErrors reached:
+          echo send alert

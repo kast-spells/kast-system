@@ -22,10 +22,6 @@ spec:
         - name: repo-volume
           emptyDir:
             sizeLimit: 1Gi
-        - name: ssh-key-volume
-          secret:
-            secretName: kast01-ssh
-            defaultMode: 0600
       containerSet:
         volumeMounts:
           - name: repo-volume

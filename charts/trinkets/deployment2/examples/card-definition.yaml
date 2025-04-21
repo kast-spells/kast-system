@@ -1,0 +1,94 @@
+name: container-build
+# containerFile: Containerfile
+#repository: es optional if y want to bootstrap or simple run more complex code
+image:
+  tag: alpine:latest #hace q se ejecute en modificacion de los configfiles 
+contents: #esto va a emular el repositorio de git for simple stuff (agregarlo al summon)
+  standardCards: #si no contiene un type es un directorio
+    build:
+      containerFile: #name
+        type: containerFile #for extensions o tests
+        content: |
+          FROM alpine:latest
+          RUN apk add --no-cache curl buildah yq
+          # RUN export spellName=$(cat /repo/spellFile.yaml |yq .name)
+    git:
+      containerFile: #name
+        type: containerFile #for extensions o tests
+        content: |
+          FROM alpine:latest
+          RUN apk add --no-cache git yq grep
+          RUN git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' &&
+              git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' &&
+  build.sh:
+    type: bashScript
+    content: |
+      #!/bin/sh
+      apk add --no-cache curl buildah yq ## meter un for por aca para q esto itere los files en rules
+      ls -l /run/secrets/kubernetes.io/serviceaccount/token
+      echo $spellRegistry #from book
+      echo $spellName #from book
+      echo $spellRevision #from parameter
+      echo $spellContainername #from book
+      buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry
+      for $cardname in standardCards:
+        cd $cardname && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:$spellRevision 
+        buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest
+        buildah push $spellRegistry/$spellName:$spellRevision docker://$spellRegistry/$spellName:$spellRevision"]  
+
+      
+
+envs:
+  force: false
+
+
+## el shell es por q no hay nadie q corra nada antes y dar la opcion de hacer eso pero es como job para q sea una card tiene q ir en el content de uno similar 
+shell: #runs the script in sh /rule.sh # else command #este solo buildea los configmaps
+  command: [sh, -c] #primerp hacer un registry pull para ver si la imagen existe y fallar ok (ponerle un force)
+#y sino hacer q buildee la imagen de buildear (q este repo define y despues se compila como una imagen q no se ejecuta(o en el waitDaemonSet o reglas especiales))
+  args: ["/content/build.sh"]
+
+#toma del $root.repository y compila lo q dice en $root.containerFile como si fuera solo el step de build y push
+#como es un job el es de la infra los updates de commit no nesesariamente updatea no se modifica
+
+secret: #agregamos el secret para poder dar las credenciales de push
+  registry-creds:
+    type: secret
+    values:
+      type: env
+      name: registry
+      keys:
+        - docker-token
+        - username
+
+
+
+## esto vive en un configfile q es el checkea el workflow de arriba para ejecutarse (esto es por ya debe existir ya q define 2 cards)
+deckPile: # cuando se buildea la bookwide deckpile dropear values (standarizar across lexiconKind) para q builde trinkets y pase values
+  - name: build
+    labels:
+      rule: build
+    image:
+      reopository:
+      image:
+      tag:
+    parameters: #esto de movida no va a funcionar pero por aca es la idea
+      revision: develop #from trigger
+      repository: landing # from trigger
+      orgName: #_#.$spellbook.organization.name
+    outputs:
+      - type: oci-container-image
+  - name: git
+    labels:
+      rule: git
+    parameters: 
+      revision: develop #from trigger
+      repository: landing # from trigger
+      orgName: #_#.$spellbook.organization.name
+    outputs: #esto de movida no va a funcionar pero por aca es la idea
+      - type: git-repository
+        path: /repo
+
+    
+
+

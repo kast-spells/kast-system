@@ -13,6 +13,8 @@ sensor:
  
 configMaps: {}
 workflow:
+  static:
+    enabled: true
   name: github
   enabled: true
   containers:
@@ -51,11 +53,26 @@ eventSource:
 #   - name: gitURL
 #     value: git@github.com
 
-
+registry:
+  name: pepe
+  enabled: true
+  immutableTags: true
+  location: us-east5
+  cleanup:
+    enabled: true
+    newerThan: 7d
+    olderThan: 30d
+    id: old-images-policy
+    keepNum: 20
 
 
 
 ####### vienen de spellbook
 spellbook:
+  organization:
+    name: the-yaml-life
   name: the-recolection-of-BOBs-spells
   revision: default
+chapter:  
+  name: intro
+  

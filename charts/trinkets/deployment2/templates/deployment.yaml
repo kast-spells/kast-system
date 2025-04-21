@@ -1,0 +1,54 @@
+{{- $root := . }}
+
+# rbac (probably)
+# confirmar q la ksa de la app pueda  pulleawer
+
+# gcp.sa-asoc
+{{- define "gsa.inline" }}
+name: my-binding-name
+member: serviceAccount:my-sa@project.iam.gserviceaccount.com
+role: roles/my.customRole
+resourceRef:
+  name: my-resource-name
+  external: true
+  apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+  namespace: my-namespace
+  kind: Project
+{{- end }}
+
+{{- $gsaDefinition := include "gsa.inline" . | fromYaml }}
+{{- include "gcp.iamBind" (list $root $gsaDefinition ) }}
+
+# sa for workflow
+
+{{- define "ksa.inline" }}
+enabled: true
+{{- end }}
+{{- $ksaDefinition := include "ksa.inline" . | fromYaml  }}
+{{- include "summon.serviceAccount" (list $root $ksaDefinition ) }}
+
+# registry repo # registry cleanup
+{{- if $root.Values.registry.enabled }}
+apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1  # apiVersion
+kind: ArtifactRegistryRepository                            # kind
+metadata:                                                   # metadata
+  name: {{ $root.Values.registry.name }}                                       # metadata.name
+  labels:                                                   # metadata.labels
+    env: "dev"                                              # metadata.labels.env
+spec:                                                       # spec
+  {{- if $root.Values.registry.cleanup.enabled }}    
+  cleanupPolicies:                                          # spec.cleanupPolicies
+  - action: delete                                          # spec.cleanupPolicies[].action
+    condition:                                              # spec.cleanupPolicies[].condition
+      newerThan: {{ $root.Values.registry.cleanup.newerThan }}                                          # spec.cleanupPolicies[].condition.newerThan
+      olderThan: {{ $root.Values.registry.cleanup.olderThan }}                                         # spec.cleanupPolicies[].condition.olderThan
+    id: {{ $root.Values.registry.cleanup.id }}                                  # spec.cleanupPolicies[].id
+    mostRecentVersions:                                     # spec.cleanupPolicies[].mostRecentVersions
+      keepCount: {{ $root.Values.registry.cleanup.keepNum }}                                         # spec.cleanupPolicies[].mostRecentVersions.keepCount
+  {{- end }}
+  description: {{ $root.Values.registry.name }}              # spec.description
+  dockerConfig:                                             # spec.dockerConfig
+    immutableTags: {{ $root.Values.registry.immutableTags }}                                      # spec.dockerConfig.immutableTags
+  location: {{ $root.Values.registry.location }}                                    # spec.location
+  format: Docker                                            # spec.format
+{{- end }}
