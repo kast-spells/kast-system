@@ -63,8 +63,8 @@ registry:
   location: us-east5
   cleanup:
     enabled: true
-    newerThan: 7d
-    olderThan: 30d
+    newerThan: 604800s
+    olderThan: 2592000s
     id: old-images-policy
     keepNum: 20
 
