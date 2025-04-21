@@ -44,7 +44,6 @@ spec:
     id: {{ $root.Values.registry.cleanup.id }}
     {{- if not $root.Values.registry.cleanup.keepNum }}
     condition:
-      newerThan: {{ $root.Values.registry.cleanup.newerThan }}
       olderThan: {{ $root.Values.registry.cleanup.olderThan }}
     {{- else }}
     mostRecentVersions:
