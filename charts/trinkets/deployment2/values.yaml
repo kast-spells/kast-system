@@ -1,3 +1,5 @@
+projectID: pepelala
+clusterName: otro-cluster
 eventBus:
   enabled: true
   name: control-plane-default
@@ -54,6 +56,7 @@ eventSource:
 #     value: git@github.com
 
 registry:
+  role: roles/dns.admin
   name: pepe
   enabled: true
   immutableTags: true

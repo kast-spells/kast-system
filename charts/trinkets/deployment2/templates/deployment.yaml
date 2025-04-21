@@ -5,15 +5,14 @@
 
 # gcp.sa-asoc
 {{- define "iamBind.inline" }}
-name: my-binding-name
-member: serviceAccount:my-sa@project.iam.gserviceaccount.com
-role: roles/my.customRole
+name: {{ $root.Values.name }}-registry
+member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
 resourceRef:
-  name: my-resource-name
-  external: true
   apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
-  namespace: my-namespace
   kind: Project
+  name: {{ $root.Values.projectID }}
+role: roles/dns.admin
+
 {{- end }}
 
 {{- $gsaDefinition := include "iamBind.inline" . | fromYaml }}
@@ -32,6 +31,8 @@ enabled: true
 apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1  # apiVersion
 kind: ArtifactRegistryRepository                            # kind
 metadata:                                                   # metadata
+  annotations:
+    cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
   name: {{ $root.Values.registry.name }}                                       # metadata.name
   labels:                                                   # metadata.labels
     env: "dev"                                              # metadata.labels.env
