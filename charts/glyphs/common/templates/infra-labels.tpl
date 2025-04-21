@@ -10,5 +10,5 @@ spell: {{ default .Chart.Name .Values.name }}
 
 {{- define "common.infra.annotations" -}}
 spelbook: {{ .Values.spellbook.name }}
-cnrm.cloud.google.com/project-id: {{ $root.Values.projectID }}
+cnrm.cloud.google.com/project-id: {{ .Values.projectID }}
 {{- end -}}

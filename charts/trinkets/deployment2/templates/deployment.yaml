@@ -5,6 +5,7 @@
 
 # gcp.sa-asoc
 {{- define "iamBind.inline" }}
+{{- $root := . }}
 name: {{ $root.Values.name }}-registry
 member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
 resourceRef:
