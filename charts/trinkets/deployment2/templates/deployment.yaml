@@ -41,12 +41,15 @@ spec:
   {{- if $root.Values.registry.cleanup.enabled }}    
   cleanupPolicies:
   - action: delete
+    id: {{ $root.Values.registry.cleanup.id }}
+    {{- if not $root.Values.registry.cleanup.keepNum }}
     condition:
       newerThan: {{ $root.Values.registry.cleanup.newerThan }}
       olderThan: {{ $root.Values.registry.cleanup.olderThan }}
-    id: {{ $root.Values.registry.cleanup.id }}
+    {{- else }}
     mostRecentVersions:
       keepCount: {{ $root.Values.registry.cleanup.keepNum }}
+    {{- end }}
   {{- end }}
   description: {{ $root.Values.registry.name }}
   dockerConfig:
