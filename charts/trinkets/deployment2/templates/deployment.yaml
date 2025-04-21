@@ -37,20 +37,20 @@ metadata:
     {{- include "common.infra.labels" $root | nindent 4}}
   annotations:
     {{- include "common.infra.annotations" $root | nindent 4}}
-spec:                                                       # spec
+spec:
   {{- if $root.Values.registry.cleanup.enabled }}    
-  cleanupPolicies:                                          # spec.cleanupPolicies
-  - action: delete                                          # spec.cleanupPolicies[].action
-    condition:                                              # spec.cleanupPolicies[].condition
-      newerThan: {{ $root.Values.registry.cleanup.newerThan }}                                          # spec.cleanupPolicies[].condition.newerThan
-      olderThan: {{ $root.Values.registry.cleanup.olderThan }}                                         # spec.cleanupPolicies[].condition.olderThan
-    id: {{ $root.Values.registry.cleanup.id }}                                  # spec.cleanupPolicies[].id
-    mostRecentVersions:                                     # spec.cleanupPolicies[].mostRecentVersions
-      keepCount: {{ $root.Values.registry.cleanup.keepNum }}                                         # spec.cleanupPolicies[].mostRecentVersions.keepCount
+  cleanupPolicies:
+  - action: delete
+    condition:
+      newerThan: {{ $root.Values.registry.cleanup.newerThan }}
+      olderThan: {{ $root.Values.registry.cleanup.olderThan }}
+    id: {{ $root.Values.registry.cleanup.id }}
+    mostRecentVersions:
+      keepCount: {{ $root.Values.registry.cleanup.keepNum }}
   {{- end }}
-  description: {{ $root.Values.registry.name }}              # spec.description
-  dockerConfig:                                             # spec.dockerConfig
-    immutableTags: {{ $root.Values.registry.immutableTags }}                                      # spec.dockerConfig.immutableTags
-  location: {{ $root.Values.registry.location }}                                    # spec.location
-  format: Docker                                            # spec.format
+  description: {{ $root.Values.registry.name }}
+  dockerConfig:
+    immutableTags: {{ $root.Values.registry.immutableTags }}
+  location: {{ $root.Values.registry.location }}
+  format: Docker
 {{- end }}
