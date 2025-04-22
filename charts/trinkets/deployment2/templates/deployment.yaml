@@ -12,6 +12,7 @@ resourceRef:
   apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
   kind: Project
   name: {{ $root.Values.projectID }}
+  namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
   # apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
   # kind: ArtifactRegistryRepository
   # name: {{ $root.Values.name }}-registry
