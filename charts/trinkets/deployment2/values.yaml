@@ -60,7 +60,7 @@ registry:
   name: pepe
   enabled: true
   immutableTags: true
-  location: us-central1
+  location: us-east5
   cleanup:
     enabled: true
     newerThan: 604800s
