@@ -42,8 +42,8 @@ resourceRef:
 role: "roles/iam.workloadIdentityUser"
 {{- end }}
 
-{{- $gsaDefinition := include "iamBind-workload.inline" $root | fromYaml }}
-{{- include "gcp.iamBind" (list $root $gsaDefinition ) }}
+{{- $workloadDef := include "iamBind-workload.inline" $root | fromYaml }}
+{{- include "gcp.iamBind" (list $root $workloadDef ) }}
 # sa for workflow
 
 {{- define "ksa.inline" }}
