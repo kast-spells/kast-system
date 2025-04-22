@@ -9,11 +9,14 @@
 name: {{ $root.Values.name }}-registry
 member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
 resourceRef:
-  apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
-  kind: ArtifactRegistryRepository
-  name: {{ $root.Values.name }}-registry
+  apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+  kind: Project
+  name: {{ $root.Values.projectID }}
+  # apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+  # kind: ArtifactRegistryRepository
+  # name: {{ $root.Values.name }}-registry
 role: roles/artifactregistry.admin
-
+# role: "roles/iam.workloadIdentityUser"
 {{- end }}
 
 {{- $gsaDefinition := include "iamBind.inline" $root | fromYaml }}
