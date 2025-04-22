@@ -32,13 +32,13 @@ role: roles/artifactregistry.admin
 name: {{ $root.Values.name }}-workload
 member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
 resourceRef:
-  # apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
-  # kind: Project ## TODO este sobre todo el de el project ya estaba mas abajo
-  # name: {{ $root.Values.projectID }}
-  # namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
-  apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
-  kind: ArtifactRegistryRepository
-  name: {{ $root.Values.name }}-registry
+  apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+  kind: Project ## TODO este sobre todo el de el project ya estaba mas abajo
+  name: {{ $root.Values.projectID }}
+  namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
+  # apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+  # kind: ArtifactRegistryRepository
+  # name: {{ $root.Values.name }}-registry
 role: "roles/iam.workloadIdentityUser"
 {{- end }}
 
