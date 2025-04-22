@@ -59,14 +59,13 @@ spec:
         - name: container-build
           image: alpine:latest
           command: [sh, -c]
-          args: ["apk add --no-cache curl buildah yq
+          args: ["sleep infinite && apk add --no-cache curl buildah yq 
                   && export spellName=$(cat /spell/spellFile.yaml |yq .name)
                   && echo $(cat /spell/spellFile.yaml |yq .name)
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository)
                   && echo $(cat /spell/spellFile.yaml |yq .image.repository)
                   && export spellContainername=$(cat /spell/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
                   && ls -l /var/run/secrets/kubernetes.io/serviceaccount/token
-                  && sleep infinite
                   && buildah login --username={{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) us-east5-docker.pkg.dev
                   && echo 'loggeed'
                   && cd /spell/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} 
