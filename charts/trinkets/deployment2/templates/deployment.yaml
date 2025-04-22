@@ -29,7 +29,7 @@ role: roles/artifactregistry.admin
 # gcp.sa-asoc-workload
 {{- define "iamBind-workload.inline" }}
 {{- $root := . }}
-name: {{ $root.Values.name }}-registry
+name: {{ $root.Values.name }}-workload
 member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
 resourceRef:
   # apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
@@ -38,7 +38,7 @@ resourceRef:
   # namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
   apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
   kind: ArtifactRegistryRepository
-  name: {{ $root.Values.name }}-registry
+  name: {{ $root.Values.name }}-workload
 role: "roles/iam.workloadIdentityUser"
 {{- end }}
 
