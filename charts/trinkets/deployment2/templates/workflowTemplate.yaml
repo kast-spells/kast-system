@@ -67,6 +67,7 @@ spec:
                   && export spellContainername=$(cat /spell/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
                   && ls -l /var/run/secrets/kubernetes.io/serviceaccount/token
                   && buildah login --username=oauth2accesstoken --password=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $spellRegistry
+                  && echo 'loggeed'
                   && cd /spell/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} 
                   && buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest
                   && buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
