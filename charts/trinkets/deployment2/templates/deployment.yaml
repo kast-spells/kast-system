@@ -44,7 +44,7 @@ metadata:
 spec:
   {{- if $root.Values.registry.cleanup.enabled }}    
   cleanupPolicies:
-  - action: delete
+  - action: DELETE
     id: {{ $root.Values.registry.cleanup.id }}
     {{- if not $root.Values.registry.cleanup.keepNum }}
     condition:
