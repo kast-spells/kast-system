@@ -46,6 +46,8 @@ spec:
               metadata:
                 generateName: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-
                 namespace: {{ default $root.Release.Namespace $root.Values.workflow.namespace }}
+                  labels:
+                    argocd.argoproj.io/instance: {{ default $root.Release.Name $root.Values.overWriteInstance }}
               spec:
                 workflowTemplateRef:
                   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
