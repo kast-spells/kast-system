@@ -71,7 +71,7 @@ spec:
                   && export spellContainername=$(cat /spell/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
                   && buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASSWORD $spellRegistry
                   && echo 'loggeed'
-                  && sed -i 's/^\(driver *= *\).*/\1\"vfs\"/' /etc/containers/storage.conf
+                  && sed -i -e 's/overlay/vfs/g' /etc/containers/storage.conf
                   && cd /spell/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} 
                   && buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest
                   && buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
