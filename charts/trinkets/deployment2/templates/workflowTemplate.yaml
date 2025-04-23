@@ -79,6 +79,8 @@ spec:
                   && buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.commit}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.commit}} `}}"]
           dependencies:
             - clone-repo
+          securityContext:
+            privileged: true
           env:
             - name: REGISTRY_PASSWORD
               valueFrom:
