@@ -105,15 +105,15 @@ spec:
                   key: ghGithub
           command: [sh, -c]
           args: ["apk add --no-cache yq grep 
-                  export spellName=$(cat /spell/spellFile.yaml |yq .name) &&
-                  export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository) &&
-                  cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.commit}}` }}\"'
-                  git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' &&
-                  git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' &&
-                  git add $(grep -R {{`{{workflow.parameters.repository}}`}}) &&
-                  export spellName=$(cat /spell/spellFile.yaml |yq .name) &&
-                  git commit -m '{{ default "automagic cd " ($root.Values.workflow.git).message }} $spellName {{ $root.Values.spellbook.revision }}' &&
-                  git push "]
+                  && export spellName=$(cat /spell/spellFile.yaml |yq .name) 
+                  && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository) 
+                  && cat $(grep -R {{`{{workflow.parameters.repository}}`}}) | yq -i '.image.tag=\"{{ `{{workflow.parameters.commit}}` }}\"'
+                  && git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' 
+                  && git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' 
+                  && git add $(grep -R {{`{{workflow.parameters.repository}}`}}) 
+                  && export spellName=$(cat /spell/spellFile.yaml |yq .name) 
+                  && git commit -m '{{ default "automagic cd " ($root.Values.workflow.git).message }} $spellName {{ $root.Values.spellbook.revision }}' 
+                  && git push "]
           dependencies:
             - container-build
             - tests
