@@ -55,12 +55,14 @@ spec:
                   clusterScope: true
                 arguments:
                   parameters:
-                    - name: revision
+                    - name: branch
                       value: hello world
                     - name: repository
                       value: defaultLanding
                     - name: orgName
                       value: the-life
+                    - name: commit
+                      value: hello world
                     - name: eventType
                       value: push
       parameters:
@@ -77,10 +79,14 @@ spec:
             dependencyName: github-push
             dataKey: body.repository.owner.name
           dest: k8s.source.resource.spec.arguments.parameters.2.value
+        - src:
+            dependencyName: github-push
+            dataKey: body.head_commit.id
+          dest: k8s.source.resource.spec.arguments.parameters.3.value
       # - src:
       #     dependencyName: github-push
       #     dataKey: headers.X-GitHub-Event
-      #   dest: spec.arguments.parameters.3.value
+      #   dest: spec.arguments.parameters.4.value
 {{- end }}
 
 
