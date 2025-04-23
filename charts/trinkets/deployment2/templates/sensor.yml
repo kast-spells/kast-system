@@ -49,6 +49,7 @@ spec:
                 # labels:
                 #   argocd.argoproj.io/instance: {{ default $root.Release.Name $root.Values.overWriteInstance }}
               spec:
+                serviceAccount: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
                 workflowTemplateRef:
                   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
                   clusterScope: true
