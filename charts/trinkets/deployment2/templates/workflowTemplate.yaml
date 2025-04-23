@@ -69,11 +69,11 @@ spec:
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository)
                   && echo $(cat /spell/spellFile.yaml |yq .image.repository)
                   && export spellContainername=$(cat /spell/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
-                  && buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASSWORD $spellRegistry
+                  && buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASSWORD $REGISTRY
                   && echo 'loggeed'
-                  && cd /spell/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} 
-                  && buildah push $spellRegistry/$spellName:latest docker://$spellRegistry/$spellName:latest
-                  && buildah push $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
+                  && cd /spell/spell && buildah build -f $spellContainername -t $REGISTRY/$spellName:latest -t $REGISTRY/$spellName:{{ `{{workflow.parameters.revision}} `}} 
+                  && buildah push $REGISTRY/$spellName:latest docker://$REGISTRY/$spellName:latest
+                  && buildah push $REGISTRY/$spellName:{{ `{{workflow.parameters.revision}} `}} docker://$REGISTRY/$spellName:{{ `{{workflow.parameters.revision}} `}}"]
           dependencies:
             - clone-repo
           env:
@@ -84,6 +84,8 @@ spec:
                   key: password
             - name: REGISTRY_USER
               value: deploy-unico
+            - name: REGISTRY
+              value: us.gcr.io
         - name: tests
           image: busybox
           command: [sh, -c]
