@@ -67,7 +67,6 @@ spec:
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository)
                   && echo $(cat /spell/spellFile.yaml |yq .image.repository)
                   && export spellContainername=$(cat /spell/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
-                  && ls -l /var/run/secrets/kubernetes.io/serviceaccount/token
                   && buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASSWORD $spellRegistry
                   && echo 'loggeed'
                   && cd /spell/spell && buildah build -f $spellContainername -t $spellRegistry/$spellName:latest -t $spellRegistry/$spellName:{{ `{{workflow.parameters.revision}} `}} 
@@ -86,7 +85,7 @@ spec:
         - name: tests
           image: busybox
           command: [sh, -c]
-          args: ["sleep 10 && ls /repo"]
+          args: ["sleep 10 && ls /spell"]
           dependencies:
             - clone-repo
         - name: book-signing
@@ -126,12 +125,12 @@ spec:
       containerSet:
         volumeMounts:
           - name: spell
-            mountPath: /repo
+            mountPath: /spell
         containers:
         - name: check-status-or-fail
           image: busybox
           command: [sh, -c]
-          args: ["sleep 10 && echo 'debuging' && ls /repo"]
+          args: ["sleep 10 && echo 'debuging' && ls /spell"]
 ## agregar los acceos a la policy? como una funcion de addendum indexado?
 ## el runic indexer es la funcion de addendum indexado
 
