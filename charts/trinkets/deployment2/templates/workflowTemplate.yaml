@@ -65,7 +65,7 @@ spec:
           # command: [sh, -c]
           # args: ["sleep infinite"]
           command: [sh, -c]
-          args: ["apk add --no-cache curl buildah yq 
+          args: ["apk add --no-cache curl buildah yq netavark
                   && export spellName=$(cat /spell/spellFile.yaml |yq .name)
                   && echo $(cat /spell/spellFile.yaml |yq .name)
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository)
