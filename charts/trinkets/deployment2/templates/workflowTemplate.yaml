@@ -51,7 +51,7 @@ spec:
                   && ls -l /spell/spellbook/bookrack/ 
                   && echo $(grep -Rl {{`{{workflow.parameters.repository}} /spell/spellbook/bookrack/*`}} )  
                   && cat $(grep -Rl {{`{{workflow.parameters.repository}} /spell/spellbook/bookrack/*`}} ) | tee /spell/spellFile.yaml |yq .name 
-                  && git clone --depth 1 --branch $( echo \"{{`{{workflow.parameters.commit}}`}}\" | sed 's#refs/heads/##' ) https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /spell/spell
+                  && git clone --depth 1 --branch $( echo \"{{`{{workflow.parameters.branch}}`}}\" | sed 's#refs/heads/##' ) https://git:$GH_TOKEN@{{ default "github.com" $root.Values.spellbook.gitUrl }}/{{`{{workflow.parameters.orgName}}`}}/{{`{{workflow.parameters.repository}}`}}.git /spell/spell
                   && ls -l /spell/spell
                 "]
           env:
