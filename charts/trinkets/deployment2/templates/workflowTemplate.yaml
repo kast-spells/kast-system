@@ -108,9 +108,9 @@ spec:
                   && export spellName=$(cat /spell/spellFile.yaml |yq .name) 
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository) 
                   && yq -i '.image.tag=\"{{ `{{workflow.parameters.commit}}` }}\"' $(grep -Rl {{`{{workflow.parameters.repository}} /spell/spellbook/bookrack/*`}} )
+                  && cd /spell/spellbook
                   && git config --local user.email '{{ default "kaster@kast.ing" ($root.Values.workflow.git).mail }}' 
                   && git config --local user.name '{{ default "kaster" ($root.Values.workflow.git).user }}' 
-                  && cd /spell/spellbook
                   && git add $(grep -Rl {{`{{workflow.parameters.repository}} /spell/spellbook/bookrack/*`}} ) 
                   && git commit -m '{{ default "automagic cd " ($root.Values.workflow.git).message }} $spellName {{ $root.Values.spellbook.revision }}' 
                   && git push "]
