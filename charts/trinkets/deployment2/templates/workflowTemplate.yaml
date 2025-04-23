@@ -10,7 +10,7 @@ spec:
     secondsAfterSuccess: 604800 #estos dos borran
     secondsAfterFailure: 604800 #7 dias ## TODO testear y si borra y eso
   entrypoint: clone-and-list
-  serviceAccount: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
+  serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
   arguments:
     parameters:
       - name: revision
