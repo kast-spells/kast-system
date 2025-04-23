@@ -63,7 +63,7 @@ spec:
           # command: [sh, -c]
           # args: ["sleep infinite"]
           command: [sh, -c]
-          args: ["sleep 10000 && apk add --no-cache curl buildah yq 
+          args: ["apk add --no-cache curl buildah yq 
                   && export spellName=$(cat /spell/spellFile.yaml |yq .name)
                   && echo $(cat /spell/spellFile.yaml |yq .name)
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository)
