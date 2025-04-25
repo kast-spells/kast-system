@@ -1,0 +1,73 @@
+name: glyphs-sync
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "glyphs-*"
+
+jobs:
+  sync-glyphs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Detect event type
+        id: event_type
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "is_tag=true" >> $GITHUB_OUTPUT
+            echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+            echo "COMMIT_MSG=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+          fi
+
+      - name: Clone destination repository
+        run: |
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/glyphs.git glyphs-repo
+          cd glyphs-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Copy files to destination repository (branch)
+        run: |
+          rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' glyphs/ glyphs-repo/
+          rsync -av --exclude='Chart.yaml' glyphs/ glyphs-repo/
+
+      - name: Copy files to destination repository (tag)
+        if: steps.event_type.outputs.is_tag == 'true'
+        run: |
+          CHART_VERSION=$(echo $TAG_NAME | sed 's/glyphs-//')
+          sed -i "s/^version:.*/version: ${CHART_VERSION}/" glyphs-repo/Chart.yaml
+
+      - name: Commit and push changes (branch)
+        if: steps.event_type.outputs.is_tag == 'false'
+        run: |
+          cd glyphs-repo
+          git add .
+
+          # Verifica si hay cambios antes de hacer commit
+          if git diff --cached --quiet -- . ':(exclude)Chart.yaml'; then
+            echo "No changes to commit."
+          else
+            git commit -m "$COMMIT_MSG"
+            git push origin master
+          fi
+
+      - name: Commit, tag and push changes (tag)
+        if: steps.event_type.outputs.is_tag == 'true'
+        run: |
+          cd glyphs-repo
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists. Skipping..."
+          else
+            git add .
+            git commit -m "Release - Tag: $TAG_NAME"
+            git push origin master
+            git tag "$TAG_NAME"
+            git push origin "$TAG_NAME"
+          fi
