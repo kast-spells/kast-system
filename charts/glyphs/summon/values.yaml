@@ -13,7 +13,7 @@ workload:
 image:
   repository: ""
   pullPolicy: IfNotPresent
-  name: nginx
+  name: ""
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
