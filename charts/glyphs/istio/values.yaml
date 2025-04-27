@@ -4,14 +4,14 @@
 #     selectorLabels:
 #       type: istio-gw
 #       default: book
-#     baseURL: int.fwck.com.ar
+#     baseURL: int.yaml.com.ar
 #     istioSelector:
-#       istio: fwck-int-gw
-#     name: fwck-int-gw
+#       istio: yaml-int-gw
+#     name: yaml-int-gw
 #     noPrefix: True
 #     tls:
 #       enabled: True
-#       issuerName: fwck-internal
+#       issuerName: yaml-internal
 #     ports:
 #       - name: http
 #         port: 80
