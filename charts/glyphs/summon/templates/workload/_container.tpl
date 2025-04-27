@@ -25,7 +25,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- $root := index . 0 -}}
 {{- $container := index . 1 -}}
 {{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
-{{- $imageName := default (include "common.name" $root) (default $root.Values.repository ($container.image).name) -}}
+{{- $imageName := default "nginx" (default (include "common.name" $root) ($container.image).name) -}}
 {{- $imageTag := default "latest" ($container.image).tag -}}
 {{- if eq $repository "" }}
 {{- printf "%s:%s" $imageName $imageTag -}}
