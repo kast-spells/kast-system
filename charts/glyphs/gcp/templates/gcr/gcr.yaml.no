@@ -1,0 +1,30 @@
+# apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+# kind: ArtifactRegistryRepository
+# metadata:
+#   name: pipeline-jobs/buildah
+#   labels:
+#     label-one: "value-one"
+# spec:
+#   cleanupPolicies:
+#   - action: delete
+#     condition:
+#       newerThan: string
+#       olderThan: string
+#     id: string
+#     mostRecentVersions:
+#       keepCount: 20
+#   description: string
+#   dockerConfig:
+#     immutableTags: true
+#   location: us-east5a
+#   format: Docker #[npm, python, kubeflow]
+#   # remoteRepositoryConfig:
+#   #   description: string
+#   #   dockerRepository:
+#   #     publicRepository: string
+#   #   mavenRepository:
+#   #     publicRepository: string
+#   #   npmRepository:
+#   #     publicRepository: string
+#   #   pythonRepository:
+#   #     publicRepository: string

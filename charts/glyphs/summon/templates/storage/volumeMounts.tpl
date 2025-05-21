@@ -4,14 +4,14 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- define "summon.common.volumeMounts" }}
 volumeMounts:
-  {{- if .Values.configMaps }}
-    {{- include "summon.common.volumeMounts.configMaps" .Values.configMaps | nindent 2 -}}
+  {{- if .configMaps }}
+    {{- include "summon.common.volumeMounts.configMaps" .configMaps | nindent 2 -}}
   {{- end }}
-  {{- if .Values.secrets }}
-    {{- include "summon.common.volumeMounts.secrets" .Values.secrets | nindent 2 -}}
+  {{- if .secrets }}
+    {{- include "summon.common.volumeMounts.secrets" .secrets | nindent 2 -}}
   {{- end }}
-  {{- if .Values.volumes }}
-    {{- include "summon.common.volumeMounts.volumes" .Values.volumes | nindent 2 -}}
+  {{- if .volumes }}
+    {{- include "summon.common.volumeMounts.volumes" .volumes | nindent 2 -}}
   {{- end }}
 {{- end -}}
 

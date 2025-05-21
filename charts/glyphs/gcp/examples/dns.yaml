@@ -2,17 +2,17 @@ glyphs:
   gcp:
     - type: dnsManagedZone
       dnsec: on #default on options off import
-      name: int-cp-ligocloud-tech #defau para url cambia - por .
+      name: int.the.yaml.life #defau para url cambia - por .
       visbility: public #default public option internal
       description: a nice long string
     - type: dnsRecordSet
       url: www.epe.com
-      name: pepe-com
+      name: the-yaml-life
       dnsType: cname # default A 
       ttl: 8321 # defaults 30 segs
-      managedZone: pepe.com
+      managedZone: the.yaml.life
       records:
-        - pepe.com
+        - the.yaml.life
       #or
       compueAddresses:
         - name: la-ip

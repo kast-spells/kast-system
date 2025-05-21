@@ -1,0 +1,81 @@
+projectID: pepelala
+clusterName: otro-cluster
+eventBus:
+  enabled: true
+  name: control-plane-default
+  replicas: 1
+rbac:
+  enabled: true
+seviceAccount:
+  name: github
+name: github
+sensor:
+  enabled: true
+  branch: main
+ 
+configMaps: {}
+workflow:
+  static:
+    enabled: true
+  name: github
+  enabled: true
+  containers:
+    cursed:
+      dependancies: #they can have dependancies to set complex of the cantrip sentence
+        - canHaveAVerb
+      image:
+        name: busybox #or have full custom container configuration
+      command: [sh, -c]
+      args: ["sleep 10 && ls /repo"]
+      probes: {}
+      resources:
+        limits:
+          cpu: "10m"
+          memory: "20M"
+        requests:
+          cpu: "10m"
+          memory: "10M"
+      volumes:
+        config:
+          type: hostPath
+          destinationPath: /config
+          path: /mnt/storage/cargo-hold/retriever/transmission-config
+      secrets:
+        kast01-ssh:
+          type: file
+          mountPath: /key.pem
+          defaultMode: 0600
+eventSource:
+  enabled: true
+  name: github
+  endpoint: ""
+  url: cosa.the.yaml.com
+
+# parameters:
+#   - name: gitURL
+#     value: git@github.com
+
+registry:
+  role: roles/dns.admin
+  name: pepe
+  enabled: true
+  immutableTags: true
+  location: us-east5
+  cleanup:
+    enabled: true
+    newerThan: 604800s
+    olderThan: 2592000s
+    id: old-images-policy
+    keepNum: 20
+
+
+
+####### vienen de spellbook
+spellbook:
+  organization:
+    name: the-yaml-life
+  name: the-recolection-of-BOBs-spells
+  revision: default
+chapter:  
+  name: intro
+  

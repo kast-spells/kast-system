@@ -5,6 +5,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- define "gcp.iamBind" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
+---
 apiVersion: iam.cnrm.cloud.google.com/v1beta1
 kind: IAMPolicyMember
 metadata:
@@ -17,17 +18,17 @@ spec:
   member: {{ $glyphDefinition.member }}
   role: {{ $glyphDefinition.role }}
   resourceRef:
-    name: {{ $glyphDefinition.resourceRef }}
-    {{- if $glyphDefinition.resourceRefExternal }}
-    external: {{ $glyphDefinition.resourceRefExternal }}
+    name: {{ $glyphDefinition.resourceRef.name }}
+    {{- if $glyphDefinition.resourceRef.external }}
+    external: {{ $glyphDefinition.resourceRef.external }}
     {{- end }}
-    {{- if $glyphDefinition.resourceRefApiVersion }}
-    apiVersion: {{ $glyphDefinition.resourceRefApiVersion }}
+    {{- if $glyphDefinition.resourceRef.apiVersion }}
+    apiVersion: {{ $glyphDefinition.resourceRef.apiVersion }}
     {{- end }}
-    {{- if $glyphDefinition.resourceRefNamespace }}
-    namespace: {{ $glyphDefinition.resourceRefNamespace }}
+    {{- if $glyphDefinition.resourceRef.namespace }}
+    namespace: {{ $glyphDefinition.resourceRef.namespace }}
     {{- end }}
-    {{- if $glyphDefinition.resourceRefKind }}
-    kind: {{ $glyphDefinition.resourceRefKind }}
+    {{- if $glyphDefinition.resourceRef.kind }}
+    kind: {{ $glyphDefinition.resourceRef.kind }}
     {{- end }}
 {{- end }}

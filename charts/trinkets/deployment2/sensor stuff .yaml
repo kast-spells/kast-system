@@ -1,0 +1,122 @@
+
+
+
+
+#     # PR a staging
+#     - template:
+#         name: trigger-pr-to-staging
+#         conditions: "github-pr.payload.pull_request.base.ref == 'staging'"
+#         k8s:
+#           group: argoproj.io
+#           version: v1alpha1
+#           resource: workflowtemplates
+#           operation: submit
+#           source:
+#             resource:
+#               apiVersion: argoproj.io/v1alpha1
+#               kind: WorkflowTemplate
+#               metadata:
+#                 name: deploy-workflow
+#               spec: {}
+#           parameters:
+#             - src:
+#                 dependencyName: github-pr
+#                 dataKey: body.repository.name
+#               dest: spec.arguments.parameters.0.value
+
+#     # PR a prod
+#     - template:
+#         name: trigger-pr-to-prod
+#         conditions: "github-pr.payload.pull_request.base.ref == 'prod'"
+#         k8s:
+#           group: argoproj.io
+#           version: v1alpha1
+#           resource: workflowtemplates
+#           operation: submit
+#           source:
+#             resource:
+#               apiVersion: argoproj.io/v1alpha1
+#               kind: WorkflowTemplate
+#               metadata:
+#                 name: deploy-workflow
+#               spec: {}
+#           parameters:
+#             - src:
+#                 dependencyName: github-pr
+#                 dataKey: body.repository.name
+#               dest: spec.arguments.parameters.0.value
+
+
+
+# ---
+# apiVersion: argoproj.io/v1alpha1
+# kind: Sensorwebhook-git-clone-wf
+# metadata:
+#   name: develop-push
+# spec:
+#   eventBusName: {{ $root.eventBusName }}
+#   template:
+#     serviceAccountName: {{ $root.Values.name }}-sensor
+#     container:
+#       resources:
+#         requests:
+#           memory: "16Mi"
+#           cpu: "10m"
+#         limits:
+#           memory: "32Mi"
+#           cpu: "20m"
+#   dependencies: 
+#     - name: test-dep
+#       eventSourceName: webhook-sarasa
+#       eventName: example
+#       filters:
+#         exprs:
+#           - expr: name == "pepe"
+#             fields:
+#               - name: name
+#                 path: body.nombre
+#       filters:
+#         data:
+#           body.ref:
+#             match: "refs/heads/main"
+#           body.repository.name:
+#             match: "mi-repo-especial"
+#   trigger:
+#   name: on-push-main
+#   template:
+#     name: my-workflow
+#   eventDependencyName: github-push
+
+#   triggers:
+#     - template:
+#       operation: create
+#       conditions: |
+#         github-push.body.ref == "refs/heads/main"
+        
+#       source:
+#         resource:
+#           apiVersion: argoproj.io/v1alpha1
+#           kind: Workflow
+#           metadata:
+#             generateName: {{ $root.Values.name }}-workflow
+#           spec:
+#             workflowTemplateRef:
+#               name: {{ $root.Values.name }}-template
+#             arguments:
+#               parameters:
+#               {{- range $root.Values.parameters }}
+#               - {{ . }}
+#               {{- end }}
+#       parameters:
+#         - src:
+#             dependencyName: test-dep
+#             dataKey: body.branch
+#           dest: spec.arguments.parameters.0.value
+#         - src:
+#             dependencyName: test-dep
+#             dataKey: body.repo
+#           dest: spec.arguments.parameters.3.value
+#         - src:
+#             dependencyName: test-dep
+#             dataKey: body.wf
+#           dest: spec.workflowTemplateRef.name

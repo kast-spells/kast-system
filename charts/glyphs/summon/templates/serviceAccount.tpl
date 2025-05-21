@@ -3,37 +3,39 @@ Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- define "summon.serviceAccount" }}
-{{- if .Values.serviceAccount.enabled }}
+{{- $root := index . 0 -}}
+{{- $glyphDefinition := index . 1}}
+{{- if $glyphDefinition.enabled }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ default (include "common.name" . ) .Values.serviceAccount.name }}
+  name: {{ default (include "common.name" $root ) $glyphDefinition.name }}
   labels:
-    {{- include "common.labels" . | nindent 4 }}
-  {{- with .Values.serviceAccount.labels }}
+    {{- include "common.labels" $root | nindent 4 }}
+  {{- with $glyphDefinition.labels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}    
   annotations:
-    {{- include "common.annotations" . | nindent 4 }}
-  {{- with .Values.serviceAccount.annotations }}
+    {{- include "common.annotations" $root | nindent 4 }}
+  {{- with $glyphDefinition.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- if .Values.serviceAccount.secret }}
+  {{- if $glyphDefinition.secret }}
 secrets:
-  - name: {{ .Values.serviceAccount.secret }}
+  - name: {{ $glyphDefinition.secret }}
   {{- end }}
-  {{- if .Values.serviceAccount.automountServiceAccountToken }}
+  {{- if $glyphDefinition.automountServiceAccountToken }}
 automountServiceAccountToken:
   - name: true
   {{- end }}
-  {{- if .Values.serviceAccount.imagePullSecrets }}
-    {{- if eq (kindOf .Values.serviceAccount.imagePullSecrets) "string" }}
+  {{- if $glyphDefinition.imagePullSecrets }}
+    {{- if eq (kindOf $glyphDefinition.imagePullSecrets) "string" }}
 secrets: ##TODO WTF
- - name: {{ .Values.serviceAccount.imagePullSecrets }}
+ - name: {{ $glyphDefinition.imagePullSecrets }}
     {{- else }}
   secrets:
-      {{ range .Values.serviceAccount.imagePullSecrets }}
+      {{ range $glyphDefinition.imagePullSecrets }}
  - name: {{ . }}
       {{- end }} 
     {{- end }}
