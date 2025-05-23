@@ -11,7 +11,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 kind: Certificate
 apiVersion: cert-manager.io/v1
 metadata:
-  name: {{ include "common.name" $root }}-{{ $issuer.name }}-cert
+  name: {{ defaut ( default ( include "common.name" $root ) $glyphDefinition.nameOverride ) $glyphDefinition.name }}-{{ $issuer.name }}-cert
 spec:
   commonName: {{ index $glyphDefinition.dnsNames 0 }}
   dnsNames:
@@ -19,6 +19,6 @@ spec:
   issuerRef:
     kind: ClusterIssuer
     name: {{ $issuer.name }}
-  secretName: {{ include "common.name" $root }}-{{ $glyphDefinition.name }}-cert
+  secretName: {{ defaut ( default ( include "common.name" $root ) $glyphDefinition.nameOverride ) $glyphDefinition.name }}-cert
 {{- end }}
 {{- end }}
