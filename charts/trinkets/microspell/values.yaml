@@ -23,6 +23,9 @@ image:
 envs:
   ENV: default #[DEV, STAGE]
 
+infrastructure:
+  prolicy:
+    enabled: false
 
 
 # secrets:
