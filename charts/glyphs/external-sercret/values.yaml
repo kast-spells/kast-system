@@ -1,0 +1,37 @@
+vaultURL: 'https://vault-alter.dev.soytul.com'
+vaultMountPoint: cluster-control
+vaultRole: unity
+authServiceAccount: unity
+authNameSpace: unity
+secrets: {}
+  # - name: secretName
+  #   path: kv/deta/dsa/
+  #   namespace: sarasa
+  # - name: otroSecret
+  #   path: kv/otro/secret/sarasa
+  #   namespace: cosa
+  #   template:
+  #     properties:
+  #       - familyName
+  #       - serviceName
+  #     config: |-
+  #         {
+  #                       "service": "postgres_rds",
+  #                       "group_id": "{{ fivetranSecret.json.data.data.fivetranGroupID }}",
+  #                       "config": {
+  #                           "schema_prefix": "{{ .serviceName }}_{{ .familyName | replace ( '-' , '_' ) }}_{{ .serviceName | replace ( '-' , '_' ) }}",
+  #                           "host": "{{ familySecret.json.data.data.host }}",
+  #                           "port": 5432,
+  #                           "database": "{{ familyName }}-{{ serviceName }}",
+  #                           "user": "{{ familyName }}-{{ serviceName }}-fivetran",
+  #                           "password": "{{ fivetranPassword }}",
+  #                           "tunnel_host": "{{ fivetranSecret.json.data.data.bastionDBHost }}",
+  #                           "tunnel_port": 22,
+  #                           "tunnel_user": "fivetran",
+  #                           "update_method": "WAL",
+  #                           "replication_slot": "fivetran_{{ familyName | replace ( '-' , '_' ) }}_{{ serviceName | replace ( '-' , '_' ) }}"
+  #                       }
+  #                   }
+unityPlugin:
+  name: secret-generator
+  override: ""
