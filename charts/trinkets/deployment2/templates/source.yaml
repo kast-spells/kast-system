@@ -15,6 +15,7 @@ spec:
       - name: githook
         port: 12000
         targetPort: 12000
+# Estas variables son especificas del webhook de github, deberian ser genericas
   github: #esto era un algo random??
     githook: #o era este?
       repositories:

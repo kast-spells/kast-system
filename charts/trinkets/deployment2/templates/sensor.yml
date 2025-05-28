@@ -7,7 +7,7 @@ kind: Sensor
 metadata:
   name: github-deploy-sensor
 spec:
-  eventBusName: {{ $root.Values.eventBus.name }}
+  eventBusName: {{ $root.Values.eventBus.name }} # ESTO DEBERIA SER INDEPENDIENTE?
   template:
     serviceAccountName: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
     container:
@@ -20,7 +20,7 @@ spec:
           cpu: "20m"
   dependencies:
     - name: github-push
-      eventSourceName: {{ $root.Values.eventSource.name }}
+      eventSourceName: {{ $root.Values.eventSource.name }} # Esto deberia ser independiente?
       eventName: githook
       filters:
         exprs:
@@ -50,7 +50,7 @@ spec:
                 #   argocd.argoproj.io/instance: {{ default $root.Release.Name $root.Values.overWriteInstance }}
               spec:
                 serviceAccount: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
-                workflowTemplateRef:
+                workflowTemplateRef: #Aca usa datos del workflow
                   name: {{ $root.Values.name }}-{{ $root.Values.workflow.name }}-template
                   clusterScope: true
                 arguments:
