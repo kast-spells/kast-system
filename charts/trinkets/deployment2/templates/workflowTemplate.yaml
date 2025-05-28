@@ -32,14 +32,14 @@ spec:
         - name: spell
           emptyDir:
             sizeLimit: 1Gi
-        - name: definitions
-          configMap:
-            name: {{ $root.Values.name }}-definitions
+       # - name: definitions
+       #   configMap:
+       #     name: {{ $root.Values.name }}-definitions
       containerSet:
         serviceAccount: {{ $root.Values.name }}-{{ $root.Values.seviceAccount.name }}-sensor
         volumeMounts:
-          - name: definitions
-            mountPath: /definitions/fromCMap.yaml
+          #- name: definitions
+          #  mountPath: /definitions/fromCMap.yaml
           - name: spell
             mountPath: /spell
         containers:
