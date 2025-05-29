@@ -71,6 +71,7 @@ spec:
                   && export spellRegistry=$(cat /spell/spellFile.yaml |yq .image.repository)
                   && echo $(cat /spell/spellFile.yaml |yq .image.repository)
                   && export spellContainername=$(cat /spell/spellFile.yaml | yq '.containerFile // \"Dockerfile\"') 
+                  && env
                   && buildah login --username=$REGISTRY_USER --password=$REGISTRY_PASSWORD $spellRegistry
                   && echo 'loggeed'
                   && sed -i -e 's/\"overlay\"/\"vfs\"/g' /etc/containers/storage.conf
