@@ -12,7 +12,12 @@ metadata:
   name: {{ default (include "common.name" $root ) $glyphDefinition.name }}
 spec:
   addresses:
-{{- range $address := $glyphDefinition.addresses }}
-  - {{ $address }}
+{{- range $glyphDefinition.addresses }}
+  - {{ . }}
+{{- end }}
+  autoAssign: {{ default false $glyphDefinition.autoAssign }}
+  avoidBuggyIPs: {{ default true $glyphDefinition.autoAssign }}
+{{- with $glyphDefinition.serviceAllocation }}
+{{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end }}

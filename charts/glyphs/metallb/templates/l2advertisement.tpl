@@ -12,12 +12,12 @@ metadata:
   name: {{ default (include "common.name" $root ) $glyphDefinition.name }}
 spec:
   ipAddressPools:
-{{- range $addressPool := $glyphDefinition.addressPools }}
-  - {{ $addressPool }}
+{{- range $glyphDefinition.addressPools }}
+  - {{ . }}
 {{- end }}
-{{- if $glyphDefinition.nodes }}
+{{- with $glyphDefinition.nodes }}
   nodeSelectors:
-{{- range $glyphDefinition.nodes }}
+{{- range .nodes }}
      - matchLabels:
          kubernetes.io/hostname: {{ . }}
 {{- end }}
