@@ -1,0 +1,11 @@
+lexicon:
+  - chapter: intro
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: the-yaml-life
+    secretPath: secret
+    labels:
+      default: book
