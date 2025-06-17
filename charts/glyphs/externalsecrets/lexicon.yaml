@@ -1,0 +1,11 @@
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
