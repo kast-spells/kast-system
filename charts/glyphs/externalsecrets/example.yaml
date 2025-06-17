@@ -1,0 +1,77 @@
+spellbook:
+  name: silly
+  chapters: 
+    - willy
+chapter:
+  name: willy
+glyphs:
+  externalsecrets:
+    - type: secret-store
+      mode: cluster
+      name: silly
+      provider:
+        vault: #only one for now
+          server: silly
+          path: silly
+          auth:
+            kubernetes:
+              mountpath: silly
+              role: silly
+    - type: secret-store
+      name: silly
+      provider:
+        vault: #only one for now
+          server: silly
+          path: silly
+          auth:
+            kubernetes:
+              mountpath: silly
+              role: silly
+
+    - type: external-secret
+      name: silly
+      template:
+        data: #if you want to use inline secret template
+          config: |
+            datasources:
+            - name: "{{ .silly | toString }}"
+              type: "{{ .willy }}"
+      data: # data sourcing if you want to use inline template
+        - secretKey: silly #in this remoteRef gonna use kast's secret naming
+        - secretKey: willy
+          remoteRef:
+            key: willyindeed
+          # property: will default to secretKey, can also be set up by hand
+      
+    - type: external-secret
+      name: silly-datafrom
+    - type: external-secret
+      name: silly-datafrom
+      path: /silly/willy
+
+    - type: external-secret
+      name: silly-datafrom2
+      dataFrom: 
+        - extract:
+            key: database-credentials
+            version: v1
+            property: data
+            conversionStrategy: Default
+            decodingStrategy: Auto
+          rewrite:
+          - regexp:
+              source: "exp-(.*?)-ression"
+              target: "rewriting-${1}-with-groups"
+        - find:
+            path: path-to-filter
+            name:
+              regexp: ".*foobar.*"
+            tags:
+              foo: bar
+            conversionStrategy: Unicode
+            decodingStrategy: Base64
+          rewrite:
+          - regexp:
+              source: "foo"
+              target: "bar"
+
