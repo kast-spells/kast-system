@@ -10,23 +10,15 @@ glyphs:
       mode: cluster
       name: silly
       provider:
-        vault: #only one for now
-          server: silly
-          path: silly
-          auth:
-            kubernetes:
-              mountpath: silly
-              role: silly
-    - type: secret-store
-      name: silly
-      provider:
-        vault: #only one for now
-          server: silly
-          path: silly
-          auth:
-            kubernetes:
-              mountpath: silly
-              role: silly
+        type: vault
+#      provider:
+#        vault: #only one for now
+#          server: silly
+#          path: silly
+#          auth:
+#            kubernetes:
+#              mountpath: silly
+#              role: silly
 
     - type: external-secret
       name: silly
