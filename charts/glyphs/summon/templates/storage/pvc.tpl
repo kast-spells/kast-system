@@ -9,7 +9,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ default $glyphDefinition.name (print (include "common.name" $root) "-pvc") | replace "." "-" }}
+  name: {{ default (print (include "common.name" $root) "-pvc") $glyphDefinition.name | replace "." "-" }}
   labels:
     {{- include "common.labels" $root | nindent 4 }}
     {{- with $glyphDefinition.labels }}
