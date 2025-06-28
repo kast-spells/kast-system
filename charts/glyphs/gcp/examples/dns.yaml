@@ -2,7 +2,7 @@ glyphs:
   gcp:
     - type: dnsManagedZone
       dnsec: on #default on options off import
-      name: int-cp-ligocloud-tech #defau para url cambia - por .
+      name: int-cp-yaml #defau para url cambia - por .
       visbility: public #default public option internal
       description: a nice long string
     - type: dnsRecordSet

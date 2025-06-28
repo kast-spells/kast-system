@@ -2,39 +2,31 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "summon.persistanteVolumeClaim" -}}
-  {{- range $name, $volume := .Values.volumes }}
-    {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
+{{- define "summon.pvc" }}
+{{- $root := index . 0 }}
+{{- $glyphDefinition := index . 1 }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  {{- $pvcName := "" }}
-  {{- if $volume.name }}
-    {{- $pvcName = $volume.name }}
-  {{- else }}
-    {{- $pvcName = print (include "common.name" $ ) "-" $name }}
-  {{- end }}
-  name: {{ $pvcName }}
+  name: {{ default $glyphDefinition.name (print (include "common.name" $root) "-pvc") | replace "." "-" }}
   labels:
-    {{- include "common.labels" $ | nindent 4}}
-    {{- with $volume.labels }}
+    {{- include "common.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.definition.labels }}
     {{ toYaml . | indent 4 }}
     {{- end }}
   annotations:
-    {{- include "common.annotations" $ | nindent 4}}
-    {{- with $volume.annotations }}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- with $glyphDefinition.definition.annotations }}
     {{ toYaml . | indent 4 }}
     {{- end }}
 spec:
-  {{- if $volume.storageClassName }}
-  storageClassName: {{ $volume.storageClassName }}
+  {{- with $glyphDefinition.definition.storageClassName }}
+  storageClassName: {{ . }}
   {{- end }}
-  accessModes: 
-    - {{ default "ReadWriteOnce" $volume.accessMode }}
+  accessModes:
+    - {{ default "ReadWriteOnce" $glyphDefinition.definition.accessMode }}
   resources:
     requests:
-      storage: {{ $volume.size }}
-{{- end }}
-{{- end }}
+      storage: {{ default "1Gi" $glyphDefinition.definition.size }}
 {{- end }}

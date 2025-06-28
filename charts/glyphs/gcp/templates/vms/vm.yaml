@@ -118,7 +118,7 @@ spec:
 
     # [Peer]
     # PublicKey = $SERVER_PUB_KEY
-    # Endpoint = wire.cp.ligocloud.tech:$SERVER_PORT
+    # Endpoint = wire.cp.the.yaml.life:$SERVER_PORT
     # AllowedIPs = 10.12.0.0/16
     # PersistentKeepalive = 25
     # EOF
@@ -170,7 +170,7 @@ spec:
     
     # VAULT_TOKEN="hvs.TOKEN"
     
-    # VAULT_ADDR="https://vault.int.cp.ligocloud.tech"
+    # VAULT_ADDR="https://vault.int.cp.the.yaml.life"
     # SECRET=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
     # PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9.,<>~' | head -c64)
     # SECRET_PAYLOAD=$(jq -n --arg secret "$SECRET" '{"data": {"client_secret": $secret}}')
@@ -194,9 +194,9 @@ spec:
     # cd netbird/infrastructure_files/
 
     # cat > setup.env <<EOF
-    # NETBIRD_DOMAIN="bastion.cp.ligocloud.tech"
+    # NETBIRD_DOMAIN="bastion.cp.the.yaml.life"
     # NETBIRD_LETSENCRYPT_EMAIL="devops@tarjetasperuanas.pe"
-    # NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT="https://keycloak.int.cp.ligocloud.tech/realms/ligo/.well-known/openid-configuration"
+    # NETBIRD_AUTH_OIDC_CONFIGURATION_ENDPOINT="https://keycloak.int.cp.the.yaml.life/realms/yaml-life/.well-known/openid-configuration"
     # NETBIRD_USE_AUTH0=false
     # NETBIRD_AUTH_CLIENT_ID="netbird"
     # NETBIRD_AUTH_SUPPORTED_SCOPES="openid profile email offline_access api groups"
@@ -205,10 +205,10 @@ spec:
     # NETBIRD_MGMT_IDP="keycloak"
     # NETBIRD_IDP_MGMT_CLIENT_ID="netbird-backend"
     # NETBIRD_IDP_MGMT_CLIENT_SECRET="$SECRET"
-    # NETBIRD_IDP_MGMT_EXTRA_ADMIN_ENDPOINT="https://keycloak.int.cp.ligocloud.tech/admin/realms/ligo"
+    # NETBIRD_IDP_MGMT_EXTRA_ADMIN_ENDPOINT="https://keycloak.int.cp.the.yaml.life/admin/realms/yaml-life"
     # NETBIRD_STORE_CONFIG_ENGINE=postgres
     # # AUTH_CLIENT_SECRET="$SECRET"
-    # NETBIRD_STORE_ENGINE_POSTGRES_DSN="host=netbird.int.cp.ligocloud.tech user=netbird password=$PASSWORD dbname=netbird port=5432"
+    # NETBIRD_STORE_ENGINE_POSTGRES_DSN="host=netbird.int.cp.the.yaml.life user=netbird password=$PASSWORD dbname=netbird port=5432"
     # EOF
 
     # ./configure.sh

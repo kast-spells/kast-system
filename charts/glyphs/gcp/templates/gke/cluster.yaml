@@ -28,7 +28,7 @@ spec:
     - us-east5-a
   {{- end }}
   workloadIdentityConfig:
-    workloadPool: ligo-control-plane.svc.id.goog
+    workloadPool: control-plane.svc.id.goog
   networkingMode: {{ default "routes" $glyphDefinition.description }}
   networkRef:
     name: {{ $glyphDefinition.networkRef }}
