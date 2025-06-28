@@ -12,21 +12,21 @@ metadata:
   name: {{ default $glyphDefinition.name (print (include "common.name" $root) "-pvc") | replace "." "-" }}
   labels:
     {{- include "common.labels" $root | nindent 4 }}
-    {{- with $glyphDefinition.definition.labels }}
+    {{- with $glyphDefinition.labels }}
     {{ toYaml . | indent 4 }}
     {{- end }}
   annotations:
     {{- include "common.annotations" $root | nindent 4 }}
-    {{- with $glyphDefinition.definition.annotations }}
+    {{- with $glyphDefinition.annotations }}
     {{ toYaml . | indent 4 }}
     {{- end }}
 spec:
-  {{- with $glyphDefinition.definition.storageClassName }}
+  {{- with $glyphDefinition.storageClassName }}
   storageClassName: {{ . }}
   {{- end }}
   accessModes:
-    - {{ default "ReadWriteOnce" $glyphDefinition.definition.accessMode }}
+    - {{ default "ReadWriteOnce" $glyphDefinition.accessMode }}
   resources:
     requests:
-      storage: {{ default "1Gi" $glyphDefinition.definition.size }}
+      storage: {{ default "1Gi" $glyphDefinition.size }}
 {{- end }}
