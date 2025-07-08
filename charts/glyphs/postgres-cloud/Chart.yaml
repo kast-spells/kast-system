@@ -1,7 +1,7 @@
 apiVersion: v2
-name: metallb
+name: posgres
 version: 1.0.0
-description: metallb glyphs for kast
+description: posgrescn glyphs for kast
 home: https://github.com/kast-spells
 sources:
   - https://github.com/kast-spells/kast-system
