@@ -17,13 +17,14 @@ spec:
   description: {{ default (print "Postgre cluster for" (default (include "common.name" $root ) $glyphDefinition.name)) $glyphDefinition.description }} # NOTE check
 
   # Image XXX
-  {{- with $glyphDefinition.image }} #TODO make it summon compilant #FIXME
-  imageName: {{ summon.getImage (list $root $glyphDefinition) }} 
+  {{- with $glyphDefinition.image }} 
+  imageName: {{ include "summon.getImage" (list $root $glyphDefinition) }}  
   {{- end}}
 
   # instances XXX
-  {{- with $glyphDefinition.startDelay }}
+  instances: {{ default 1 $glyphDefinition.instances }}
 
+  {{- with $glyphDefinition.startDelay }}
   # startDelay XXX
   startDelay: {{ . }} # default 3600
   {{- end}}
@@ -35,26 +36,24 @@ spec:
 
   # primaryUpdateStrategy XXX
   {{- with $glyphDefinition.primaryUpdateStrategy }}
-  primaryUpdateStrategy: {{ . }} # default unsupervised, unsupervised|supervised
+  primaryUpdateStrategy: {{ . }} 
   {{- end}}
   
   # Roles XXX
-  {{-with $glyphDefinition.roles}}
+  {{- with $glyphDefinition.roles}}
   managed:
      roles:
-       {{- toYaml . | nindent 6 }} #FIXME this is a list. its okey to put it like this?
+       {{- toYaml . | nindent 6 }} 
   {{- end}}
 
   # superuser XXX
-  {{-with $glyphDefinition.superuser}}
-  enableSuperuserAccess: enabled
-  superuserSecret: {{default (print "superuser-pg-" (default (include "common.name" $root ) $glyphDefinition.name)) .secret }} #NOTE dont know if worl
-  {{- end}}
+  enableSuperuserAccess: {{ default "enabled" ($glyphDefinition.superuser).enabled }}
+  superuserSecret: {{ default (print "superuser-pg-" (default (include "common.name" $root ) $glyphDefinition.name)) .secret }} 
 
 
   # Bootstrap XXX 
 ### example
-{{-if or $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
+{{- if or $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
   bootstrap:
     initdb: 
       database: {{ default (include "common.name" $root ) $glyphDefinition.dbName }}
@@ -71,12 +70,12 @@ spec:
 
       {{- if .type eq "cm"}}
        
-      {{-if .create eq true }}
+      {{- if .create eq true }}
 
       # XXX configmap creation
       {{- $defaultValues := dict "name" (default (print "posgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
 
-      {{- include summon.configmap ($root , $defaultValues) }} 
+      {{- include "summon.configmap" ( list $root $defaultValues ) }} 
 
       {{- end}}
 

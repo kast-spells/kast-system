@@ -11,11 +11,11 @@ glyphs:
       description: bar
       imageName: foo
       instances: 1
-      
+      image:
+        name: posgre-image
       roles:
         - silly
         - willy
-
       postInitApp:
         database: silly
         owner: silly
@@ -23,10 +23,12 @@ glyphs:
         name: config-cm #if not create
         key: config-cm #if not create
       secret: the-secret #if not created
-      
     - type: cluster
       name: sillycluster2
       description: bar
+      image:
+        name: posgre-image
+        repositoy: posgre-repo
       imageName: foo
       instances: 1
       roles:
@@ -41,9 +43,13 @@ glyphs:
           asldijasldijasldi
       superuser:
         secret: willy-super-secret
-
     - type: cluster
-      imageName: foo
+      image:
+        name: posgre-image
+        repositoy: posgre-repo
+        tag: asd
+      superuser:
+        enabled: false
       postInitApp:
         type: cm
         create: true
