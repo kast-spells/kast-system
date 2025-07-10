@@ -5,7 +5,7 @@ spellbook:
 chapter:
   name: willy
 glyphs:
-  postgre:
+  postgresql:
     - type: cluster
       name: sillycluster
       description: bar
@@ -40,7 +40,7 @@ glyphs:
         type: cm
         create: true
         content: |
-          asldijasldijasldi
+          prueba111
       superuser:
         secret: willy-super-secret
     - type: cluster
@@ -54,7 +54,7 @@ glyphs:
         type: cm
         create: true
         content: |
-          asldijasldijasldi
+          prueba222
         
 
       secret: the-secret #if not created

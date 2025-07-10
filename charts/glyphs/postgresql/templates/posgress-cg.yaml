@@ -3,7 +3,7 @@ Copyright (C) 2025 laaledesiempre@disroot.org
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
 
-{{- define "postgre.cluster" }}
+{{- define "postgresql.cluster" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 
@@ -48,7 +48,7 @@ spec:
 
   # superuser XXX
   enableSuperuserAccess: {{ default "enabled" ($glyphDefinition.superuser).enabled }}
-  superuserSecret: {{ default (print "superuser-pg-" (default (include "common.name" $root ) $glyphDefinition.name)) .secret }} 
+  superuserSecret: {{ default (print "superuser-pg-" (default (include "common.name" $root ) $glyphDefinition.name)) ($glyphDefinition.superuser).secret }} 
 
 
   # Bootstrap XXX 
@@ -65,20 +65,9 @@ spec:
         name: {{ . }}
       {{- end }}
 
-
       {{- with $glyphDefinition.postInitApp }} #leer la funcion de cofnigmap en summon
 
-      {{- if .type eq "cm"}}
-       
-      {{- if .create eq true }}
-
-      # XXX configmap creation
-      {{- $defaultValues := dict "name" (default (print "posgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
-
-      {{- include "summon.configmap" ( list $root $defaultValues ) }} 
-
-      {{- end}}
-
+      {{- if eq .type "cm" }}
 
       # XXX postInitApplicationSQLRefs
       postInitApplicationSQLRefs: 
@@ -98,10 +87,10 @@ spec:
 
   # storage XXX
   storage:
-    {{- with $glyphDefinition.storage.storageClass }} 
+    {{- with ($glyphDefinition.storage).storageClass }} 
     storageClass: {{ . }}
     {{- end}}
-    size: {{ default "1Gi" $glyphDefinition.storage.size }}
+    size: {{ default "1Gi" ($glyphDefinition.storage).size }}
 
   # resourses XXX
   {{- with $glyphDefinition.resources }} 
@@ -117,5 +106,19 @@ spec:
   {{- with $glyphDefinition.postgresql }} #TODO ver como se gestionan los defaults con herencia #prod
   {{- toYaml . | nindent 2 }}
   {{- end }}
+
+
+#configMap/secret(prod) creation
+ {{- with $glyphDefinition.postInitApp }} #leer la funcion de cofnigmap en summon
+   {{- if eq .type "cm" }}
+     {{- if eq .create true }}
+      # XXX configmap creation
+      # asdasd
+      {{- $defaultValues := dict "definition" ( dict "name" (default (print "posgres-postinit-app" (default (include "common.name" $root ) $glyphDefinition.name ) ) .name ) "content" .content)  }} #NOTE no sure if works
+      {{- include "summon.configMap" ( list $root $defaultValues ) }} 
+      {{- end}}
+    {{- end}}
+  {{- end}}
+
 
 {{- end}}
