@@ -48,7 +48,9 @@ spec:
 
   # superuser XXX
   enableSuperuserAccess: {{ default true ($glyphDefinition.superuser).enabled }}
-  superuserSecret: {{ default (print "superuser-pg-" (default (include "common.name" $root ) $glyphDefinition.name)) ($glyphDefinition.superuser).secret }} 
+  {{- with ($glyphDefinition.superuser).secret }}
+  superuserSecret: {{ . }} 
+  {{- end}}
 
 
   # Bootstrap XXX 
