@@ -1,7 +1,7 @@
 apiVersion: v2
-name: kaster
-version: 1.0.1
-description: a kaster for the glyphs system.
+name: postgresql
+version: 1.0.0
+description: posgresql glyphs for kast
 home: https://github.com/kast-spells
 sources:
   - https://github.com/kast-spells/kast-system
