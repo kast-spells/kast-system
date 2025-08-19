@@ -1,0 +1,26 @@
+name: tarot-minimal-test
+
+# Minimal example for testing basic functionality
+cards:
+  - name: simple-task
+    type: card
+    labels:
+      cardType: task
+    container:
+      image: busybox:latest
+      command: ["echo", "hello world"]
+
+tarot:
+  executionMode: container
+  reading:
+    simple-task:
+      position: foundation
+      with:
+        message: "Hello from tarot!"
+
+workflow:
+  serviceAccount: tarot-runner
+  generateName: true
+
+rbac:
+  enabled: true

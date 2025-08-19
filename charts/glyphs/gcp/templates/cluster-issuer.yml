@@ -12,7 +12,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: {{ $glyphDefinition.name }}
+  name: {{ default (include "common.name" $root) $glyphDefinition.name }}
 spec:
   acme:
     email: {{ $glyphDefinition.email }}

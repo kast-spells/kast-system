@@ -1,0 +1,42 @@
+{{- $root := . }}
+## TODO add commit to base.yaml
+
+
+
+
+
+{{- if .Values.service.enabled -}}
+{{- $glyph := $root.Values.service }}
+{{- $_ := set $glyph "name" ( include "common.name" $root ) }}
+{{- include "istio.virtualService" (list $root $glyph ) }}
+{{- if $glyph.external }}
+{{- $_ := set $glyph "selector" (dict "access" "external") }}
+{{- $_ := set $glyph "name" (print ( include "common.name" $root ) "-external") }}
+{{- include "istio.virtualService" (list $root $glyph ) }}
+{{- end -}}
+{{- end -}}
+
+
+{{- if .Values.infrastructure.prolicy.enabled -}}
+{{- $glyph := $root.Values.infrastructure.prolicy }}
+{{- include "vault.prolicy" (list $root $glyph ) }}
+{{- end }}
+
+
+
+
+
+{{- range $name, $content := .Values.secrets }}
+  {{- if not (eq $content.location "create") }}
+  {{- $glyph := $content }}
+    {{- $_ := set $glyph "name" $name }}
+
+
+
+
+    {{- include "vault.secret" (list $root $glyph ) }}
+
+
+  
+  {{- end -}}
+{{- end -}}

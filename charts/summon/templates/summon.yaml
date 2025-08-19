@@ -55,11 +55,6 @@ root: |
 {{- include "summon.service" . }}
 {{- end }}
 
-
 {{- if .Values.volumes -}}
-  {{- range $name, $volume := .Values.volumes }}
-    {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
-  {{- include "summon.pvc" (list $root .) }}
-{{- end }}
-{{- end }}
+{{- include "summon.persistentVolumeClaim" . }}
 {{- end }}

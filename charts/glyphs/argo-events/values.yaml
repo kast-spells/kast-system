@@ -1,0 +1,33 @@
+# Default values for argo-events glyph
+# This file provides default configurations for Argo Events resources
+
+# EventBus default configuration
+eventBus:
+  type: jetstream
+  jetstream:
+    version: "2.10.1"
+    replicas: 3
+    persistence:
+      storageClassName: standard
+      accessMode: ReadWriteOnce
+      volumeSize: 10Gi
+
+# EventSource default configuration  
+eventSource:
+  type: webhook
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+
+# Sensor default configuration
+sensor:
+  template:
+    container:
+      resources:
+        requests:
+          memory: "32Mi"
+          cpu: "20m"
+        limits:
+          memory: "64Mi"
+          cpu: "50m"

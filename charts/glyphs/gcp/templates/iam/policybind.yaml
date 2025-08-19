@@ -10,7 +10,7 @@ kind: IAMPolicyMember
 metadata:
   labels:
     {{- include "common.infra.labels" $root | nindent 4}}
-  name: {{ $glyphDefinition.name }}
+  name: {{ default (include "common.name" $root) $glyphDefinition.name }}
   annotations:
     {{- include "common.infra.annotations" $root | nindent 4}}
 spec:

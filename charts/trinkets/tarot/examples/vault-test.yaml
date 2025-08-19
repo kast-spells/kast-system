@@ -1,0 +1,40 @@
+# Vault Glyph Integration Test
+name: tarot-vault-test
+
+# Simple card for testing
+cards:
+  - name: vault-task
+    type: card
+    labels:
+      cardType: task
+    container:
+      image: busybox:latest
+      command: ["echo", "vault test"]
+
+# Simple secret using vault
+secrets:
+  test-secret:
+    type: vault-secret
+    path: "secret/test/data"
+    keys: ["username", "password"]
+
+# Simple tarot reading
+tarot:
+  executionMode: container
+  reading:
+    vault-task:
+      position: foundation
+      secrets:
+        test-secret:
+          type: vault-secret
+          path: "secret/test/data"
+          keys: ["username", "password"]
+
+# Minimal workflow configuration
+workflow:
+  serviceAccount: default
+  generateName: true
+
+# Disable RBAC for testing
+rbac:
+  enabled: false

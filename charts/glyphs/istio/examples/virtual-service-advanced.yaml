@@ -1,0 +1,65 @@
+# Advanced Istio VirtualService Example  
+# Shows multiple routing rules, custom hosts, and rewrites
+
+spellbook:
+  name: my-platform
+chapter:
+  name: production
+
+lexicon:
+  istio-gw:
+    external-gateway:
+      name: external-gateway
+      gateway: istio-system/external-gateway
+      baseURL: platform.com
+      selector:
+        access: external
+    internal-gateway:
+      name: internal-gateway
+      gateway: istio-system/internal-gateway
+      baseURL: internal.platform.com
+      selector:
+        access: internal
+
+glyphs:
+  istio:
+    # API Gateway with multiple versions
+    api-v1:
+      type: virtualService
+      enabled: true
+      subdomain: api
+      host: api-v1-service.production.svc.cluster.local
+      httpRules:
+        - prefix: /v1
+          port: 8080
+          rewrite: /        # Strip /v1 prefix
+        - prefix: /health
+          port: 9090
+      selector:
+        access: external
+
+    # Internal service routing
+    internal-service:
+      type: virtualService
+      enabled: true
+      host: backend-service.production.svc.cluster.local
+      httpRules:
+        - prefix: /internal/api
+          port: 8080
+          rewrite: /api
+      selector:
+        access: internal
+
+    # Legacy application with custom routing
+    legacy-app:
+      type: virtualService
+      enabled: true
+      subdomain: legacy
+      httpRules:
+        - prefix: /old-path
+          port: 80
+          rewrite: /new-path
+        - prefix: /
+          port: 80
+      selector:
+        access: external

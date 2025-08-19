@@ -1,0 +1,54 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+https://github.com/kast-spells/summon.git/templates/summon.yaml
+ */}}
+{{- $root := . }}{{/* esto seria remplazable por $ pero para lectura de codigo */}} 
+
+{{- if .Values.debug }}
+root: |
+  {{ toYaml $root | nindent 2 }}
+{{- end }}
+
+{{/* glyph system for summons 
+## TODO no entendi por q no puede ser una lista aun (bug/skill issue)
+*/}} 
+
+
+{{/* ## TODO ver de migrar lo q falta a glyph compatible y si hace falta capas rompe muchas cosas*/}} 
+
+
+{{/* default app style */}} 
+{{- if .Values.workload.enabled  -}}
+{{- include ( printf "summon.workload.%s" .Values.workload.type ) . }}
+{{- end -}}
+
+{{- range $name, $content := .Values.configMaps }}
+  {{- if eq $content.location "create" }}
+  {{- $glyph := dict "name" $name "definition" $content  }}
+    {{- include "summon.configMap" (list $root $glyph )  }}
+  {{- end -}}
+{{- end -}}
+
+{{- range $name, $content := .Values.secrets }}
+  {{- if eq $content.location "create" }}
+  {{- $glyph := dict "name" $name "definition" $content  }}
+    {{- include "summon.secrets" (list $root $glyph )  }}
+  {{- end -}}
+{{- end -}}
+
+{{- if .Values.serviceAccount.enabled -}}
+{{- include "summon.serviceAccount" . }}
+{{- end -}}
+
+{{- if .Values.autoscaling.enabled -}}
+{{- include "summon.autoscaling" . }}
+{{- end -}}
+
+{{- if .Values.service.enabled }}
+{{- include "summon.service" . }}
+{{- end }}
+
+{{- if .Values.volumes -}}
+{{- include "summon.persistentVolumeClaim" . }}
+{{- end }}

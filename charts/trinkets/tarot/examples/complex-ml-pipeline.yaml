@@ -1,0 +1,349 @@
+name: tarot-complex-ml-pipeline
+
+# Complex machine learning pipeline with multi-node execution
+# Demonstrates: DAG execution, GPU scheduling, large data processing, position-based dependencies
+
+# ML-specific secrets
+secrets:
+  aws-credentials:
+    type: vault-secret
+    path: "secret/aws/ml"
+    keys: ["access_key", "secret_key"]
+  mlflow-token:
+    type: k8s-secret
+    name: mlflow-tracking
+    keys: ["token"]
+  wandb-api-key:
+    type: vault-secret
+    path: "secret/wandb"
+    keys: ["api_key"]
+
+# ML environment variables
+envs:
+  S3_BUCKET: "ml-data-lake"
+  S3_REGION: "us-west-2"
+  MLFLOW_TRACKING_URI: "https://mlflow.company.com"
+  WANDB_PROJECT: "payment-fraud-detection"
+  MODEL_REGISTRY: "ml-registry.company.com"
+
+# Cards for ML workloads (simulated)
+cards:
+  - name: data-ingestion
+    type: data
+    labels:
+      workload: data-processing
+      source: s3
+      scale: large
+      default: book
+    container:
+      image: python:3.9-ml
+      command: ["python", "ingest_data.py"]
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+    volumes:
+      - name: data-volume
+        type: persistentVolumeClaim
+        size: "500Gi"
+        mountPath: /data
+
+  - name: spark-preprocessing
+    type: data
+    labels:
+      framework: spark
+      workload: data-preprocessing
+      scale: distributed
+      default: chapter
+    container:
+      image: bitnami/spark:latest
+      command: ["spark-submit"]
+      resources:
+        requests:
+          memory: "8Gi"
+          cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
+
+tarot:
+  executionMode: dag
+  reading:
+    # Data ingestion from S3
+    data-ingestion:
+      position: foundation
+      with:
+        source_bucket: "{{envs.S3_BUCKET}}"
+        source_prefix: "raw-transactions/"
+        output_path: "/data/raw"
+      nodeSelector:
+        workload: data-heavy
+        storage: fast-ssd
+
+    # Large-scale data preprocessing using Spark
+    data-preprocessing:
+      selectors:
+        framework: spark
+        workload: data-preprocessing
+        scale: distributed
+      position: action
+      depends: [data-ingestion]
+      parallelism: 4
+      with:
+        input_path: "/data/raw"
+        output_path: "/data/processed"
+        spark_config: "--executor-memory 4g --executor-cores 2 --num-executors 8"
+      nodeSelector:
+        workload: compute-intensive
+      
+    # Feature engineering with custom container
+    feature-engineering:
+      container:
+        image: pandas/pandas:latest
+        command: ["python", "feature_engineering.py"]
+        args: 
+          - "--input"
+          - "/data/processed"
+          - "--output" 
+          - "/data/features"
+          - "--feature-set"
+          - "fraud-detection-v2"
+        resources:
+          requests:
+            memory: "16Gi"
+            cpu: "8"
+          limits:
+            memory: "32Gi"
+            cpu: "16"
+      position: action
+      depends: [data-preprocessing]
+      volumes:
+        - name: feature-store
+          type: persistentVolumeClaim
+          size: "100Gi"
+          mountPath: /data/features
+      envs:
+        FEATURE_STORE_URL: "{{envs.MODEL_REGISTRY}}/features"
+        PANDAS_BACKEND: "modin"
+      with:
+        input_path: "/data/processed"
+        output_path: "/data/features"
+        
+    # Model training on GPU nodes
+    model-training:
+      container:
+        image: tensorflow/tensorflow:latest-gpu
+        command: ["python", "train_model.py"]
+        args:
+          - "--data-path"
+          - "/data/features"
+          - "--model-output"
+          - "/models/trained"
+          - "--epochs"
+          - "{{workflow.parameters.epochs}}"
+          - "--batch-size"
+          - "1024"
+        resources:
+          requests:
+            memory: "32Gi"
+            cpu: "16"
+            nvidia.com/gpu: 2
+          limits:
+            memory: "64Gi"
+            cpu: "32"
+            nvidia.com/gpu: 2
+      position: challenge
+      depends: [feature-engineering]
+      nodeSelector:
+        accelerator: gpu
+        gpu-type: v100
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      volumes:
+        - name: model-output
+          type: persistentVolumeClaim
+          size: "50Gi"
+          mountPath: /models
+      secrets:
+        gpu-driver:
+          type: k8s-secret
+          name: nvidia-driver-credentials
+      envs:
+        CUDA_VISIBLE_DEVICES: "0,1"
+        MIXED_PRECISION: "true"
+        TENSORBOARD_LOG_DIR: "/models/logs"
+      with:
+        learning_rate: "0.001"
+        optimizer: "adam"
+        
+    # Model validation and testing
+    model-validation:
+      container:
+        image: python:3.9-ml
+        command: ["python", "validate_model.py"]
+        args:
+          - "--model-path"
+          - "/models/trained"
+          - "--test-data"
+          - "/data/test"
+          - "--metrics-output"
+          - "/models/metrics"
+          - "--threshold"
+          - "{{workflow.parameters.accuracy_threshold}}"
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+          limits:
+            memory: "16Gi"
+            cpu: "8"
+      position: challenge
+      depends: [model-training]
+      envs:
+        MLFLOW_TRACKING_URI: "{{envs.MLFLOW_TRACKING_URI}}"
+        WANDB_PROJECT: "{{envs.WANDB_PROJECT}}"
+      with:
+        validation_split: "0.2"
+        cross_validation_folds: 5
+        
+    # Model deployment to staging
+    model-deployment-staging:
+      container:
+        image: ml-deploy:latest
+        command: ["python", "deploy_model.py"]
+        args:
+          - "--model-path"
+          - "/models/trained"
+          - "--environment"
+          - "staging"
+          - "--endpoint"
+          - "fraud-detection-staging"
+          - "--replicas"
+          - "3"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+      position: outcome
+      depends: [model-validation]
+      envs:
+        KUBERNETES_NAMESPACE: "ml-staging"
+        MODEL_REGISTRY: "{{envs.MODEL_REGISTRY}}"
+      with:
+        deployment_strategy: "rolling"
+        health_check: "true"
+        
+    # Performance testing on deployed model
+    performance-testing:
+      container:
+        image: locustio/locust:latest
+        command: ["locust"]
+        args:
+          - "--host"
+          - "{{workflow.parameters.staging_endpoint}}"
+          - "--users"
+          - "100"
+          - "--spawn-rate"
+          - "10"
+          - "--run-time"
+          - "5m"
+          - "--headless"
+          - "--csv"
+          - "/results/performance"
+      position: outcome
+      depends: [model-deployment-staging]
+      volumes:
+        - name: test-results
+          type: persistentVolumeClaim
+          size: "10Gi"
+          mountPath: /results
+      with:
+        test_scenarios: "fraud-detection-load-test.py"
+        
+    # Production deployment (conditional)
+    model-deployment-prod:
+      container:
+        image: ml-deploy:latest
+        command: ["python", "deploy_model.py"]
+        args:
+          - "--model-path"
+          - "/models/trained"
+          - "--environment"
+          - "production"
+          - "--endpoint"
+          - "fraud-detection-prod"
+          - "--replicas"
+          - "10"
+          - "--strategy"
+          - "blue-green"
+      position: outcome
+      depends: [performance-testing]
+      envs:
+        KUBERNETES_NAMESPACE: "ml-production"
+        DEPLOYMENT_APPROVAL: "required"
+      with:
+        canary_percentage: "10"
+        rollback_threshold: "95"
+
+# Workflow configuration for ML pipeline
+workflow:
+  serviceAccount: ml-workflow-runner
+  generateName: true
+  arguments:
+    parameters:
+      - name: epochs
+        value: "100"
+      - name: accuracy_threshold
+        value: "0.95"
+      - name: staging_endpoint
+        value: "https://staging-ml.company.com/fraud-detection"
+  labels:
+    workload: machine-learning
+    data-classification: sensitive
+    compliance: gdpr
+  annotations:
+    cost-center: "ml-research"
+    data-retention: "2years"
+
+# Resource management for large-scale ML
+resources:
+  activeDeadlineSeconds: 14400  # 4 hours for full pipeline
+
+# Node affinity for ML workloads
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: workload
+              operator: In
+              values: ["ml", "data-science"]
+      - weight: 50
+        preference:
+          matchExpressions:
+            - key: storage
+              operator: In
+              values: ["fast-ssd", "nvme"]
+
+# GPU node tolerations
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "ml-workload"
+    operator: "Equal"
+    value: "dedicated"
+    effect: "NoSchedule"
+
+# RBAC for ML workflows
+rbac:
+  enabled: true

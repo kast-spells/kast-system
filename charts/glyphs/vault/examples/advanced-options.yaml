@@ -1,0 +1,90 @@
+# Test example for advanced vault secret options
+# This validates service accounts, refresh periods, secret types, metadata, etc.
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Test custom service account
+    - type: secret
+      name: custom-sa-secret
+      format: plain
+      serviceAccount: custom-vault-sa
+      keys:
+        - token
+      refreshPeriod: 5m0s
+
+    # Test custom secret type
+    - type: secret
+      name: tls-secret
+      format: plain
+      secretType: kubernetes.io/tls
+      keys:
+        - tls.crt
+        - tls.key
+
+    # Test with custom annotations and labels
+    - type: secret
+      name: metadata-secret
+      format: plain
+      keys:
+        - api-key
+      annotations:
+        vault.io/source: "external-secrets"
+        reloader.stakater.com/match: "true"
+      labels:
+        app: my-application
+        tier: backend
+        environment: production
+
+    # Test custom name override
+    - type: secret
+      name: name-override-secret
+      nameOverwrite: overridden-secret-name
+      format: plain
+      keys:
+        - password
+
+    # Test long refresh period
+    - type: secret
+      name: slow-refresh-secret
+      format: env
+      refreshPeriod: 1h0s
+      keys:
+        - long-lived-token
+      staticData:
+        cache-ttl: "3600"
+
+    # Test combination of all advanced options
+    - type: secret
+      name: complex-advanced-secret
+      nameOverwrite: production-db-credentials
+      format: env
+      serviceAccount: production-vault-reader
+      secretType: Opaque
+      refreshPeriod: 10m0s
+      keys:
+        - database-host
+        - database-user
+        - database-name
+      staticData:
+        database-port: "5432"
+        ssl-mode: require
+      annotations:
+        vault.io/agent-inject: "true"
+        vault.io/role: "database-reader"
+      labels:
+        app: web-application
+        component: database
+        tier: backend
+        environment: production

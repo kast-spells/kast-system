@@ -1,0 +1,14 @@
+# Name Override Example  
+# Tests name generation with overrides and global settings
+
+# Override the computed name entirely
+nameOverride: custom-app-name
+
+# Test global prefixes and suffixes
+global:
+  namePrefix: prod-
+  nameSuffix: -stable
+
+serviceAccount:
+  # Test service account name generation
+  enabled: true

@@ -1,0 +1,71 @@
+# Complex Production Example
+# Full-featured deployment with autoscaling, multiple volumes, and secrets
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+    - port: 8080  
+      protocol: TCP
+      name: admin
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+serviceAccount:
+  enabled: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/test-role
+
+# Multiple volumes
+volumes:
+  app-data:
+    type: pvc
+    size: 20Gi
+    storageClassName: fast-ssd
+    destinationPath: /app/data
+  logs:
+    type: pvc
+    size: 10Gi
+    destinationPath: /app/logs
+  config:
+    type: configMap
+    name: app-config
+    destinationPath: /app/config
+
+# Environment variables
+envs:
+  ENVIRONMENT: production
+  LOG_LEVEL: info
+  DATABASE_URL:
+    type: secret
+    name: db-credentials
+    key: url
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+image:
+  name: myapp
+  tag: v1.2.3
+  pullPolicy: Always

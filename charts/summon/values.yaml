@@ -2,7 +2,7 @@ workload:
   enabled: true
   type: deployment # [deployment, statefulset, daemonset, cronjob] #default deployment
   replicas: 1
-  # volumeClaimTemplates: #mandatory on type statefullset
+  # volumeClaimTemplates: #mandatory on type statefulset
   #   dastateCacata:
   #     destinationPath: /data
   #     storageClass: lala #optional

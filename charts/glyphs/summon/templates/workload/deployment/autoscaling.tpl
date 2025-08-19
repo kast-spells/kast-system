@@ -3,38 +3,39 @@ Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
 {{- define "summon.autoscaling" }}
+{{- $root := . }}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "common.name" . }}
+  name: {{ include "common.name" $root }}
   labels:
-  {{- include "common.labels" . | nindent 2}}
+  {{- include "common.labels" $root | nindent 2}}
 annotations:
-{{- include "common.annotations" . | nindent 2}}
+{{- include "common.annotations" $root | nindent 2}}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ template "common.name" . }}
-  minReplicas: {{ default .Values.workload.autoscaling.minReplicas .Values.workload.replicas }}
-  maxReplicas: {{ .Values.workload.autoscaling.maxReplicas }}
+    name: {{ template "common.name" $root }}
+  minReplicas: {{ default $root.Values.autoscaling.minReplicas $root.Values.workload.replicas }}
+  maxReplicas: {{ $root.Values.autoscaling.maxReplicas }}
   metrics:
-    {{- if .Values.workload.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if $root.Values.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.workload.autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ $root.Values.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if .Values.workload.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if $root.Values.autoscaling.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.workload.autoscaling.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ $root.Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
 ## TODO implementar behiviors
 {{- end -}}

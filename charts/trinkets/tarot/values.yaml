@@ -1,0 +1,128 @@
+# Tarot Trinket Default Values
+# Dynamic workflow composition system
+
+# Workflow execution mode and card reading
+tarot:
+  # Execution mode: container|dag|steps|suspend|resource|script
+  executionMode: dag
+  
+  # Cluster-wide template reference (optional)
+  # template: standard-ci-template
+  
+  # Dictionary-based card reading  
+  reading:
+    # Default empty reading to pass syntax validation
+    _syntax_test:
+      position: foundation
+      container:
+        image: busybox:latest
+        command: ["echo", "default"]
+    # Example structure:
+    # checkout:  # Card name
+    #   position: foundation
+    #   with:
+    #     repository: "{{workflow.parameters.repo}}"
+    # build:
+    #   selectors:
+    #     builder: buildah
+    #     target: container
+    #   position: action
+    #   depends: [checkout]
+    # custom-step:
+    #   container:
+    #     image: custom:latest
+    #   position: challenge
+
+  # Template parameters (for cluster-wide templates)
+  parameters: {}
+
+# Workflow configuration
+workflow:
+  # Service account for workflow execution
+  serviceAccount: tarot-runner
+  
+  # Global workflow parameters
+  arguments:
+    parameters: []
+  
+  # Workflow metadata
+  generateName: true
+  labels: {}
+  annotations: {}
+
+# Secret and environment variable inheritance
+secrets: {}
+  # Example:
+  # registry-creds:
+  #   type: vault-secret
+  #   path: "secret/registry"
+  #   keys: ["username", "password"]
+
+envs: {}
+  # Example:
+  # REGISTRY_URL: "registry.company.com"
+  # LOG_LEVEL: "info"
+
+# Cards system integration
+cards:
+  # Default card for syntax validation
+  - name: _syntax_test
+    type: card
+    labels:
+      cardType: test
+    container:
+      image: busybox:latest
+      command: ["echo", "default"]
+  # Will be populated from bookrack/_cards/ directories
+  # via card manager or direct inclusion
+
+# Book/Chapter system integration (for runic indexer and vault glyph)
+spellbook:
+  name: tarot
+
+chapter:
+  name: default
+
+# Lexicon system integration (for cluster templates)
+lexicon:
+  # Default vault server for vault glyph integration
+  - name: default-vault
+    type: vault
+    labels:
+      default: book
+    server: vault.vault.svc.cluster.local:8200
+    auth:
+      kubernetes:
+        path: kubernetes
+        role: tarot-vault-role
+  # Will be populated from bookrack/_lexicon/ directories
+
+# RBAC configuration
+rbac:
+  enabled: true
+
+# Service Account configuration (used by summon glyph)
+serviceAccount:
+  enabled: true
+  name: tarot-runner
+  labels: {}
+  annotations: {}
+  # Vault integration example:
+  # annotations:
+  #   vault.hashicorp.com/role: tarot-vault-role
+  
+# Volume management
+volumes: []
+
+# Node selection and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Resource management
+resources:
+  limits: {}
+  requests: {}
+
+# Security context
+securityContext: {}

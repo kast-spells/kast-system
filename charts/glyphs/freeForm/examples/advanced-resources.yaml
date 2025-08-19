@@ -1,0 +1,86 @@
+# Advanced FreeForm Resources Example
+# Shows complex custom resources and multiple resource types
+
+spellbook:
+  name: my-platform
+chapter:
+  name: production
+
+glyphs:
+  freeForm:
+    # Custom Service with advanced configuration
+    load-balancer-service:
+      type: manifest
+      enabled: true
+      definition:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: app-loadbalancer
+          annotations:
+            service.beta.kubernetes.io/aws-load-balancer-type: nlb
+            service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+        spec:
+          type: LoadBalancer
+          selector:
+            app: my-platform
+            tier: frontend
+          ports:
+            - name: http
+              port: 80
+              targetPort: 8080
+              protocol: TCP
+            - name: https
+              port: 443
+              targetPort: 8443
+              protocol: TCP
+
+    # Custom RBAC
+    app-rbac:
+      type: manifest
+      enabled: true
+      definition:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: app-reader
+        rules:
+          - apiGroups: [""]
+            resources: ["configmaps", "secrets"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["apps"]
+            resources: ["deployments"]
+            verbs: ["get", "list"]
+
+    # Custom NetworkPolicy
+    network-policy:
+      type: manifest
+      enabled: true
+      definition:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          name: app-network-policy
+        spec:
+          podSelector:
+            matchLabels:
+              app: my-platform
+          policyTypes:
+            - Ingress
+            - Egress
+          ingress:
+            - from:
+              - namespaceSelector:
+                  matchLabels:
+                    name: istio-system
+              ports:
+              - protocol: TCP
+                port: 8080
+          egress:
+            - to:
+              - namespaceSelector:
+                  matchLabels:
+                    name: database
+              ports:
+              - protocol: TCP
+                port: 5432

@@ -1,0 +1,48 @@
+name: kaster-argo-events-test
+
+glyphs:
+  argo-events:
+    - type: eventBus
+      name: test-eventbus
+      jetstream:
+        version: "2.10.1"
+        replicas: 3
+        persistence:
+          storageClassName: standard
+          accessMode: ReadWriteOnce
+          volumeSize: 10Gi
+
+    - type: eventSource
+      name: test-github-source
+      selector:
+        type: jetstream
+        environment: test
+      github:
+        test-repo:
+          owner: kast-spells
+          repository: test-repo
+          webhook:
+            endpoint: /github
+            port: "12000"
+          events: 
+            - push
+          auth:
+            token:
+              secretRef:
+                name: github-access
+                key: token
+
+    - type: sensor
+      name: test-sensor
+      selector:
+        type: jetstream
+        environment: test
+      dependencies:
+        - name: github-push
+          eventSourceName: test-github-source
+          eventName: test-repo
+      triggers:
+        - name: log-trigger
+          type: log
+          log:
+            intervalSeconds: 1

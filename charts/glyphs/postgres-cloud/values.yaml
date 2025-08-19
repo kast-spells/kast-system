@@ -1,0 +1,62 @@
+spellbook:
+  name: silly
+  chapters:
+    - willy
+chapter:
+  name: willy
+glyphs:
+  postgre:
+    - type: cluster
+      name: sillycluster
+      description: bar
+      imageName: foo
+      instances: 1
+      image:
+        name: posgre-image
+      roles:
+        - silly
+        - willy
+      postInitApp:
+        database: silly
+        owner: silly
+        type: cm
+        name: config-cm #if not create
+        key: config-cm #if not create
+      secret: the-secret #if not created
+    - type: cluster
+      name: sillycluster2
+      description: bar
+      image:
+        name: posgre-image
+        repositoy: posgre-repo
+      imageName: foo
+      instances: 1
+      roles:
+        - silly
+        - willy
+      postInitApp:
+        database: silly
+        owner: silly
+        type: cm
+        create: true
+        content: |
+          asldijasldijasldi
+      superuser:
+        secret: willy-super-secret
+    - type: cluster
+      image:
+        name: posgre-image
+        repositoy: posgre-repo
+        tag: asd
+      superuser:
+        enabled: false
+      postInitApp:
+        type: cm
+        create: true
+        content: |
+          asldijasldijasldi
+        
+
+      secret: the-secret #if not created
+
+

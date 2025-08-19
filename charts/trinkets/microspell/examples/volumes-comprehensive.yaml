@@ -1,0 +1,109 @@
+# Comprehensive Volumes Example for Microspell
+# Tests all volume types across different scenarios
+
+spellbook:
+  name: example-tdd-book
+chapter:
+  name: infrastructure
+
+lexicon:
+  - chapter: infrastructure
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+name: volume-test-service
+
+image:
+  name: nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Deployment workload for testing volumes
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+# Service enabled for this example
+service:
+  enabled: true
+  ports:
+    - port: 80
+      name: http
+
+# Comprehensive volume testing
+volumes:
+  # PVC volume with default settings
+  data:
+    type: pvc
+    size: 10Gi
+    destinationPath: /data
+    
+  # PVC volume with custom storage class and access mode
+  cache:
+    type: pvc
+    size: 5Gi
+    destinationPath: /cache
+    storageClassName: fast-ssd
+    accessMode: ReadWriteMany
+    name: custom-cache-pvc
+    
+  # PVC with metadata
+  logs:
+    type: pvc
+    size: 2Gi
+    destinationPath: /var/log
+    labels:
+      tier: logging
+      retention: "30days"
+    annotations:
+      backup.policy: "daily"
+      
+  # EmptyDir volume (in-memory)
+  tmp:
+    type: emptyDir
+    destinationPath: /tmp
+    inMemory: true
+    size: 1Gi
+    
+  # EmptyDir volume (disk-based)
+  scratch:
+    type: emptyDir
+    destinationPath: /scratch
+    size: 2Gi
+
+# Include vault secrets with volume example
+secrets:
+  app-config:
+    location: vault
+    path: chapter
+    private: configs
+    format: env
+    keys:
+      - database-url
+      - api-key
+
+# Environment variables
+envs:
+  APP_MODE: volume-testing
+  LOG_LEVEL: debug
+
+# Service account
+serviceAccount:
+  enabled: true
+
+# Resource limits
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi

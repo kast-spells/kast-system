@@ -1,0 +1,11 @@
+# Basic Labels Example
+# Tests common label generation functions
+
+name: test-app
+
+# Test namePrefix and nameSuffix
+namePrefix: dev-
+nameSuffix: -v1
+
+serviceAccount:
+  name: custom-service-account
