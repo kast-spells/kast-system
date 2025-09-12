@@ -33,23 +33,23 @@ spec:
         "userinfo.token.claim": "true"
         "claim.name": "resource_access.${client_id}.roles"
 {{- end }}
----
-  protocolMappers:
-    - name: groups
-      protocol: openid-connect
-      protocolMapper: "oidc-group-membership-mapper"
-      config:
-        "access.token.claim": "true"
-        "claim.name": "groups"
-        "full.path": "false"
-        "id.token.claim": "true"
-        "userinfo.token.claim": "true"
----
-  protocolMappers:
-    - name: Audience for NetBird Management API
-      protocol: openid-connect
-      protocolMapper: oidc-audience-mapper
-      config:
-        included.client.audience: netbird
-        id.token.claim: "false"
-        access.token.claim: "true"
+# ---
+#   protocolMappers:
+#     - name: groups
+#       protocol: openid-connect
+#       protocolMapper: "oidc-group-membership-mapper"
+#       config:
+#         "access.token.claim": "true"
+#         "claim.name": "groups"
+#         "full.path": "false"
+#         "id.token.claim": "true"
+#         "userinfo.token.claim": "true"
+# ---
+#   protocolMappers:
+#     - name: Audience for NetBird Management API
+#       protocol: openid-connect
+#       protocolMapper: oidc-audience-mapper
+#       config:
+#         included.client.audience: netbird
+#         id.token.claim: "false"
+#         access.token.claim: "true"
