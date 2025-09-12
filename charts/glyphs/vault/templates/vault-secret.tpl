@@ -9,7 +9,7 @@ Parameters:
 - $root: Chart root context (index . 0)
 - $glyphDefinition: Secret configuration object (index . 1)
 
-## Path Resolution Examples:
+Path Resolution Examples:
 
 path: # puede ser absoluto o relativo si es relativo es desde el public del chapter
 path: $chapterName/publics/$secretName

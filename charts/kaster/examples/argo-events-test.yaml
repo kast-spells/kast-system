@@ -15,7 +15,7 @@ glyphs:
     - type: eventSource
       name: test-github-source
       selector:
-        type: jetstream
+        # type: jetstream  # COMMENTED OUT - template not implemented yet
         environment: test
       github:
         test-repo:
@@ -35,7 +35,7 @@ glyphs:
     - type: sensor
       name: test-sensor
       selector:
-        type: jetstream
+        # type: jetstream  # COMMENTED OUT - template not implemented yet
         environment: test
       dependencies:
         - name: github-push

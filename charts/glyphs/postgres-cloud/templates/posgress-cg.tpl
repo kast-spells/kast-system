@@ -52,7 +52,7 @@ spec:
 
 
   # Bootstrap XXX 
-### example
+{{/*# example*/}}
 {{- if or $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
   bootstrap:
     initdb: 

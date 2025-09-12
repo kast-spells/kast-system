@@ -3,7 +3,7 @@
 
 # EventBus default configuration
 eventBus:
-  type: jetstream
+  type: eventBus  # Changed from jetstream to eventBus (template name)
   jetstream:
     version: "2.10.1"
     replicas: 3
@@ -14,7 +14,7 @@ eventBus:
 
 # EventSource default configuration  
 eventSource:
-  type: webhook
+  type: eventSource  # Changed from webhook to eventSource (template name)
   service:
     ports:
       - port: 12000
@@ -22,6 +22,7 @@ eventSource:
 
 # Sensor default configuration
 sensor:
+  type: sensor  # Added template type mapping
   template:
     container:
       resources:

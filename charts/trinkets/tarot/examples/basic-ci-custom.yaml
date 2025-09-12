@@ -64,15 +64,15 @@ tarot:
         branch: "{{workflow.parameters.branch}}"
         path: "/workspace"
     
-    # Uses selector-based resolution  
-    security-scan:
-      selectors:
-        type: security
-        scanner: trivy
-      position: action
-      depends: [git-clone]
-      with:
-        target: "/workspace"
+    # Uses selector-based resolution - COMMENTED OUT: runicIndexer resolution issues
+    # security-scan:
+    #   selectors:
+    #     type: security
+    #     scanner: trivy
+    #   position: action
+    #   depends: [git-clone]
+    #   with:
+    #     target: "/workspace"
     
     # Inline custom container definition
     build-push:
@@ -96,7 +96,7 @@ tarot:
             memory: "2Gi"
             cpu: "1"
       position: challenge
-      depends: [security-scan]
+      depends: [git-clone]  # Changed from [security-scan] due to commented card
       secrets:
         build-secrets:
           type: vault-secret

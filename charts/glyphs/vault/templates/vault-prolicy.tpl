@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
-## TODO el selector esta hardcoded lo q evita multiples vaults
+TODO el selector esta hardcoded lo q evita multiples vaults
  */}}
 
 {{- define "vault.prolicy" -}}
@@ -86,7 +86,7 @@ spec:
     }
     {{- end }}
     {{- end }}
-## TODO hay un posible corner case de q cuando se use como summon y se le defina un glyph extra para otra prolicy y las dos tengan prolicys custom pueden escalar permisos en el segundo prolicy
+{{/* TODO hay un posible corner case de q cuando se use como summon y se le defina un glyph extra para otra prolicy y las dos tengan prolicys custom pueden escalar permisos en el segundo prolicy*/}}
 ---
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: KubernetesAuthEngineRole #role
