@@ -9,8 +9,6 @@ Parameters:
 - Glyph usage: (list $root $glyphDefinition)
 
 Usage:
-- {{- include "argo-events.eventBus" (list $root $glyphDefinition) }}
-
 Example glyphDefinition:
   name: default
   type: jetstream
