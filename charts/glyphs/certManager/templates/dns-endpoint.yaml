@@ -6,7 +6,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 ---
-apiVersion: externaldns.k8s.io/v1beta1
+apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
