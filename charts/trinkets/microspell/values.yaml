@@ -47,7 +47,7 @@ infrastructure:
 #     type: file
 #     mountPath: /defaults.yaml
 service:
-  enabled: false  # Enable service only when needed (typically for deployments/statefulsets)
+  enabled: true
   annotations: {}
   labels: {}
   type: ClusterIP
@@ -121,7 +121,7 @@ workload:
   enabled: true
   type: deployment # [deployment, statefulset, daemonset, cronjob] #default deployment
   replicas: 1
-  # volumeClaimTemplates: #mandatory on type statefulset
+  # volumeClaimTemplates: #mandatory on type statefullset
   #   dastateCacata:
   #     destinationPath: /data
   #     storageClass: lala #optional

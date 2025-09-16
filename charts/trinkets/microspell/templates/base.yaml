@@ -45,10 +45,10 @@ root: |
 {{- include "summon.autoscaling" . }}
 {{- end -}}
 
-{{- if .Values.service.enabled }}
+{{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "deamonset")) }}
 {{- include "summon.service" . }}
 {{- end }}
 
 {{- if .Values.volumes -}}
-{{- include "summon.persistentVolumeClaim" . }}
+{{- include "summon.persistanteVolumeClaim" . }}
 {{- end }}

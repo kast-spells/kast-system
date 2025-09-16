@@ -28,7 +28,7 @@ spec:
     - us-east5-a
   {{- end }}
   workloadIdentityConfig:
-    workloadPool: control-plane.svc.id.goog
+    workloadPool: the-yaml-life.svc.id.goog
   networkingMode: {{ default "routes" $glyphDefinition.description }}
   networkRef:
     name: {{ $glyphDefinition.networkRef }}
