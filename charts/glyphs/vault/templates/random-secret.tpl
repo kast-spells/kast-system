@@ -19,5 +19,8 @@ spec:
   secretKey: {{ default "password" $glyphDefinition.randomKey }}
   secretFormat:
     passwordPolicyName: {{ default "simple-password-policy" $glyphDefinition.passPolicyName }}
+  {{- if $glyphDefinition.refreshPeriod }}
+  refreshPeriod: {{ $glyphDefinition.refreshPeriod }}
+  {{- end }}
   {{- end }}
 {{- end }}
