@@ -1,0 +1,106 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+
+{{- if .Values.rbac.enabled }}
+{{/* Use summon glyph for ServiceAccount instead of custom implementation */}}
+{{- include "summon.serviceAccount" . }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "common.name" . }}-workflow-runner
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+rules:
+  # Workflow management
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflows", "workflowtemplates"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Pod management for workflow execution
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Secret access for workflow steps
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  
+  # ConfigMap access for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  
+  # PVC management for persistent volumes
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Service management for workflow services
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Events for workflow status reporting
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "common.name" . }}-workflow-runner
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "tarot.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "common.name" . }}-workflow-runner
+  apiGroup: rbac.authorization.k8s.io
+
+{{/* ClusterRole for accessing cluster-wide templates */}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "common.name" . }}-cluster-template-reader
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+rules:
+  # Cluster workflow template access
+  - apiGroups: ["argoproj.io"]
+    resources: ["clusterworkflowtemplates"]
+    verbs: ["get", "list", "watch"]
+  
+  # Node information for scheduling
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "common.name" . }}-cluster-template-reader
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "tarot.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "common.name" . }}-cluster-template-reader
+  apiGroup: rbac.authorization.k8s.io
+
+{{- end }}

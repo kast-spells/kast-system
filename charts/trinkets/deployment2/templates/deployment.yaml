@@ -1,0 +1,105 @@
+{{- $root := . }}
+
+# gcp.sa-asoc
+# sa for workflow
+# registry repo # registry cleanup
+# definitions (configmap)
+
+
+# rbac (probably)
+# confirmar q la ksa de la app pueda  pulleawer
+
+# gcp.sa-asoc
+{{- define "iamBind.inline" }}
+{{- $root := . }}
+name: {{ $root.Values.name }}-registry
+member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
+resourceRef:
+  apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+  kind: Project ## TODO este sobre todo el de el project ya estaba mas abajo
+  name: {{ $root.Values.projectID }}
+  namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
+role: roles/artifactregistry.admin
+# role: "roles/iam.workloadIdentityUser"
+{{- end }}
+
+{{- $gsaDefinition := include "iamBind.inline" $root | fromYaml }}
+{{- include "gcp.iamBind" (list $root $gsaDefinition ) }}
+
+# gcp.sa-asoc-workload
+{{- define "iamBind-workload.inline" }}
+{{- $root := . }}
+name: {{ $root.Values.name }}-workload
+member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
+resourceRef:
+  apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+  kind: Project ## TODO este sobre todo el de el project ya estaba mas abajo
+  name: {{ $root.Values.projectID }}
+  namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
+  # apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+  # kind: ArtifactRegistryRepository
+  # name: {{ $root.Values.name }}-registry
+role: "roles/iam.workloadIdentityUser"
+{{- end }}
+
+{{- $workloadDef := include "iamBind-workload.inline" $root | fromYaml }}
+{{- include "gcp.iamBind" (list $root $workloadDef ) }}
+# sa for workflow
+
+{{- define "ksa.inline" }}
+enabled: true
+{{- end }}
+{{- $ksaDefinition := include "ksa.inline" $root | fromYaml  }}
+{{- include "summon.serviceAccount" (list $root $ksaDefinition ) }}
+
+# registry repo # registry cleanup
+{{- if $root.Values.registry.enabled }}
+apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+kind: ArtifactRegistryRepository
+metadata:
+  name: {{ $root.Values.name }}-registry
+  labels:
+    {{- include "common.infra.labels" $root | nindent 4}}
+  annotations:
+    {{- include "common.infra.annotations" $root | nindent 4}}
+spec:
+  {{- if $root.Values.registry.cleanup.enabled }}    
+  cleanupPolicies:
+  - id: {{ $root.Values.registry.cleanup.id }}
+    {{- if not $root.Values.registry.cleanup.keepNum }}
+    condition:
+      olderThan: {{ $root.Values.registry.cleanup.olderThan }}
+    {{- else }}
+    action: KEEP
+    mostRecentVersions:
+      keepCount: {{ $root.Values.registry.cleanup.keepNum }}
+    {{- end }}
+  {{- end }}
+  description: {{ $root.Values.name }}-registry #aca despues ponemos la metadata de la description del spell
+  dockerConfig:
+    immutableTags: {{ $root.Values.registry.immutableTags }}
+  location: {{ $root.Values.registry.location }}
+  format: Docker
+{{- end }}
+
+
+{{- define "configMap.inline" }}
+{{- $root := . }}
+name: {{ $root.Values.name }}-definitions
+contentType: yaml
+content:
+  member: serviceAccount:{{ $root.Values.projectID }}.svc.id.goog[{{ $root.Release.Namespace }}/{{ include "common.name" $root  }}]
+  resourceRef:
+    apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+    kind: Project ## TODO este sobre todo el de el project ya estaba mas abajo
+    name: {{ $root.Values.projectID }}
+    namespace: control-plane-gcp-iac ## TODO esto deberia de venir del lexicon vieja
+    # apiVersion: artifactregistry.cnrm.cloud.google.com/v1beta1
+    # kind: ArtifactRegistryRepository
+    # name: {{ $root.Values.name }}-registry
+  role: roles/artifactregistry.admin
+  # role: "roles/iam.workloadIdentityUser"
+{{- end }}
+
+{{- $cmDefinition := include "configMap.inline" $root | fromYaml }}
+{{- include "summon.configMap" (list $root $cmDefinition ) }}

@@ -56,5 +56,5 @@ root: |
 {{- end }}
 
 {{- if .Values.volumes -}}
-{{- include "summon.persistanteVolumeClaim" . }}
+{{- include "summon.persistentVolumeClaim" . }}
 {{- end }}

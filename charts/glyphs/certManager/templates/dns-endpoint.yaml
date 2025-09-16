@@ -1,0 +1,19 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+{{- define "certManager.dnsEndpoint" }}
+{{- $root := index . 0 -}}
+{{- $glyphDefinition := index . 1}}
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: {{ default (include "common.name" $root) $glyphDefinition.name }}
+spec:
+  endpoints:
+    - dnsName: {{ $glyphDefinition.dnsName }}
+      recordType: {{ default "A" $glyphDefinition.recordType }}
+      targets:
+        - {{ $glyphDefinition.target }}
+{{- end }}

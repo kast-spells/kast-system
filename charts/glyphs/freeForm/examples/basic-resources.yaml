@@ -1,0 +1,53 @@
+# Basic FreeForm Resources Example
+# Shows how to create custom Kubernetes resources
+
+spellbook:
+  name: my-app
+chapter:
+  name: production
+
+glyphs:
+  freeForm:
+    # Custom ConfigMap
+    app-config:
+      type: manifest
+      enabled: true
+      definition:
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: app-configuration
+          labels:
+            app: my-app
+            environment: production
+        data:
+          app.properties: |
+            database.host=postgres.production.svc.cluster.local
+            database.port=5432
+            cache.enabled=true
+            log.level=info
+          features.json: |
+            {
+              "feature_flags": {
+                "new_ui": true,
+                "beta_features": false,
+                "analytics": true
+              }
+            }
+
+    # Custom Secret
+    app-credentials:
+      type: manifest
+      enabled: true
+      definition:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: app-secrets
+          labels:
+            app: my-app
+        type: Opaque
+        data:
+          # Base64 encoded values
+          api-key: bXktc2VjcmV0LWFwaS1rZXk=
+          webhook-secret: d2ViaG9vay1zZWNyZXQtdmFsdWU=

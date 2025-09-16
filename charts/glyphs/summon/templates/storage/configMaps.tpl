@@ -1,7 +1,18 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
- */}}
+
+summon.configMap creates ConfigMap resources for configuration data.
+Follows standard glyph parameter pattern for consistency.
+
+Parameters:
+- $root: Chart root context (index . 0) 
+- $glyphDefinition: ConfigMap configuration with structure:
+  - name: ConfigMap name
+  - definition: Configuration object with content
+
+Usage: {{- include "summon.configMap" (list $root $glyph) }}
+*/}}
 {{- define "summon.configMap" }}
 {{- $root := index . 0 }}
 {{- $glyphDefinition := index . 1}}

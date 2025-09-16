@@ -24,13 +24,36 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- define "summon.getImage" -}}
 {{- $root := index . 0 -}}
 {{- $container := index . 1 -}}
-{{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
-{{- $imageName := default "nginx" (default (include "common.name" $root) ($container.image).name) -}}
-{{- $imageTag := default "latest" ($container.image).tag -}}
-{{- if eq $repository "" }}
-{{- printf "%s:%s" $imageName $imageTag -}}
-{{- else }}
-{{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+{{- if typeIs "string" $container.image -}}
+  {{/* Simple string format: "nginx:latest" - used by tarot and other systems */}}
+  {{- $container.image -}}
+{{- else if and $container.container $container.container.image -}}
+  {{/* Handle nested container.container.image structure */}}
+  {{- if typeIs "string" $container.container.image -}}
+    {{- $container.container.image -}}
+  {{- else -}}
+    {{- $repository := default "" (default ($root.Values.image).repository ($container.container.image).repository) -}}
+    {{- $imageName := default "nginx" (default (include "common.name" $root) ($container.container.image).name) -}}
+    {{- $imageTag := default "latest" ($container.container.image).tag -}}
+    {{- if eq $repository "" -}}
+      {{- printf "%s:%s" $imageName $imageTag -}}
+    {{- else -}}
+      {{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if $container.image -}}
+  {{/* Structured format: {repository: "", name: "", tag: ""} */}}
+  {{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
+  {{- $imageName := default "nginx" (default (include "common.name" $root) ($container.image).name) -}}
+  {{- $imageTag := default "latest" ($container.image).tag -}}
+  {{- if eq $repository "" -}}
+    {{- printf "%s:%s" $imageName $imageTag -}}
+  {{- else -}}
+    {{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+  {{- end -}}
+{{- else -}}
+  {{/* Fallback to default */}}
+  {{- printf "%s:latest" (include "common.name" $root) -}}
 {{- end -}}
 {{- end -}}
 

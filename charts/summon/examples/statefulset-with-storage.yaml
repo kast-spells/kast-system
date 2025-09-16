@@ -1,0 +1,58 @@
+# StatefulSet with Storage Example  
+# Shows persistent storage and StatefulSet configuration
+
+workload:
+  enabled: true
+  type: statefulset
+  replicas: 3
+  # StatefulSet-specific volumeClaimTemplates for persistent storage
+  volumeClaimTemplates:
+    data:
+      destinationPath: /var/lib/postgresql/data
+      storageClassName: fast-ssd
+      size: 50Gi
+      accessModes: ReadWriteOnce
+    backup:
+      destinationPath: /backups
+      storageClassName: backup-storage  
+      size: 100Gi
+      accessModes: ReadWriteOnce
+
+image:
+  name: postgres
+  tag: "13"
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 5432
+      protocol: TCP
+      name: postgres
+
+# Note: For StatefulSets, persistent storage is configured via workload.volumeClaimTemplates above
+# Regular volumes can still be used for non-persistent storage like configMaps, secrets, etc.
+
+# Environment variables
+envs:
+  POSTGRES_DB: myapp
+  POSTGRES_USER: appuser
+  POSTGRES_PASSWORD:
+    type: secret
+    name: postgres-credentials
+    key: password
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+serviceAccount:
+  enabled: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/postgres-backup

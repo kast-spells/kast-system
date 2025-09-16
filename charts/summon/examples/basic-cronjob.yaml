@@ -1,0 +1,30 @@
+# Basic CronJob Example  
+# Shows scheduled job execution with summon
+
+workload:
+  enabled: true
+  type: cronjob
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  restartPolicy: OnFailure
+
+image:
+  name: busybox
+  tag: latest
+  pullPolicy: IfNotPresent
+
+command:
+  - /bin/sh
+  - -c
+  - echo "Hello from scheduled job"; date; echo "Scheduled job completed"
+
+serviceAccount:
+  enabled: true
+
+# Basic resource limits
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi

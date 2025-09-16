@@ -1,0 +1,149 @@
+name: tarot-basic-ci-custom
+
+# Basic CI pipeline using custom workflow with mixed card types
+# Demonstrates: name resolution, selector resolution, and inline definitions
+
+# Application secrets (inherited by all cards)
+secrets:
+  github-token:
+    type: vault-secret
+    path: "secret/github/ci"
+    keys: ["token"]
+  registry-creds:
+    type: k8s-secret
+    name: harbor-registry-secret
+
+# Application environment variables
+envs:
+  REGISTRY_URL: "registry.company.com"
+  BUILD_CONTEXT: "/workspace"
+  
+# Cards available for resolution (simulated)
+cards:
+  - name: git-clone
+    type: source
+    labels:
+      vcs: git
+      action: clone
+      default: book
+    container:
+      image: alpine/git:latest
+      command: [sh, -c]
+      args: ["git clone $REPO_URL $CLONE_PATH"]
+    parameters:
+      repository: string
+      branch: string
+      path: string
+    volumes:
+      - name: source-code
+        type: emptyDir
+        mountPath: /workspace
+
+  - name: security-scanner
+    type: security
+    labels:
+      type: security
+      scanner: trivy
+      default: chapter
+    container:
+      image: aquasec/trivy:latest
+      command: ["trivy"]
+      args: ["fs", "--exit-code", "1", "/workspace"]
+    volumes:
+      - name: source-code
+        type: inherit
+
+tarot:
+  executionMode: dag
+  reading:
+    # Uses registered card by name (git-clone)
+    git-clone:
+      position: foundation
+      with:
+        repository: "{{workflow.parameters.repo}}"
+        branch: "{{workflow.parameters.branch}}"
+        path: "/workspace"
+    
+    # Uses selector-based resolution - COMMENTED OUT: runicIndexer resolution issues
+    # security-scan:
+    #   selectors:
+    #     type: security
+    #     scanner: trivy
+    #   position: action
+    #   depends: [git-clone]
+    #   with:
+    #     target: "/workspace"
+    
+    # Inline custom container definition
+    build-push:
+      container:
+        image: quay.io/buildah/stable:latest
+        securityContext:
+          privileged: true
+        command: ["buildah"]
+        args: 
+          - "build"
+          - "--file"
+          - "Dockerfile"
+          - "--tag"
+          - "{{envs.REGISTRY_URL}}/{{workflow.parameters.image}}:{{workflow.parameters.tag}}"
+          - "{{envs.BUILD_CONTEXT}}"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+      position: challenge
+      depends: [git-clone]  # Changed from [security-scan] due to commented card
+      secrets:
+        build-secrets:
+          type: vault-secret
+          path: "secret/build/credentials"
+          keys: ["username", "password"]
+      envs:
+        BUILDAH_FORMAT: "docker"
+        STORAGE_DRIVER: "vfs"
+      with:
+        context: "{{envs.BUILD_CONTEXT}}"
+        dockerfile: "Dockerfile"
+        
+    # Another inline definition for deployment notification
+    notify-success:
+      container:
+        image: curlimages/curl:latest
+        command: ["curl"]
+        args:
+          - "-X"
+          - "POST"
+          - "{{workflow.parameters.webhook_url}}"
+          - "-H"
+          - "Content-Type: application/json"
+          - "-d"
+          - '{"status": "success", "image": "{{workflow.parameters.image}}", "tag": "{{workflow.parameters.tag}}"}'
+      position: outcome
+      depends: [build-push]
+      with:
+        webhook_url: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+
+# Workflow configuration
+workflow:
+  serviceAccount: tarot-runner
+  generateName: true
+  arguments:
+    parameters:
+      - name: repo
+        value: "https://github.com/example/app.git"
+      - name: branch
+        value: "main"
+      - name: image
+        value: "example-app"
+      - name: tag
+        value: "latest"
+      - name: webhook_url
+        value: "https://hooks.slack.com/services/webhook"
+
+# RBAC enabled for workflow execution
+rbac:
+  enabled: true

@@ -1,0 +1,33 @@
+# Fallback Defaults Example
+# Tests runicIndexer default fallback behavior (book vs chapter defaults)
+
+# Lexicon with default configurations
+lexicon:
+  - name: book-default-gateway
+    type: istio-gw
+    labels:
+      access: public
+      default: book
+    gateway: istio-system/book-gateway
+    
+  - name: chapter-default-gateway
+    type: istio-gw
+    labels:
+      access: public
+      default: chapter
+    chapter: production
+    gateway: istio-system/chapter-gateway
+    
+  - name: specific-gateway
+    type: istio-gw
+    labels:
+      access: private
+    gateway: istio-system/private-gateway
+
+# Test fallback when no exact match found
+selectors:
+  access: unknown
+
+# Should fall back to defaults
+type: istio-gw
+chapter: production

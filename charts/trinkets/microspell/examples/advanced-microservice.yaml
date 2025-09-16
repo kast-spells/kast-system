@@ -1,0 +1,93 @@
+# Advanced Microservice Example
+# Shows comprehensive microservice deployment with all features
+
+name: payment-service
+repository: https://github.com/my-org/payment-service.git
+revision: v2.1.0
+path: helm-chart
+
+image:
+  repository: registry.example.com/payment-service
+  tag: v2.1.0
+
+# Service configuration with multiple endpoints
+service:
+  enabled: true
+  external: true
+  ports:
+    - port: 80
+      name: http
+    - port: 8080
+      name: admin
+  prefix: /api/payments
+  circuitBreaking:
+    enabled: true
+    maxRequestsPerConnection: 10
+    consecutive5xxErrors: 5
+  retry:
+    attempts: 3
+    perTryTimeout: 5s
+
+# Vault policy for secure access
+infrastructure:
+  prolicy:
+    enabled: true
+    paths:
+      - "kv/data/payment-service/*"
+    capabilities:
+      - read
+      - list
+
+# Comprehensive environment setup
+envs:
+  ENV: production
+  SERVICE_NAME: payment-service
+  LOG_LEVEL: info
+  METRICS_ENABLED: "true"
+
+# Secrets from Vault
+secrets:
+  database:
+    location: vault
+    path: chapter
+    private: privates
+  api-keys:
+    location: vault
+    path: book
+    private: secrets
+  stripe-webhook:
+    location: create
+    type: env
+    content: webhook-secret-123
+    contentType: yaml
+
+# Persistent storage
+volumes:
+  cache:
+    type: pvc
+    size: 10Gi
+    destinationPath: /app/cache
+  logs:
+    type: pvc
+    size: 5Gi
+    destinationPath: /app/logs
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Autoscaling
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70

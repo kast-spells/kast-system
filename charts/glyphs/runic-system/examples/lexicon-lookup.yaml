@@ -1,0 +1,36 @@
+# Lexicon Lookup Example
+# Tests runicIndexer functionality for finding infrastructure references
+
+# Mock lexicon data structure for testing
+lexicon:
+  - name: external-gateway
+    type: istio-gw
+    labels:
+      access: external
+      environment: staging
+      default: book
+    gateway: istio-system/external-gateway
+    
+  - name: internal-gateway  
+    type: istio-gw
+    labels:
+      access: internal
+      environment: staging
+    gateway: istio-system/internal-gateway
+    
+  - name: postgres-primary
+    type: database
+    labels:
+      engine: postgres
+      tier: production
+      default: chapter
+    connectionString: postgres.production.svc:5432
+
+# Test selector criteria
+selectors:
+  access: external
+  environment: staging
+
+# Test parameters
+type: istio-gw
+chapter: staging

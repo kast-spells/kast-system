@@ -1,0 +1,29 @@
+# Basic Job Example
+# Shows simple job execution with summon
+
+workload:
+  enabled: true
+  type: job
+  restartPolicy: OnFailure
+
+image:
+  name: busybox
+  tag: latest
+  pullPolicy: IfNotPresent
+
+command:
+  - /bin/sh
+  - -c
+  - echo "Hello from job"; sleep 5; echo "Job completed"
+
+serviceAccount:
+  enabled: true
+
+# Basic resource limits
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi

@@ -1,0 +1,52 @@
+# Test example for all vault secret path resolution variants
+# This validates the 4 different path resolution patterns in _vault.tpl
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Test path: "book" - resolves to $secretPath/data/$spellbook/publics/$name
+    - type: secret
+      name: book-level-secret
+      path: "book"
+      format: plain
+      keys:
+        - username
+        - password
+
+    # Test path: "chapter" - resolves to $secretPath/data/$spellbook/$chapter/publics/$name  
+    - type: secret
+      name: chapter-level-secret
+      path: "chapter"
+      format: plain
+      keys:
+        - api-key
+        - token
+
+    # Test absolute path - resolves to $secretPath/data/absolute/path
+    - type: secret
+      name: absolute-path-secret
+      path: "/shared/credentials"
+      format: plain
+      keys:
+        - database-url
+        - redis-url
+
+    # Test default (summon) path - resolves to $secretPath/data/$spellbook/$chapter/$namespace/publics/$name
+    - type: secret
+      name: summon-level-secret
+      # No path specified - defaults to summon pattern
+      format: plain
+      keys:
+        - service-key
+        - endpoint

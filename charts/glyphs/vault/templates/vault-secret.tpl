@@ -1,0 +1,114 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+
+vault.secret creates ExternalSecret resources for HashiCorp Vault integration.
+Follows standard glyph parameter pattern: (list $root $glyphDefinition).
+
+Parameters:
+- $root: Chart root context (index . 0)
+- $glyphDefinition: Secret configuration object (index . 1)
+
+Path Resolution Examples:
+
+path: # puede ser absoluto o relativo si es relativo es desde el public del chapter
+path: $chapterName/publics/$secretName
+path: $secretName
+path: /$book/publics/$secretName
+
+spelbook:
+  name: sarasa
+chapter:
+  name: intro
+name: summonName
+
+#cuando path es chapter el path es /$spellbook/$chapter/publics/$secretName
+#cuando path es book es /$spellbook/publics/$secretName
+#cuando path es absolute es /$path
+#cuando path es summon es /$spellbook/$chapter/$summonName/publics/$secretName
+path: chapter # or spellbook or absolute "/algo/aca" (always starts with /) or summon si path no esta definido usa el publics del micro 
+
+name: secretName
+format: env # yaml json b64
+b64: false
+path: summon
+keys:
+  - SECRET
+  - OTRO
+
+*/}}
+
+{{- define "vault.secret" -}}
+{{- $root := index . 0 -}}
+{{- $glyphDefinition := index . 1 }}
+{{- $vaultServer := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "vault" $root.Values.chapter.name ) | fromJson) "results" }}
+{{- range $vaultConf := $vaultServer }}
+{{- if ne false $glyphDefinition.random }}
+  {{- if or $glyphDefinition.randomKey $glyphDefinition.random }}
+{{ include "vault.randomSecret" (list $root $glyphDefinition ) }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: VaultSecret
+metadata:
+  name: {{ $glyphDefinition.name }}
+spec:
+  refreshPeriod: {{ default "3m0s" $glyphDefinition.refreshPeriod }}
+  vaultSecretDefinitions:
+    - name: secret
+      requestType: GET
+      path: {{ include "generateSecretPath" ( list $root $glyphDefinition $vaultConf "" ) }}
+      {{- include "vault.connect" (list $root $vaultConf  "" ( default "" $glyphDefinition.serviceAccount )) | nindent 6 }}
+  output:
+    name: {{ default $glyphDefinition.name $glyphDefinition.nameOverwrite }}
+    stringData:
+    {{- $format := default "plain" $glyphDefinition.format }}
+    {{- if eq $format "env" }} #tiene q haber una forma de hacer q esto funcione con un range del lado del operator para q no hagan falta las keys
+      {{- range $key := $glyphDefinition.keys }}
+        {{ upper $key | replace "-" "_" }}: '{{ default (printf `{{ .secret.%s }}` $key ) }}'
+      {{- end }}
+      {{-  if $glyphDefinition.staticData }}
+        {{- range $static, $data := $glyphDefinition.staticData }}
+        {{ upper $static | replace "-" "_" }}: {{ $data }}
+        {{- end }}
+      {{- end }}
+      {{-  if $glyphDefinition.randomKey }}
+        {{ upper $glyphDefinition.randomKey | replace "-" "_" }}: '{{ printf `{{ .secret.%s }}` $glyphDefinition.randomKey  }}'
+      {{- end }}
+      {{-  if $glyphDefinition.random }}
+        PASSWORD: '{{ printf `{{ .secret.password }}` }}'
+      {{- end }}
+    {{- else if eq $format "json" }}
+      {{ default $glyphDefinition.name $glyphDefinition.key }}: '{{ `{{ .secret | toJson  }}` }}'
+    {{- else if eq $format "b64" }}
+      {{ default $glyphDefinition.name $glyphDefinition.key }}: '{{ `{{ .secret.b64 }}` }}'
+    {{- else if eq $format "yaml" }}
+      {{ default $glyphDefinition.name $glyphDefinition.key }}: '{{ `{{ .secret | toYaml  }}` }}'
+    {{- else if eq $format "plain" }}
+      {{- range $key := default list $glyphDefinition.keys }}
+        {{ $key  }}: '{{ default (printf `{{ .secret.%s }}` $key ) }}'
+      {{- end }}
+      {{-  if $glyphDefinition.staticData }}
+        {{- range $static, $data := $glyphDefinition.staticData }}
+        {{ $static }}: {{ $data }}
+        {{- end }}
+      {{- end }}
+      {{-  if $glyphDefinition.randomKey }}
+        {{ $glyphDefinition.randomKey  }}: '{{ printf `{{ index .secret "%s" }}` $glyphDefinition.randomKey  }}'
+      {{- end }}
+      {{-  if and $glyphDefinition.random (not $glyphDefinition.randomKey)}}
+        password: '{{ printf `{{ .secret.password }}` }}'
+      {{- end }}
+    {{- end }}
+    type: {{ default "Opaque" $glyphDefinition.secretType }}
+    {{- with $glyphDefinition.annotations }}
+    annotations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.labels }}
+    labels:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}
+{{- end }}

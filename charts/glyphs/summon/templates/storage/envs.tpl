@@ -23,7 +23,7 @@ envFrom:
 
 {{- define "summon.common.envs.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if eq $content.type "env" }}
+    {{- if or (eq $content.type "env") (and (eq $content.location "vault") (eq $content.format "env")) }}
   - secretRef:
       name: {{ $name | replace "." "-"}}
     {{- end -}}

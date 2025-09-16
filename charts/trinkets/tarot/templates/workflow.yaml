@@ -1,0 +1,124 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+
+{{- if .Values.tarot }}
+{{- if .Values.tarot.template }}
+  {{/* Use cluster-wide template */}}
+  {{- $clusterTemplate := include "tarot.lookupClusterTemplate" (list . .Values.tarot.template) }}
+  {{- if $clusterTemplate }}
+    {{- $templateDef := $clusterTemplate | fromJson }}
+    {{- include "tarot.generateWorkflowFromTemplate" (list . $templateDef) }}
+  {{- else }}
+    {{- fail (printf "Cluster template '%s' not found in lexicon" .Values.tarot.template) }}
+  {{- end }}
+
+{{- else if .Values.tarot.reading }}
+  {{/* Generate custom workflow from reading */}}
+  {{- $resolvedCards := include "tarot.resolveAllCards" (list . .Values.tarot.reading) | fromJson }}
+  
+  {{/* Collect all secrets for secret resource generation */}}
+  {{- $allSecrets := dict }}
+  {{- range $cardName, $cardDef := .Values.tarot.reading }}
+    {{- if $cardDef.secrets }}
+      {{- $allSecrets = merge $allSecrets $cardDef.secrets }}
+    {{- end }}
+  {{- end }}
+  {{- $allSecrets = merge (.Values.secrets | default dict) $allSecrets }}
+  
+  {{/* Generate secret resources if needed */}}
+  {{- if $allSecrets }}
+    {{- include "tarot.generateSecretResources" (list . $allSecrets) }}
+  {{- end }}
+
+  {{/* Generate PVC resources for volumes with type "pvc" using summon glyph */}}
+  {{- include "tarot.generatePVCResources" (list . $resolvedCards) }}
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  {{- if .Values.workflow.generateName }}
+  generateName: {{ include "tarot.workflowName" . }}
+  {{- else }}
+  name: {{ include "tarot.workflowName" . }}
+  {{- end }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+    kast.io/workflow-type: custom
+    kast.io/execution-mode: {{ .Values.tarot.executionMode | default "dag" | quote }}
+    {{- if .Values.workflow.labels }}
+    {{- .Values.workflow.labels | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.workflow.annotations }}
+  annotations:
+    {{- .Values.workflow.annotations | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  entrypoint: main
+  
+  {{/* Service Account */}}
+  {{- if .Values.workflow.serviceAccount }}
+  serviceAccountName: {{ .Values.workflow.serviceAccount | quote }}
+  {{- end }}
+  
+  {{/* Global workflow arguments */}}
+  {{- if .Values.workflow.arguments }}
+  arguments:
+    {{- .Values.workflow.arguments | toYaml | nindent 4 }}
+  {{- end }}
+  
+  {{/* Volumes */}}
+  {{- $volumes := include "tarot.generateVolumes" (list . $resolvedCards) }}
+  {{- if $volumes }}
+  volumes:
+    {{- $volumes | nindent 4 }}
+  {{- end }}
+  
+  {{/* Node Selection */}}
+  {{- if .Values.nodeSelector }}
+  nodeSelector:
+    {{- .Values.nodeSelector | toYaml | nindent 4 }}
+  {{- end }}
+  
+  {{/* Tolerations */}}
+  {{- if .Values.tolerations }}
+  tolerations:
+    {{- .Values.tolerations | toYaml | nindent 4 }}
+  {{- end }}
+  
+  {{/* Affinity */}}
+  {{- if .Values.affinity }}
+  affinity:
+    {{- .Values.affinity | toYaml | nindent 4 }}
+  {{- end }}
+  
+  {{/* Security Context */}}
+  {{- if .Values.securityContext }}
+  securityContext:
+    {{- .Values.securityContext | toYaml | nindent 4 }}
+  {{- end }}
+  
+  {{/* Resource Management */}}
+  {{- if .Values.resources }}
+  {{- if or .Values.resources.limits .Values.resources.requests }}
+  activeDeadlineSeconds: {{ .Values.resources.activeDeadlineSeconds | default 3600 }}
+  {{- end }}
+  {{- end }}
+  
+  {{/* Templates */}}
+  templates:
+{{/* Main entrypoint template */}}
+{{- include "tarot.generateMainTemplate" (list . .Values.tarot.reading $resolvedCards) | nindent 4 }}
+
+{{/* Individual card templates (only for non-container modes) */}}
+{{- if ne (.Values.tarot.executionMode | default "dag") "container" }}
+{{- include "tarot.generateAllCardTemplates" (list . .Values.tarot.reading $resolvedCards) | nindent 4 }}
+{{- end }}
+
+{{- else }}
+  {{- fail "Tarot configuration must include either 'template' (cluster-wide) or 'reading' (custom workflow)" }}
+{{- end }}
+{{- end }}

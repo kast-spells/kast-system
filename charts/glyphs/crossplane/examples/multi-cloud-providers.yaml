@@ -1,0 +1,54 @@
+# Multi-Cloud Providers Example
+# Shows how to install multiple cloud providers
+
+spellbook:
+  name: infrastructure
+chapter:
+  name: multi-cloud
+
+lexicon:
+  crossplane-provider:
+    aws-provider:
+      name: provider-aws
+      package: crossplane/provider-aws:v0.39.0
+      selector:
+        cloud: aws
+    gcp-provider:
+      name: provider-gcp
+      package: crossplane/provider-gcp:v0.22.0
+      selector:
+        cloud: gcp
+    azure-provider:
+      name: provider-azure
+      package: crossplane/provider-azure:v0.19.0
+      selector:
+        cloud: azure
+
+glyphs:
+  crossplane:
+    # AWS Provider
+    aws:
+      type: provider
+      enabled: true
+      name: provider-aws
+      package: crossplane/provider-aws:v0.39.0
+      selector:
+        cloud: aws
+
+    # Google Cloud Provider
+    gcp:
+      type: provider
+      enabled: true
+      name: provider-gcp
+      package: crossplane/provider-gcp:v0.22.0
+      selector:
+        cloud: gcp
+
+    # Azure Provider
+    azure:
+      type: provider
+      enabled: true
+      name: provider-azure
+      package: crossplane/provider-azure:v0.19.0
+      selector:
+        cloud: azure
