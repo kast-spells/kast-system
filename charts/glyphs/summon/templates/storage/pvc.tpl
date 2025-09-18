@@ -57,43 +57,5 @@ spec:
     - {{ default "ReadWriteOnce" $volume.accessMode }}
   resources:
     requests:
-      storage: {{ $volume.size }}
-{{- end }}
-
-{{/* DEPRECATED - Old version that iterated internally - DO NOT USE */}}
-{{- define "summon.persistentVolumeClaim.old" -}}
-  {{- range $name, $volume := .Values.volumes }}
-    {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  {{- $pvcName := "" }}
-  {{- if $volume.name }}
-    {{- $pvcName = $volume.name }}
-  {{- else }}
-    {{- $pvcName = print (include "common.name" $ ) "-" $name }}
-  {{- end }}
-  name: {{ $pvcName }}
-  labels:
-    {{- include "common.labels" $ | nindent 4}}
-    {{- with $volume.labels }}
-    {{ toYaml . | nindent 4 }}
-    {{- end }}
-  annotations:
-    {{- include "common.annotations" $ | nindent 4}}
-    {{- with $volume.annotations }}
-    {{ toYaml . | nindent 4 }}
-    {{- end }}
-spec:
-  {{- if $volume.storageClassName }}
-  storageClassName: {{ $volume.storageClassName }}
-  {{- end }}
-  accessModes: 
-    - {{ default "ReadWriteOnce" $volume.accessMode }}
-  resources:
-    requests:
-      storage: {{ $volume.size }}
-{{- end }}
-{{- end }}
+      storage: {{ default "1Gi" $volume.size }}
 {{- end }}
