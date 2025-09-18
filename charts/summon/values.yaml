@@ -139,51 +139,51 @@ sideCars: {}
 
 secrets: {}
 
-configMaps: {}
-  # saras2:
-  #   type: file
-  #   mountPath: /defaults.yaml
-  # saras:
-  #   location: local
-  #   type: env
-  # pepe:
-  #   location: local
-  #   type: env
-  #   name: roberto
-  # jorge:
-  #   location: create
-  #   type: file
-  #   name: jorge.conf
-  #   mountPath: /sarlanga
-  #   contentType: json
-  #   content:
-  #     {
-  #       "UTC": "Tiempo Universal Coordinado",
-  #       "GMT": "Tiempo Medio de Greenwich",
-  #       "CET": "Hora de Europa Central",
-  #       "EET": "Hora de Europa del Este",
-  #       "AST": "Hora Estándar del Atlántico",
-  #       "EST": "Hora Estándar del Este de América del Norte",
-  #       "EDT": "Hora de Verano del Este de América del Norte",
-  #       "CST": "Hora Estándar del Centro de América del Norte",
-  #     }
-  # mambru.notrock:
-  #     location: create
-  #     type: file
-  #     mountPath: /mambru.conf
-  #     content: |
-  #       sarasa co
-  # deeppurple.rock:
-  #     location: create
-  #     type: file
-  #     mountPath: /mambru.conf
-  #     contentType: yaml
-  #     content:
-  #       UTC: "Tiempo Universal Coordinado"
-  #       GMT: "Tiempo Medio de Greenwich"
-  #       CET: "Hora de Europa Central"
-  #       EET: "Hora de Europa del Este"
-  #       AST: "Hora Estándar del Atlántico"
+# configMaps:
+#   saras2:
+#     type: file
+#     mountPath: /defaults.yaml
+#   saras:
+#     location: local
+#     type: env
+#   pepe:
+#     location: local
+#     type: env
+#     name: roberto
+#   jorge:
+#     location: create
+#     type: file
+#     name: jorge.conf
+#     mountPath: /sarlanga
+#     contentType: json
+#     content:
+#       {
+#         "UTC": "Tiempo Universal Coordinado",
+#         "GMT": "Tiempo Medio de Greenwich",
+#         "CET": "Hora de Europa Central",
+#         "EET": "Hora de Europa del Este",
+#         "AST": "Hora Estándar del Atlántico",
+#         "EST": "Hora Estándar del Este de América del Norte",
+#         "EDT": "Hora de Verano del Este de América del Norte",
+#         "CST": "Hora Estándar del Centro de América del Norte",
+#       }
+#   mambru.notrock:
+#       location: create
+#       type: file
+#       mountPath: /mambru.conf
+#       content: |
+#         sarasa co
+#   deeppurple.rock:
+#       location: create
+#       type: file
+#       mountPath: /mambru.conf
+#       contentType: yaml
+#       content:
+#         UTC: "Tiempo Universal Coordinado"
+#         GMT: "Tiempo Medio de Greenwich"
+#         CET: "Hora de Europa Central"
+#         EET: "Hora de Europa del Este"
+#         AST: "Hora Estándar del Atlántico"
 
 ##esto genera dinamicamente un pvc ademas de agregar el volumen al pod
 # volumes:

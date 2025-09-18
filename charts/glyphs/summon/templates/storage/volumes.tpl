@@ -49,46 +49,9 @@ volumes:
 {{- end }}
 {{- end }}
 
-{{/* Glyph-compatible volumes template that supports glyphDefinition.name */}}
-{{- define "summon.common.volumes.volumes.glyph" -}}
-{{- $root := index . 0 -}}
-{{- $glyphDefinition := index . 1 -}}
-{{- $baseName := default (include "common.name" $root) $glyphDefinition.name -}}
-  {{- range $name, $volume := $glyphDefinition.volumes }}
-- name: {{ $name }}
-  {{- if eq $volume.type "emptyDir" }}
-  emptyDir:
-    {{- if $volume.inMemory }} 
-      medium: "Memory"
-    {{- end }}
-      sizeLimit: {{default "" $volume.size}}
-    {{- end }}
-  {{- if eq $volume.type "hostPath" }}
-  hostPath: 
-    path: {{ $volume.path }}
-    type: Directory
-    {{- end }}
-  {{- if eq $volume.type "nfs" }}
-  nfs:
-    server: {{ $volume.server }}
-    path: {{ $volume.path }}
-    {{- end }}
-  {{- if eq $volume.type "pvc" }}
-  persistentVolumeClaim:
-    {{- $pvcName := "" }}
-    {{- if $volume.name }}
-      {{- $pvcName = $volume.name }}
-    {{- else }}
-      {{- $pvcName = print $baseName "-" $name }}
-    {{- end }}
-    claimName: {{ $pvcName }}
-  {{- end }}
-{{- end }}
-{{- end }}
-
 {{- define "summon.common.volumes.configMaps" -}}
   {{- range $name, $content := .  }}
-    {{- if and ( or (eq ( default "local" $content.location ) "local") (eq $content.location "create") ) (eq .type "file") }}
+    {{- if eq  ( default "file" .type ) "file" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   configMap: 
     name: {{ default $name $content.key }}
@@ -98,7 +61,7 @@ volumes:
 
 {{- define "summon.common.volumes.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if eq .type "file" }}
+    {{- if eq ( default "file" .type ) "file" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   secret: 
     secretName: {{ default $name $content.key }}

@@ -27,14 +27,14 @@
 
 
 {{- range $name, $content := .Values.secrets }}
-  {{- if not (eq $content.location "create") }}
+  {{- if not (or (eq $content.location "local") (eq $content.location "create")) }}
   {{- $glyph := $content }}
     {{- $_ := set $glyph "name" $name }}
 
 
 
 
-    {{- include "vault.secret" (list $root $glyph ) }}
+    {{- include (print $content.location".secret") (list $root $glyph ) }}
 
 
   

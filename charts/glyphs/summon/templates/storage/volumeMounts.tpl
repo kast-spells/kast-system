@@ -27,7 +27,7 @@ volumeMounts:
 ## TODO el name deberia incluir la common.name
 {{- define "summon.common.volumeMounts.configMaps" -}}
   {{- range $name, $content := .  }}
-    {{- if and ( or (eq ( default "local" $content.location ) "local") (eq $content.location "create") ) (eq .type "file") }}
+    {{- if eq ( default "" .contentType ) "file" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   mountPath: {{ $content.mountPath }}
   subPath: {{ default $name $content.key }}
@@ -37,7 +37,7 @@ volumeMounts:
 
 {{- define "summon.common.volumeMounts.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if eq .type "file" }}
+    {{- if eq ( default "" .contentType ) "file" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   mountPath: {{ $content.mountPath }}
   subPath: {{ default $name $content.key }}

@@ -14,7 +14,7 @@ envFrom:
 
 {{- define "summon.common.envs.configMaps" -}}
   {{- range $name, $content := . -}}
-    {{- if eq $content.type "env" }}
+    {{- if eq ( default "" $content.type ) "env" }}
   - configMapRef:
       name: {{ $name | replace "." "-"  }}
     {{- end }}
@@ -23,7 +23,7 @@ envFrom:
 
 {{- define "summon.common.envs.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if or (eq $content.type "env") (and (eq $content.location "vault") (eq $content.format "env")) }}
+    {{- if eq ( default "" $content.type ) "env" }}
   - secretRef:
       name: {{ $name | replace "." "-"}}
     {{- end -}}
