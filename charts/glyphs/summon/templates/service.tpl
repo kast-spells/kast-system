@@ -10,15 +10,18 @@ Parameters:
 - Glyph usage: (list $root $glyphDefinition)
 
 Usage:
-- Direct: {{- include "summon.service" . }}
-- Glyph: {{- include "summon.service" (list $root $glyphDefinition) }}
+- Direct: {{- include "summon.service" (list . .Values.service nil) }}
+- Glyph: {{- include "summon.service" (list $root $glyphDefinition.service $glyphDefinition.name) }}
  */}}
 {{- define "summon.service" }}
-{{- if kindIs "slice" . }}
-  {{- $root := index . 0 }}
-  {{- $glyphDefinition := index . 1 }}
-  {{- $resourceName := default (include "common.name" $root) $glyphDefinition.name }}
-  {{- $serviceConfig := $glyphDefinition.service }}
+{{/* Parameters: (list $root $serviceConfig $resourceName) 
+     - $root: Chart root context for labels and selectors
+     - $serviceConfig: Service configuration (can be .Values.service for direct or $glyphDefinition.service for glyph)
+     - $resourceName: Optional custom name (defaults to common.name if nil)
+*/}}
+{{- $root := index . 0 }}
+{{- $serviceConfig := index . 1 }}
+{{- $resourceName := default (include "common.name" $root) (index . 2) }}
 ---
 apiVersion: v1
 kind: Service
@@ -57,46 +60,4 @@ spec:
   {{- end }}
   selector:
     {{- include "common.selectorLabels" $root | nindent 4 }}
-{{- else }}
-{{/* Direct usage - use $root for clarity */}}
-{{- $root := . }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "common.name" $root }}
-  labels:
-    {{- include "common.labels" $root | nindent 4 }}
-  {{- with $root.Values.service.annotations }}
-  annotations:
-    {{- . | toYaml | nindent 4 }}
-  {{- end }}
-spec:
-  type: {{ default "ClusterIP" $root.Values.service.type }}
-{{- if eq $root.Values.service.type "LoadBalancerSpecial"}}
-## this is a placeholder
-  loadBalancerIP: 1.2.3.4
-  loadBalancerSourceRanges: #supported on EKS, GKS and AKS at least
-    - 130.211.204.1/32 # loadBalancerSourceRanges defines the IP ranges that are allowed to access the load balancer
-  healthCheckNodePort: 30000   # healthCheckNodePort defines the healthcheck node port for the LoadBalancer service type
-{{- end }}
-  ports:
-  {{- if $root.Values.service.ports }}
-    {{- range $root.Values.service.ports }}
-    - port: {{ default 80 .port }}
-      protocol: {{ default "TCP" .protocol }}
-      name:  {{ default "http" .name }}
-      targetPort: {{ default 80 (default .port .targetPort) }}
-      {{- if .nodePort }}
-      nodePort: {{ .nodePort }}
-      {{- end }}
-    {{- end }}
-  {{- else }}
-    - port: {{ default 80 $root.Values.service.port }}
-      protocol: {{ default "TCP" $root.Values.service.protocol }}
-      name:  {{ default "http" $root.Values.service.name }}
-  {{- end }}
-  selector:
-    {{- include "common.selectorLabels" $root | nindent 4 }}
-{{- end }}
 {{- end}}

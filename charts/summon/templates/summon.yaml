@@ -60,8 +60,8 @@ root: |
 {{- include "summon.autoscaling" . }}
 {{- end -}}
 
-{{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "deamonset")) }}
-{{- include "summon.service" . }}
+{{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "daemonset")) }}
+{{- include "summon.service" (list . .Values.service nil) }}
 {{- end }}
 
 {{- if .Values.volumes -}}
