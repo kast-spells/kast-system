@@ -35,7 +35,7 @@ metadata:
   {{- end }}
 spec:
   type: {{ default "ClusterIP" $serviceConfig.type }}
-{{- if eq $serviceConfig.type "LoadBalancerSpecial"}}
+{{- if eq $serviceConfig.type "LoadBalancerSpecial" }}
 ## this is a placeholder
   loadBalancerIP: 1.2.3.4
   loadBalancerSourceRanges: #supported on EKS, GKS and AKS at least
@@ -60,4 +60,4 @@ spec:
   {{- end }}
   selector:
     {{- include "common.selectorLabels" $root | nindent 4 }}
-{{- end}}
+{{- end -}}

@@ -24,10 +24,10 @@ Usage:
 
 {{/* PVC generator - creates exactly one PVC without iteration */}}
 {{- define "summon.persistentVolumeClaim" -}}
-{{- $root := index . 0 -}}
-{{- $volumeName := index . 1 -}}
-{{- $volume := index . 2 -}}
-{{- $baseName := default (include "common.name" $root) (index . 3) -}}
+{{- $root := index . 0 }}
+{{- $volumeName := index . 1 }}
+{{- $volume := index . 2 }}
+{{- $baseName := default (include "common.name" $root) (index . 3) }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

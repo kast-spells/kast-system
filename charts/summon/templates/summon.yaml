@@ -34,7 +34,7 @@ root: |
 
 
 {{/* default app style */}} 
-{{- if .Values.workload.enabled  -}}
+{{- if .Values.workload.enabled  }}
 {{- include ( printf "summon.workload.%s" .Values.workload.type ) . }}
 {{- end -}}
 
@@ -52,19 +52,19 @@ root: |
   {{- end -}}
 {{- end -}}
 
-{{- if .Values.serviceAccount.enabled -}}
+{{- if .Values.serviceAccount.enabled }}
 {{- include "summon.serviceAccount" . }}
 {{- end -}}
 
-{{- if .Values.autoscaling.enabled -}}
+{{- if .Values.autoscaling.enabled }}
 {{- include "summon.autoscaling" . }}
-{{- end -}}
+{{- end }}
 
 {{- if and .Values.service.enabled (or (eq .Values.workload.type "deployment") (eq .Values.workload.type "statefulset") (eq .Values.workload.type "daemonset")) }}
 {{- include "summon.service" (list . .Values.service nil) }}
 {{- end }}
 
-{{- if .Values.volumes -}}
+{{- if .Values.volumes }}
   {{- range $name, $volume := .Values.volumes }}
     {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
       {{- include "summon.persistentVolumeClaim" (list $ $name $volume nil) }}
