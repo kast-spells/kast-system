@@ -53,7 +53,7 @@ env:
 {{- else if eq (index $value "type") "configMap" }}
   - name: {{ $key }}
     valueFrom:
-      configMap:
+      configMapKeyRef:
         name: {{ (index $value "name") }}
         key: {{ (index $value "key") }}
 {{- end -}}
