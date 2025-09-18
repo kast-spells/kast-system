@@ -10,9 +10,9 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "common.name" $root }}
   labels:
-  {{- include "common.labels" $root | nindent 2}}
-annotations:
-{{- include "common.annotations" $root | nindent 2}}
+    {{- include "common.labels" $root | nindent 4}}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4}}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -37,5 +37,5 @@ spec:
           type: Utilization
           averageUtilization: {{ $root.Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
-## TODO implementar behiviors
+  # TODO: implementar behaviors
 {{- end -}}
