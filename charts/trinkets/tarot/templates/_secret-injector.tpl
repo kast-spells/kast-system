@@ -237,8 +237,8 @@ Returns: PVC resource definitions for volumes with type "pvc"
     {{- $pvcDef = set $pvcDef "annotations" $volumeDef.annotations -}}
   {{- end -}}
 
-  {{/* Use summon PVC glyph to generate the PVC resource */}}
-  {{- include "summon.persistentVolumeClaim.glyph" (list $root $pvcDef) }}
+  {{/* Use summon PVC template to generate the PVC resource */}}
+  {{- include "summon.persistentVolumeClaim" (list $root $volumeName $volumeDef $volumeName) }}
 
 {{- end -}}
 {{- end -}}

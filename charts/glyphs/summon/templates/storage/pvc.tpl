@@ -2,16 +2,16 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
-summon.persistentVolumeClaim creates PersistentVolumeClaim resources for volumes defined with type "pvc".
-Automatically iterates through all volumes in .Values.volumes and creates PVCs for applicable ones.
+summon.persistentVolumeClaim.single creates a single PersistentVolumeClaim resource.
+Does NOT iterate - generates exactly one PVC for the provided volume definition.
 
-Parameters:
-- $root: Chart root context (accessed as . in the template)
-- Reads .Values.volumes directly from root context
+Parameters: (list $root $volumeName $volumeDefinition)
+- $root: Chart root context
+- $volumeName: Name/key of the volume (used for default naming)
+- $volumeDefinition: Volume configuration object
 
 Volume Configuration:
-- volume.type: must be "pvc" to generate PVC
-- volume.name: optional custom PVC name (defaults to {chart-name}-{volume-key})
+- volume.name: optional custom PVC name (defaults to {chart-name}-{volumeName})
 - volume.size: required storage size (e.g., "10Gi")
 - volume.storageClassName: optional storage class
 - volume.accessMode: optional access mode (defaults to "ReadWriteOnce")
@@ -19,17 +19,15 @@ Volume Configuration:
 - volume.annotations: optional additional annotations
 
 Usage: 
-- Direct: {{- include "summon.persistentVolumeClaim" . }}
-- Glyph: {{- include "summon.persistentVolumeClaim.glyph" (list $root $glyphDefinition) }}
+- {{- include "summon.persistentVolumeClaim.single" (list $ "data" $volumeDef) }}
 */}}
 
-{{/* Glyph-compatible PVC template that supports glyphDefinition.name */}}
-{{- define "summon.persistentVolumeClaim.glyph" -}}
+{{/* PVC generator - creates exactly one PVC without iteration */}}
+{{- define "summon.persistentVolumeClaim" -}}
 {{- $root := index . 0 -}}
-{{- $glyphDefinition := index . 1 -}}
-{{- $baseName := default (include "common.name" $root) $glyphDefinition.name -}}
-  {{- range $name, $volume := $glyphDefinition.volumes }}
-    {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
+{{- $volumeName := index . 1 -}}
+{{- $volume := index . 2 -}}
+{{- $baseName := default (include "common.name" $root) (index . 3) -}}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -38,7 +36,7 @@ metadata:
   {{- if $volume.name }}
     {{- $pvcName = $volume.name }}
   {{- else }}
-    {{- $pvcName = print $baseName "-" $name }}
+    {{- $pvcName = print $baseName "-" $volumeName }}
   {{- end }}
   name: {{ $pvcName }}
   labels:
@@ -61,11 +59,9 @@ spec:
     requests:
       storage: {{ $volume.size }}
 {{- end }}
-{{- end }}
-{{- end }}
 
-{{/* Original PVC template for direct summon usage */}}
-{{- define "summon.persistentVolumeClaim" -}}
+{{/* DEPRECATED - Old version that iterated internally - DO NOT USE */}}
+{{- define "summon.persistentVolumeClaim.old" -}}
   {{- range $name, $volume := .Values.volumes }}
     {{- if and (eq $volume.type "pvc") (not $volume.stateClaimTemplate) }}
 ---
