@@ -56,10 +56,8 @@ spec:
     - match:
       - uri:
           prefix: {{ default (default (printf "/%s" ( include "common.name" $root )) $glyphDefinition.prefix) $httpRule.prefix }}
-      {{- if or $glyphDefinition.rewrite $httpRule.rewrite }}
       rewrite:
         uri: {{ default (default "/" $glyphDefinition.rewrite) $httpRule.rewrite }}
-      {{- end }}
       route:
         - destination:
             host: {{ if (default $glyphDefinition.host $httpRule.host) }}{{ (default $glyphDefinition.host $httpRule.host) }}{{ else }}{{ include "common.name" $root }}.{{ $root.Release.Namespace }}.svc.cluster.local{{ end }}
