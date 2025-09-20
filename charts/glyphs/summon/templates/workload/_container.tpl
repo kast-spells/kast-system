@@ -30,7 +30,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- else if and $container.container $container.container.image -}}
   {{/* Handle nested container.container.image structure */}}
   {{- if typeIs "string" $container.container.image -}}
-    {{- $container.container.image -}}
+    {{- printf $container.container.image -}}
   {{- else -}}
     {{- $repository := default "" (default ($root.Values.image).repository ($container.container.image).repository) -}}
     {{- $imageName := default "nginx" (default (include "common.name" $root) ($container.container.image).name) -}}
