@@ -16,6 +16,8 @@ data:
     {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
   {{- else if eq $glyphDefinition.definition.contentType "json" }}
     {{- $glyphDefinition.definition.content | toJson | nindent 4 }}
+  {{- else if eq $glyphDefinition.definition.contentType "toml" }}
+    {{- $glyphDefinition.definition.content | toToml | nindent 4 }}
   {{- else }}
     {{- $glyphDefinition.definition.content |  nindent 4 }}
   {{- end }}
