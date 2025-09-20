@@ -10,7 +10,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}
-data:
+stringData:
   {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: |
   {{- if eq $glyphDefinition.definition.contentType "yaml" }}
     {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
