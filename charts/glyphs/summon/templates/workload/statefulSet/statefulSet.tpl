@@ -10,58 +10,63 @@ Parameters:
 - Glyph usage: (list $root $glyphDefinition)
  */}}
 {{- define "summon.workload.statefulset" -}}
-{{- $ctx := . -}}
-{{- $resourceName := include "common.name" . -}}
+{{- $root := . -}}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $resourceName }}
+  name: {{ include "common.name" $root }}
   labels:
-    {{- include "common.labels" $ctx | nindent 4}}
+    {{- include "common.labels" $root | nindent 4}}
   annotations:
-    {{- include "common.annotations" $ctx | nindent 4}}
+    {{- include "common.annotations" $root | nindent 4}}
 spec:
-  replicas: {{ default 1 $ctx.Values.workload.replicas }}
+  {{- if not $root.Values.autoscaling.enabled }}
+  replicas: {{ default 1 $root.Values.workload.replicas }}
+  {{- end }}
   selector:
     matchLabels:
-      {{- include "common.selectorLabels" $ctx | nindent 6 }}
+      {{- include "common.selectorLabels" $root | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "common.selectorLabels" $ctx | nindent 8 }}
+        {{- include "common.selectorLabels" $root | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "common.serviceAccountName" $ctx }}
+      serviceAccountName: {{ include "common.serviceAccountName" $root }}
+      {{- with $root.Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $root.Values.initContainers }}
       initContainers:
-        {{- if $ctx.Values.initContainers }}
-        {{- include "summon.common.container" (list $ctx $ctx.Values.initContainers ) | nindent 8 }}
-        {{- end }}
+        {{- include "summon.common.container" (list $root $root.Values.initContainers ) | nindent 8 }}
+      {{- end }}
       containers:
-        {{- if $ctx.Values.sideCars }}
-        {{- include "summon.common.container" (list $ctx $ctx.Values.sideCars ) | nindent 8 }}
+        {{- if $root.Values.sideCars }}
+        {{- include "summon.common.container" (list $root $root.Values.sideCars ) | nindent 8 }}
         {{- end }}
         #main Container
-        {{- include "summon.common.container" (list $ctx (list $ctx.Values) ) | nindent 8  }}
-        {{- with $ctx.Values.nodeSelector }}
+        {{- include "summon.common.container" (list $root (list $root.Values) ) | nindent 8  }}
+        {{- with $root.Values.nodeSelector }}
       nodeSelector:
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with $ctx.Values.affinity }}
+        {{- with $root.Values.affinity }}
       affinity:
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with $ctx.Values.tolerations }}
+        {{- with $root.Values.tolerations }}
       tolerations:
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with $ctx.Values.imagePullSecrets }}
+        {{- with $root.Values.imagePullSecrets }}
       imagePullSecrets:
           {{- toYaml . | nindent 8 }}
         {{- end }}
 
-      {{- include "summon.common.volumes" $ctx |nindent 6 }}
+        {{- include "summon.common.volumes" $root |nindent 6 }}
   volumeClaimTemplates:
-  {{- range $name, $volume := $ctx.Values.volumes }}
+  {{- range $name, $volume := $root.Values.volumes }}
     {{- if eq $volume.type "claimTemplates" }}
     - metadata:
         name: {{ $name }}

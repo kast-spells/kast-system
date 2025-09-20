@@ -63,7 +63,16 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- range $containerName, $container := $containers }}
 - name: {{ include "summon.common.containerName" (list $root $container $containerName )}}
   image: {{ include "summon.getImage" (list $root $container ) }}
-  imagePullPolicy: {{ default "IfNotPresent" (default ($root.Values.image).pullPolicy ($container.image).pullPolicy ) }}
+  {{- $pullPolicy := "IfNotPresent" }}
+  {{- if $root.Values.image.pullPolicy }}
+    {{- $pullPolicy = $root.Values.image.pullPolicy }}
+  {{- end }}
+  {{- if and $container.image (not (kindIs "string" $container.image)) }}
+    {{- if $container.image.pullPolicy }}
+      {{- $pullPolicy = $container.image.pullPolicy }}
+    {{- end }}
+  {{- end }}
+  imagePullPolicy: {{ $pullPolicy }}
   {{- if $container.command }}
   {{- if eq ( kindOf $container.command ) "string" }}
   command: 
