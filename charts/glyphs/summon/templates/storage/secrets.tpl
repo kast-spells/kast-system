@@ -11,6 +11,18 @@ apiVersion: v1
 metadata:
   name: {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}
 stringData:
+  {{- if eq $glyphDefinition.definition.type "env" }}
+  {{/* Para type: env, crear cada key-value como entrada separada en el Secret */}}
+  {{- if kindIs "map" $glyphDefinition.definition.content }}
+  {{- range $key, $value := $glyphDefinition.definition.content }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- else }}
+  {{/* Si type: env pero content es string, crear una sola entrada */}}
+  {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: {{ $glyphDefinition.definition.content | quote }}
+  {{- end }}
+  {{- else }}
+  {{/* Para otros tipos (file, etc), crear una sola entrada con el contenido formateado */}}
   {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: |
   {{- if eq $glyphDefinition.definition.contentType "yaml" }}
     {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
@@ -18,13 +30,6 @@ stringData:
     {{- $glyphDefinition.definition.content | toJson | nindent 4 }}
   {{- else if eq $glyphDefinition.definition.contentType "toml" }}
     {{- $glyphDefinition.definition.content | toToml | nindent 4 }}
-  {{- else if eq $glyphDefinition.definition.type "env" }}
-    {{/* Si type: env y content es un map, convertir a YAML automáticamente */}}
-    {{- if kindIs "map" $glyphDefinition.definition.content }}
-      {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
-    {{- else }}
-      {{- $glyphDefinition.definition.content | nindent 4 }}
-    {{- end }}
   {{- else }}
     {{/* Para otros casos, usar content tal cual si es string, o convertir a YAML si es map */}}
     {{- if kindIs "map" $glyphDefinition.definition.content }}
@@ -32,5 +37,6 @@ stringData:
     {{- else }}
       {{- $glyphDefinition.definition.content | nindent 4 }}
     {{- end }}
+  {{- end }}
   {{- end }}
 {{- end }}
