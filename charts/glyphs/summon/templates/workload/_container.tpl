@@ -26,7 +26,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- $container := index . 1 -}}
 {{- if typeIs "string" $container.image -}}
   {{/* Simple string format: "nginx:latest" - used by tarot and other systems */}}
-  {{- $container.image -}}
+  {{- print $container.image -}}
 {{- else if and $container.container $container.container.image -}}
   {{/* Handle nested container.container.image structure */}}
   {{- if typeIs "string" $container.container.image -}}
