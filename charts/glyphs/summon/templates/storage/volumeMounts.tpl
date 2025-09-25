@@ -13,6 +13,9 @@ volumeMounts:
   {{- if .Values.volumes }}
     {{- include "summon.common.volumeMounts.volumes" .Values.volumes | nindent 2 -}}
   {{- end }}
+  {{- if .Values.workload.volumeClaimTemplates }}
+    {{- include "summon.common.volumeMounts.volumeClaimTemplates" .Values.workload.volumeClaimTemplates | nindent 2 -}}
+  {{- end }}
 {{- end -}}
 
 {{- define "summon.common.volumeMounts.volumes" -}}
@@ -41,6 +44,16 @@ volumeMounts:
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   mountPath: {{ $content.mountPath }}
   subPath: {{ default $name $content.key }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
+{{- define "summon.common.volumeMounts.volumeClaimTemplates" -}}
+  {{- range $name, $content := . }}
+- name: {{ $name }}
+  mountPath: {{ $content.destinationPath }}
+    {{- if $content.readOnly }}
+  readOnly: {{ $content.readOnly }}
     {{- end }}
   {{- end }}
 {{- end -}}

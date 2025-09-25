@@ -1,0 +1,136 @@
+# Example: Short alphanumeric password policy
+# Creates a 16-character alphanumeric password policy and uses it
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Create the short-policy: 16 chars, alphanumeric only
+    - type: customPasswordPolicy
+      name: short-policy
+      policy: |
+        length = 16
+        rule "charset" {
+          charset = "abcdefghijklmnopqrstuvwxyz"
+          min-chars = 5
+        }
+        rule "charset" {
+          charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          min-chars = 5
+        }
+        rule "charset" {
+          charset = "0123456789"
+          min-chars = 4
+        }
+
+    # Alternative using defaultPasswordPolicy (simpler but less control)
+    - type: defaultPasswordPolicy
+      name: short-policy-alt
+      length: 16
+      minLowercase: 5
+      minUppercase: 5
+      minNumbers: 6
+      minSymbols: 0  # No special characters for alphanumeric
+
+    # Create secrets using the short-policy
+
+    # API token with short alphanumeric
+    - type: secret
+      name: api-token
+      format: plain
+      randomKey: token
+      passPolicyName: short-policy
+      keys:
+        - service
+      staticData:
+        service: api-gateway
+        environment: production
+        created-by: vault
+
+    # Session ID
+    - type: secret
+      name: session-manager
+      format: plain
+      randomKey: session-id
+      passPolicyName: short-policy
+      keys:
+        - app-name
+      staticData:
+        app-name: web-frontend
+        timeout: "3600"
+
+    # Registration code
+    - type: secret
+      name: registration-codes
+      format: plain
+      randomKey: code
+      passPolicyName: short-policy
+      refreshPeriod: 604800  # Rotate weekly (7 days in seconds)
+      keys:
+        - purpose
+      staticData:
+        purpose: user-registration
+        valid-for: "7-days"
+
+    # Device pairing code
+    - type: secret
+      name: device-pairing
+      format: plain
+      randomKey: pairing-code
+      passPolicyName: short-policy
+      keys:
+        - device-type
+      staticData:
+        device-type: iot-sensor
+        protocol: mqtt
+
+    # Temporary access token
+    - type: secret
+      name: temp-access
+      format: plain
+      randomKey: temp-token
+      passPolicyName: short-policy
+      refreshPeriod: 3600  # Rotate hourly
+      keys:
+        - grant-type
+      staticData:
+        grant-type: temporary
+        max-usage: "single-use"
+
+    # Multiple services using the same policy
+    - type: secret
+      name: microservice-auth-api
+      format: plain
+      randomKey: auth-token
+      passPolicyName: short-policy
+      staticData:
+        service: api-service
+        port: "8080"
+
+    - type: secret
+      name: microservice-auth-worker
+      format: plain
+      randomKey: auth-token
+      passPolicyName: short-policy
+      staticData:
+        service: worker-service
+        port: "8081"
+
+    - type: secret
+      name: microservice-auth-admin
+      format: plain
+      randomKey: auth-token
+      passPolicyName: short-policy
+      staticData:
+        service: admin-service
+        port: "8082"

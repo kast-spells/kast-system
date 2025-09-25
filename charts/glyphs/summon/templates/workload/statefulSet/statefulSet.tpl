@@ -65,21 +65,21 @@ spec:
         {{- end }}
 
         {{- include "summon.common.volumes" $root |nindent 6 }}
+  {{- if $root.Values.workload.volumeClaimTemplates }}
   volumeClaimTemplates:
-  {{- range $name, $volume := $root.Values.volumes }}
-    {{- if eq $volume.type "claimTemplates" }}
+  {{- range $name, $volume := $root.Values.workload.volumeClaimTemplates }}
     - metadata:
         name: {{ $name }}
       spec:
         {{- if $volume.storageClassName }}
         storageClassName: {{ $volume.storageClassName }}
         {{- end }}
-        accessModes: 
-          - {{ default "ReadWriteOnce" $volume.accessMode }}
+        accessModes:
+          - {{ default "ReadWriteOnce" $volume.accessModes }}
         resources:
           requests:
             storage: {{ $volume.size }}
-    {{- end -}}
+  {{- end -}}
   {{- end -}}          
 {{- end -}}
 ##TODO faltan volumenes

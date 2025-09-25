@@ -1,252 +1,425 @@
+# Summon - Kubernetes Workload Deployment Chart
+# This chart can deploy Deployments, StatefulSets, Jobs, CronJobs, and DaemonSets
+
+# Workload configuration
 workload:
   enabled: true
-  type: deployment # [deployment, statefulset, daemonset, cronjob] #default deployment
-  replicas: 1
-  # volumeClaimTemplates: #mandatory on type statefulset
-  #   dastateCacata:
-  #     destinationPath: /data
-  #     storageClass: lala #optional
-  #     size: sor
-  #     accessModes: ReadWriteMany #opcional default: ReadWriteOnce
-  # schedule: "* * * * *" #mandatory if type cronjob
+  type: deployment  # Options: deployment, statefulset, job, cronjob, daemonset
+  replicas: 1       # Number of replicas (ignored for daemonset and jobs)
 
+  # For StatefulSet workloads - volumeClaimTemplates
+  # volumeClaimTemplates:
+  #   data-volume:
+  #     destinationPath: /data
+  #     size: 10Gi
+  #     storageClass: fast-ssd  # Optional, uses default if not specified
+  #     accessModes: ReadWriteOnce  # Optional, default: ReadWriteOnce
+  #   cache-volume:
+  #     destinationPath: /cache
+  #     size: 5Gi
+
+  # For CronJob workloads - schedule is mandatory
+  # schedule: "0 3 * * *"  # Run daily at 3 AM
+  # schedule: "*/5 * * * *"  # Run every 5 minutes
+
+  # For Job/CronJob workloads
+  # backoffLimit: 3  # Number of retries before marking job as failed
+  # activeDeadlineSeconds: 600  # Maximum time in seconds for job to complete
+
+# Container image configuration
 image:
-  repository: ""
-  pullPolicy: IfNotPresent
-  name: ""
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  repository: ""  # e.g., nginx, myapp, ghcr.io/org/app
+  pullPolicy: IfNotPresent  # Options: Always, IfNotPresent, Never
+  name: ""  # Optional, container name override
+  tag: ""   # Overrides chart appVersion if specified
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+# - name: regcred
+# - name: dockerhub-secret
 
+nameOverride: ""     # Override the chart name
+fullnameOverride: "" # Override the full generated name
+
+# ServiceAccount configuration
 serviceAccount:
-  # Specifies whether a service account should be created
-  enabled: true
-  # Automatically mount a ServiceAccount's API credentials?
-  automount: true
-  # Annotations to add to the service account
-  annotations: {}
-    # pepe: sarasa
-    # algo: aca
+  enabled: true      # Create a ServiceAccount for the workload
+  automount: true    # Automatically mount ServiceAccount token
+  annotations: {}    # Annotations for the ServiceAccount
+  # vault.hashicorp.com/role: my-app
+  # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/my-role
   labels: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: ""  # Custom name, auto-generated if empty
 
+# Pod configuration
 podAnnotations: {}
+# prometheus.io/scrape: "true"
+# prometheus.io/port: "8080"
+# prometheus.io/path: "/metrics"
+
 podLabels: {}
+# version: "1.0.0"
+# environment: "production"
 
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
+# runAsNonRoot: true
+# runAsUser: 1000
+# runAsGroup: 3000
+# fsGroupChangePolicy: "OnRootMismatch"
 
 securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# capabilities:
+#   drop:
+#   - ALL
+#   add:
+#   - NET_BIND_SERVICE
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+# allowPrivilegeEscalation: false
 
+# Service configuration
 service:
   enabled: true
+  type: ClusterIP  # Options: ClusterIP, NodePort, LoadBalancer
   annotations: {}
+  # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  # cloud.google.com/neg: '{"ingress": true}'
   labels: {}
-  type: ClusterIP
   ports: []
-    # - port: 80 #optional, Default 80
-    #   protocol: TCP #optional Default TCP [TCP,UDP]
-    #   name: http #optional, Default http
-    #   nodePort: 30080 #mandatory in case of type NodePort
+  # - port: 80         # Service port
+  #   targetPort: 8080 # Container port (optional, defaults to port)
+  #   protocol: TCP    # TCP or UDP
+  #   name: http       # Port name
+  # - port: 443
+  #   targetPort: 8443
+  #   protocol: TCP
+  #   name: https
+  #   nodePort: 30443  # Required for NodePort service type
 
-
+# Resource limits and requests
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# limits:
+#   cpu: 500m
+#   memory: 512Mi
+# requests:
+#   cpu: 250m
+#   memory: 256Mi
 
-# probes: 
-#   liveness: # The liveness probe checks if the container is still running
+# Health checks - liveness, readiness, and startup probes
+# probes:
+#   liveness:
 #     type: httpGet
-#     path: /healthz # The path that the probe should request
-#     port: 80 # The port the probe should use
-#     host: localhost # Optional: The host name to connect to (defaults to the Pod IP)
-#     # scheme: HTTP # Optional: The scheme to use (HTTP or HTTPS, default is HTTP)
-#     # httpHeaders: # Optional: Custom HTTP headers to set in the request
-#     #   - name: X-Custom-Header
-#     #     value: "CustomValue"
-#     # initialDelaySeconds: 5 # Number of seconds after the container starts before the probe runs for the first time
-#     # periodSeconds: 10 # How often (in seconds) to perform the probe
-#     # timeoutSeconds: 1 # Number of seconds after which the probe times out
-#     # successThreshold: 1 # Minimum consecutive successes for the probe to be considered successful
-#     # failureThreshold: 3 # When a probe fails, the Kubernetes restarts the container after this many consecutive failures
-#   readiness: # The readiness probe checks if the container is ready to accept traffic
-#     type: tcpSocket # Using the TCP socket method for the probe
-#     port: 8080 # The port the probe should use
-#   startup: # The startup probe checks if the container has started successfully
-#     type: exec # Using the command execution method for the probe
-#     command: # The command to execute for the probe
-#       - "/bin/check_startup.sh"
+#     path: /healthz
+#     port: 8080
+#     initialDelaySeconds: 30
+#     periodSeconds: 10
+#     timeoutSeconds: 5
+#     successThreshold: 1
+#     failureThreshold: 3
+#     httpHeaders:
+#     - name: X-Custom-Header
+#       value: "HealthCheck"
+#   readiness:
+#     type: tcpSocket
+#     port: 8080
+#     initialDelaySeconds: 5
+#     periodSeconds: 5
+#     timeoutSeconds: 1
+#     successThreshold: 1
+#     failureThreshold: 3
+#   startup:
+#     type: exec
+#     command:
+#     - /bin/sh
+#     - -c
+#     - "test -f /app/ready"
+#     initialDelaySeconds: 0
+#     periodSeconds: 10
+#     timeoutSeconds: 1
+#     successThreshold: 1
+#     failureThreshold: 30
 
+# Horizontal Pod Autoscaler
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
+  # behavior:  # Advanced HPA behavior
+  #   scaleDown:
+  #     stabilizationWindowSeconds: 300
+  #   scaleUp:
+  #     stabilizationWindowSeconds: 60
 
-
+# Node selection
 nodeSelector: {}
+# disktype: ssd
+# node.kubernetes.io/instance-type: t3.large
 
+# Tolerations for pod scheduling
 tolerations: []
+# - key: "key1"
+#   operator: "Equal"
+#   value: "value1"
+#   effect: "NoSchedule"
+# - key: "node.kubernetes.io/unreachable"
+#   operator: "Exists"
+#   effect: "NoExecute"
+#   tolerationSeconds: 300
 
+# Affinity rules
 affinity: {}
+# podAntiAffinity:
+#   preferredDuringSchedulingIgnoredDuringExecution:
+#   - weight: 100
+#     podAffinityTerm:
+#       topologyKey: kubernetes.io/hostname
+#       labelSelector:
+#         matchLabels:
+#           app: myapp
+# nodeAffinity:
+#   requiredDuringSchedulingIgnoredDuringExecution:
+#     nodeSelectorTerms:
+#     - matchExpressions:
+#       - key: node-role.kubernetes.io/worker
+#         operator: In
+#         values:
+#         - "true"
 
+# Init containers - run before main container
 initContainers: {}
+# db-migration:
+#   image:
+#     repository: migrate/migrate
+#     tag: latest
+#   command:
+#   - migrate
+#   args:
+#   - -path=/migrations
+#   - -database=postgres://user:pass@db/mydb
+#   - up
+#   resources:
+#     limits:
+#       cpu: 200m
+#       memory: 256Mi
+# wait-for-db:
+#   image:
+#     repository: busybox
+#     tag: latest
+#   command: ['sh', '-c', 'until nc -z db 5432; do sleep 1; done']
+
+# Sidecar containers - run alongside main container
 sideCars: {}
+# prometheus-exporter:
+#   image:
+#     repository: prom/node-exporter
+#     tag: latest
+#   resources:
+#     limits:
+#       cpu: 100m
+#       memory: 128Mi
+# cloud-sql-proxy:
+#   image:
+#     repository: gcr.io/cloudsql-docker/gce-proxy
+#     tag: latest
+#   command:
+#   - /cloud_sql_proxy
+#   - -instances=project:region:instance=tcp:5432
 
-# initContainers:
-#   initializer:
-#     command: cosa
-#     args:
-#       - cosa
-#     probes: {}
-#     resources:
-#       limits:
-#         cpu: "500m"
-#         memory: "512M"
-#       requests:
-#         cpu: "250m"
-#         memory: "128M"    
-#   otroPaCommand:
-#     command:
-#       - ls
-#       - "-alh"
-
-# sideCars:
-#   cosa:
-#     image:
-#       tag: saras
-#       name: lslasla
-
+# Secrets configuration - unified contentType approach
 secrets: {}
+# db-credentials:
+#   contentType: env  # All keys will be added to envFrom
+#   location: local   # Reference existing secret
+# tls-cert:
+#   contentType: file  # Mount as file
+#   location: local
+#   mountPath: /etc/tls
+#   name: tls.crt
+# api-key:
+#   contentType: file
+#   location: create  # Create the secret
+#   mountPath: /etc/api
+#   content: "sk_live_abcdef123456"
+# app-secrets:
+#   contentType: yaml  # YAML formatted file
+#   location: create
+#   mountPath: /config
+#   name: secrets.yaml
+#   content:
+#     database:
+#       host: postgres.local
+#       password: secretpass
 
-# configMaps:
-#   saras2:
-#     type: file
-#     mountPath: /defaults.yaml
-#   saras:
-#     location: local
-#     type: env
-#   pepe:
-#     location: local
-#     type: env
-#     name: roberto
-#   jorge:
-#     location: create
-#     type: file
-#     name: jorge.conf
-#     mountPath: /sarlanga
-#     contentType: json
-#     content:
-#       {
-#         "UTC": "Tiempo Universal Coordinado",
-#         "GMT": "Tiempo Medio de Greenwich",
-#         "CET": "Hora de Europa Central",
-#         "EET": "Hora de Europa del Este",
-#         "AST": "Hora Estándar del Atlántico",
-#         "EST": "Hora Estándar del Este de América del Norte",
-#         "EDT": "Hora de Verano del Este de América del Norte",
-#         "CST": "Hora Estándar del Centro de América del Norte",
+# ConfigMaps configuration - unified contentType approach
+configMaps: {}
+# app-env-vars:
+#   contentType: env  # All keys as environment variables
+#   location: local   # Reference existing ConfigMap
+# app-config:
+#   contentType: yaml  # YAML formatted config file
+#   location: create
+#   name: config.yaml
+#   mountPath: /app/config
+#   content:
+#     server:
+#       port: 8080
+#       host: 0.0.0.0
+#     features:
+#       cache: true
+#       metrics: true
+# nginx-conf:
+#   contentType: file  # Plain text file
+#   location: create
+#   name: nginx.conf
+#   mountPath: /etc/nginx
+#   content: |
+#     server {
+#       listen 80;
+#       location / {
+#         proxy_pass http://backend;
 #       }
-#   mambru.notrock:
-#       location: create
-#       type: file
-#       mountPath: /mambru.conf
-#       content: |
-#         sarasa co
-#   deeppurple.rock:
-#       location: create
-#       type: file
-#       mountPath: /mambru.conf
-#       contentType: yaml
-#       content:
-#         UTC: "Tiempo Universal Coordinado"
-#         GMT: "Tiempo Medio de Greenwich"
-#         CET: "Hora de Europa Central"
-#         EET: "Hora de Europa del Este"
-#         AST: "Hora Estándar del Atlántico"
+#     }
+# app-settings:
+#   contentType: json  # JSON formatted file
+#   location: create
+#   name: settings.json
+#   mountPath: /app/settings
+#   content:
+#     debug: false
+#     timeout: 30
+#     retries: 3
 
-##esto genera dinamicamente un pvc ademas de agregar el volumen al pod
-# volumes:
-#   home:
-#     type: hostPath
-#     destinationPath: /home/namen/_home
-#     path: /home/namen/_home
-#   data:
-#     type: pvc
-#     destinationPath: /data
-#     create: true
-#     storageClass: lala
-#     size: sor
-#     pvcName: kara #optional si no existe toma el nombre de la ms-name-$key
-#   laslreaeraw:
-#     destinationPath: /laslreaeraw
-#     create: true
-#   dataLoca:
-#     destinationPath: /data
-#     pvcName: jorge # optional si no existe toma la key
-#     create: false
-#     readOnly: true
-#   nfs:
-#     destinationPath: /data
-#     nfs: 
-#       server: my-nfs-server.example.com
-#       path: /my-nfs-volume
-#       readOnly: true
-#   lala:
-#     emptyDir: true
-#     destination: /lala
-#   otro:
-#     emptyDir:
-#       sizeLimit: 50Mi
-#       medium: memory
+# Volumes configuration
+volumes: {}
+# # PersistentVolumeClaim - existing
+# data-existing:
+#   type: pvc
+#   destinationPath: /data
+#   pvcName: existing-pvc-name
+#   readOnly: false
+#
+# # PersistentVolumeClaim - create new
+# data-new:
+#   type: pvc
+#   destinationPath: /var/data
+#   create: true
+#   size: 10Gi
+#   storageClass: fast-ssd
+#   accessMode: ReadWriteOnce
+#
+# # HostPath volume
+# host-data:
+#   type: hostPath
+#   destinationPath: /host/data
+#   path: /var/lib/data
+#
+# # NFS volume
+# shared-data:
+#   type: nfs
+#   destinationPath: /mnt/nfs
+#   server: nfs.example.com
+#   path: /exports/data
+#   readOnly: false
+#
+# # EmptyDir volume
+# temp-data:
+#   type: emptyDir
+#   destinationPath: /tmp/data
+#   sizeLimit: 1Gi
+#   medium: Memory  # Optional: Memory for tmpfs
 
-# envs:
-#   JORGE: sarasa
-#   DB_USER:
-#     type: secret
-#     name: saladenga
-#     key: kaka
-#   lala: pep
+# Environment variables
+envs: {}
+# # Simple key-value
+# LOG_LEVEL: debug
+# APP_ENV: production
+#
+# # From secret
+# DB_PASSWORD:
+#   type: secret
+#   name: db-secret
+#   key: password
+#
+# # From ConfigMap
+# API_ENDPOINT:
+#   type: configmap
+#   name: app-config
+#   key: api.endpoint
 
+# Command and arguments override
+# command: ["nginx"]
+# args: ["-g", "daemon off;"]
 
+# Lifecycle hooks
+# lifecycle:
+#   preStop:
+#     exec:
+#       command: ["/bin/sh", "-c", "nginx -s quit; while killall -0 nginx; do sleep 1; done"]
+#   postStart:
+#     httpGet:
+#       path: /healthz
+#       port: 8080
 
+# DNS configuration
+# dnsPolicy: ClusterFirst
+# dnsConfig:
+#   nameservers:
+#   - 8.8.8.8
+#   searches:
+#   - example.com
+#   options:
+#   - name: ndots
+#     value: "2"
 
+# Host aliases
+# hostAliases:
+# - ip: 127.0.0.1
+#   hostnames:
+#   - foo.local
+#   - bar.local
 
+# Termination grace period (seconds)
+# terminationGracePeriodSeconds: 30
 
+# Priority class
+# priorityClassName: high-priority
 
+# Runtime class
+# runtimeClassName: nvidia
 
+# Scheduler name
+# schedulerName: custom-scheduler
 
+# Share process namespace
+# shareProcessNamespace: true
 
+# Subdomain for headless services
+# subdomain: ""
 
-
-
-
+# Topology spread constraints
+# topologySpreadConstraints:
+# - maxSkew: 1
+#   topologyKey: kubernetes.io/hostname
+#   whenUnsatisfiable: DoNotSchedule
+#   labelSelector:
+#     matchLabels:
+#       app: myapp
 
 ######################
+# Kast system configuration
 ######################
-# esto es herencia desde kast
 spellbook:
   name: default
 chapter:
   name: default
 glyphs: {}
+# Example glyphs integration:
+# vault:
+# - type: secret
+#   name: app-secrets
+#   format: plain
+#   random: true
+#   randomKey: password

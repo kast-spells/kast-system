@@ -1,61 +1,101 @@
-name: cp-default-honeypot ## TODO re acomodarlo para este uso real
-repository: infra-default-landing #este es el default si false no lo crea si diferente de true lo interpreta como name
-containerFile: Containerfile
-## todo meter crossplane con el coso de github es como la unica opcion
+# Microspell - Opinionated Microservice Deployment Chart
+# Built on top of Summon with additional microservice-specific features
+
+# Microservice identity and metadata
+name: microservice-name  # Service name
+repository: infra-default-landing  # Git repository or project name
+containerFile: Containerfile  # Dockerfile/Containerfile name
+
+# Container image configuration
 image:
-  repository: harbor.int.cp.the.yaml.life.tech/yaml
+  repository: ghcr.io/organization/service  # Container registry URL
+  # tag: latest  # Optional, defaults to chart appVersion
+  # pullPolicy: IfNotPresent
 
-# metadata: #asociar los labels y annotations en base de esto
-#   owners: #primero revisa si es un grupo y despues un usuario (en caso de tener q hacerlo)
-#     - devops #this is 
-#   org: the.yaml.life
-#   escalation:
-#     - namen ## esto tiene q ser dinamico desde la definicion del owner 
-#   description: default  # una pequenia descripcion para q la gente identifique mejor aun, puede ser optional
-#   serviceLevel: 3 # options=[3,5,8,13,21] siempre mas alto mas critico (podemos usar tambien texto o un 0 a 9 ), puede ser opcional defaultearia en el medio
-#   #serviceLevel se asocia al SLA
-#   type: frontend #[frotnend, backend, schedule, api]
-#   lang: python #
-#   bu: infra
-#   general: tags #etc
+# Service metadata for observability and organization
+metadata:
+  owners:  # Service owners (teams or individuals)
+    - platform-team
+    - john.doe
+  org: example.com  # Organization
+  escalation:  # Escalation contacts
+    - oncall-team
+    - sre-team
+  description: "Core API service for user management"  # Service description
+  serviceLevel: 3  # Service criticality: 3, 5, 8, 13, 21 (higher = more critical)
+  type: backend  # Service type: frontend, backend, api, scheduler, worker
+  lang: go  # Programming language
+  bu: engineering  # Business unit
+  environment: production  # Environment label
+  tags:  # Additional tags
+    - api
+    - critical
+    - public-facing
 
-
+# Environment variables - simplified configuration
 envs:
-  ENV: default #[DEV, STAGE]
+  ENV: production  # Environment: development, staging, production
+  LOG_LEVEL: info
+  # Add any service-specific environment variables
+  # API_TIMEOUT: "30s"
+  # CACHE_TTL: "300"
 
+# Infrastructure features
 infrastructure:
   prolicy:
-    enabled: false
+    enabled: false  # Enable Vault policy creation
+    # serviceAccount: custom-sa  # Custom service account for Vault
 
+# Vault secrets integration (simplified from summon)
+secrets: {}
+# # Mount secret as file
+# tls-cert:
+#   mountPath: /etc/tls/cert.pem
+#   vpath: secret/data/tls/cert  # Vault path
+#
+# # Use secret as environment variables
+# db-credentials:
+#   env: true
+#   vpath: secret/data/database/creds
+#
+# # Binary secret (base64 decoded)
+# license-key:
+#   binary: true
+#   mountPath: /app/license.key
+#   vpath: secret/data/licenses/app
+#
+# # Formatted secrets
+# app-config:
+#   format: yaml  # yaml, json, plain
+#   mountPath: /config/app.yaml
+#   vpath: secret/data/config/app
+#
+# # Create secret locally
+# api-key:
+#   location: create
+#   contentType: file
+#   mountPath: /etc/api/key
+#   content: "sk_live_xyz123"
 
-# secrets:
-#   name:
-#     mountPath: /file
-#   name2:
-#     vpath:
-#     env: true
-#   name3:
-#     vpath:
-#     binary: true #is already a base64 so is decoded as a file
-#     mountPath: /file
-#   name4:
-#     vpath:
-#     format: json #[yaml plain] default plain
-#     mountPath: /file
-#   name5:
-#     location: create
-#     type: file
-#     mountPath: /defaults.yaml
+# Service configuration with advanced networking
 service:
   enabled: true
+  type: ClusterIP  # ClusterIP, NodePort, LoadBalancer
   annotations: {}
+  # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
   labels: {}
-  type: ClusterIP
+
   ports: []
-    # - port: 80 #optional, Default 80
-    #   protocol: TCP #optional Default TCP [TCP,UDP]
-    #   name: http #optional, Default http
-    #   nodePort: 30080 #mandatory in case of type NodePort
+  # - port: 80
+  #   targetPort: 8080
+  #   protocol: TCP
+  #   name: http
+  # - port: 9090
+  #   targetPort: 9090
+  #   protocol: TCP
+  #   name: metrics
+
+  # Istio/Service Mesh features
   circuitBreaking:
     enabled: false
     maxRequestsPerConnection: 10
@@ -65,289 +105,244 @@ service:
     interval: 30s
     baseEjectionTime: 3m
     maxEjectionPercent: 100
+
   retry:
-    attempts: 5 
-    perTryTimeout: ""
-  rewrite: /
-  prefix: "" #defaultea name
-  timeout_ms: 100ms
-  selectorLabels: {} #son los del glyphs 
-  # subdomain: test 
-  external: false #para si va a la gw de external este es el modo super opinado
+    enabled: false
+    attempts: 3
+    perTryTimeout: "10s"
+    retryOn: "5xx,reset,connect-failure,refused-stream"
 
+  # URL path configuration
+  rewrite: /  # Rewrite incoming paths
+  prefix: ""  # URL prefix, defaults to service name
+  timeout: 30s  # Request timeout
 
+  # Service discovery
+  subdomain: ""  # For headless services
+  external: false  # Expose via external gateway
 
-
-# glyphs: #to defaultear
-#   istio:
-#     external:
-#       type: virtualService
-#       enabled: True
-#       httpRules:
-#         - prefix: /
-#       selector:
-#         access: external
-#     internal: #default en todos los micros
-#       type: virtualService
-#       enabled: True
-#       httpRules:
-#         - prefix: / #el default es el ##.name
-
-
-
+# Glyphs integration for Istio/Service Mesh
+glyphs: {}
+# istio:
+#   # External traffic configuration
+#   - type: virtualService
+#     name: external
+#     enabled: true
+#     gateway: external-gateway
+#     hosts:
+#     - api.example.com
+#     httpRules:
+#     - match:
+#       - uri:
+#           prefix: /v1
+#       route:
+#       - destination:
+#           port: 80
+#     selector:
+#       access: external
+#
+#   # Internal service mesh
+#   - type: virtualService
+#     name: internal
+#     enabled: true
+#     hosts:
+#     - microservice.default.svc.cluster.local
+#     httpRules:
+#     - match:
+#       - uri:
+#           prefix: /
+#       route:
+#       - destination:
+#           port: 80
+#     selector:
+#       access: internal
+#
+#   # Destination rules
+#   - type: destinationRule
+#     name: service-dr
+#     host: microservice.default.svc.cluster.local
+#     trafficPolicy:
+#       connectionPool:
+#         tcp:
+#           maxConnections: 100
+#       loadBalancer:
+#         simple: ROUND_ROBIN
 
 ############################################
+# Base Summon Configuration
+# All summon features are available below
 ############################################
-############################################
-######################
-##del lexicon to work
 
-
-
-
-
-
-
-
-
-############################################
-############################################
-############################################
-######################
-##esto es el values del base
-
-
+# Workload configuration
 workload:
   enabled: true
-  type: deployment # [deployment, statefulset, daemonset, cronjob] #default deployment
-  replicas: 1
-  # volumeClaimTemplates: #mandatory on type statefullset
-  #   dastateCacata:
+  type: deployment  # deployment, statefulset, job, cronjob, daemonset
+  replicas: 2
+
+  # For StatefulSet
+  # volumeClaimTemplates:
+  #   data:
   #     destinationPath: /data
-  #     storageClass: lala #optional
-  #     size: sor
-  #     accessModes: ReadWriteMany #opcional default: ReadWriteOnce
-  # schedule: "* * * * *" #mandatory if type cronjob
+  #     size: 10Gi
+  #     storageClass: fast-ssd
+  #     accessModes: ReadWriteOnce
 
+  # For CronJob
+  # schedule: "0 */6 * * *"  # Every 6 hours
 
-
+# Override image configuration (usually set above)
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# ServiceAccount configuration
 serviceAccount:
-  # Specifies whether a service account should be created
   enabled: true
-  # Automatically mount a ServiceAccount's API credentials?
   automount: true
-  # Annotations to add to the service account
   annotations: {}
-    # pepe: sarasa
-    # algo: aca
+  # vault.hashicorp.com/agent-inject: "true"
+  # vault.hashicorp.com/role: "microservice"
   labels: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# Pod configuration
 podAnnotations: {}
+# prometheus.io/scrape: "true"
+# prometheus.io/port: "9090"
+# prometheus.io/path: "/metrics"
+
 podLabels: {}
+# version: "v1.2.3"
 
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
+# runAsNonRoot: true
+# runAsUser: 1000
 
 securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
 
-
+# Resource management
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# limits:
+#   cpu: 1000m
+#   memory: 1Gi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
 
-# probes: 
-#   liveness: # The liveness probe checks if the container is still running
-#     type: httpGet
-#     path: /healthz # The path that the probe should request
-#     port: 80 # The port the probe should use
-#     host: localhost # Optional: The host name to connect to (defaults to the Pod IP)
-#     # scheme: HTTP # Optional: The scheme to use (HTTP or HTTPS, default is HTTP)
-#     # httpHeaders: # Optional: Custom HTTP headers to set in the request
-#     #   - name: X-Custom-Header
-#     #     value: "CustomValue"
-#     # initialDelaySeconds: 5 # Number of seconds after the container starts before the probe runs for the first time
-#     # periodSeconds: 10 # How often (in seconds) to perform the probe
-#     # timeoutSeconds: 1 # Number of seconds after which the probe times out
-#     # successThreshold: 1 # Minimum consecutive successes for the probe to be considered successful
-#     # failureThreshold: 3 # When a probe fails, the Kubernetes restarts the container after this many consecutive failures
-#   readiness: # The readiness probe checks if the container is ready to accept traffic
-#     type: tcpSocket # Using the TCP socket method for the probe
-#     port: 8080 # The port the probe should use
-#   startup: # The startup probe checks if the container has started successfully
-#     type: exec # Using the command execution method for the probe
-#     command: # The command to execute for the probe
-#       - "/bin/check_startup.sh"
+# Health checks
+probes: {}
+# liveness:
+#   type: httpGet
+#   path: /healthz
+#   port: 8080
+#   initialDelaySeconds: 30
+#   periodSeconds: 10
+# readiness:
+#   type: httpGet
+#   path: /ready
+#   port: 8080
+#   initialDelaySeconds: 5
+#   periodSeconds: 5
+# startup:
+#   type: httpGet
+#   path: /startup
+#   port: 8080
+#   failureThreshold: 30
+#   periodSeconds: 10
 
+# Autoscaling
 autoscaling:
   enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
   # targetMemoryUtilizationPercentage: 80
 
-
+# Node scheduling
 nodeSelector: {}
+# node-role: worker
 
 tolerations: []
+# - key: "dedicated"
+#   operator: "Equal"
+#   value: "microservices"
+#   effect: "NoSchedule"
 
 affinity: {}
+# podAntiAffinity:
+#   preferredDuringSchedulingIgnoredDuringExecution:
+#   - weight: 100
+#     podAffinityTerm:
+#       topologyKey: kubernetes.io/hostname
 
+# Init and sidecar containers
 initContainers: {}
+# wait-for-db:
+#   image:
+#     repository: busybox
+#     tag: latest
+#   command: ["sh", "-c", "until nc -z postgres 5432; do sleep 1; done"]
+
 sideCars: {}
+# envoy-proxy:
+#   image:
+#     repository: envoyproxy/envoy
+#     tag: latest
+#   resources:
+#     limits:
+#       cpu: 100m
+#       memory: 128Mi
 
-# initContainers:
-#   initializer:
-#     command: cosa
-#     args:
-#       - cosa
-#     probes: {}
-#     resources:
-#       limits:
-#         cpu: "500m"
-#         memory: "512M"
-#       requests:
-#         cpu: "250m"
-#         memory: "128M"    
-#   otroPaCommand:
-#     command:
-#       - ls
-#       - "-alh"
+# ConfigMaps - unified contentType
+configMaps: {}
+# app-config:
+#   contentType: yaml
+#   location: create
+#   mountPath: /config
+#   name: config.yaml
+#   content:
+#     server:
+#       port: 8080
+#     database:
+#       pool_size: 10
 
-# sideCars:
-#   cosa:
-#     image:
-#       tag: saras
-#       name: lslasla
+# Volumes
+volumes: {}
+# cache:
+#   type: emptyDir
+#   destinationPath: /cache
+#   sizeLimit: 1Gi
+# persistent-data:
+#   type: pvc
+#   destinationPath: /data
+#   create: true
+#   size: 10Gi
+#   storageClass: ssd
 
-
-  # saras2:
-  #   type: file
-  #   mountPath: /defaults.yaml
-  # saras:
-  #   location: local
-  #   type: env
-  # pepe:
-  #   location: local
-  #   type: env
-  #   name: roberto
-  # jorge:
-  #   location: create
-  #   type: file
-  #   name: jorge.conf
-  #   mountPath: /sarlanga
-  #   contentType: json
-  #   content:
-  #     {
-  #       "UTC": "Tiempo Universal Coordinado",
-  #       "GMT": "Tiempo Medio de Greenwich",
-  #       "CET": "Hora de Europa Central",
-  #       "EET": "Hora de Europa del Este",
-  #       "AST": "Hora Estándar del Atlántico",
-  #       "EST": "Hora Estándar del Este de América del Norte",
-  #       "EDT": "Hora de Verano del Este de América del Norte",
-  #       "CST": "Hora Estándar del Centro de América del Norte",
-  #     }
-  # mambru.notrock:
-  #     location: create
-  #     type: file
-  #     mountPath: /mambru.conf
-  #     content: |
-  #       sarasa co
-  # deeppurple.rock:
-  #     location: create
-  #     type: file
-  #     mountPath: /mambru.conf
-  #     contentType: yaml
-  #     content:
-  #       UTC: "Tiempo Universal Coordinado"
-  #       GMT: "Tiempo Medio de Greenwich"
-  #       CET: "Hora de Europa Central"
-  #       EET: "Hora de Europa del Este"
-  #       AST: "Hora Estándar del Atlántico"
-
-##esto genera dinamicamente un pvc ademas de agregar el volumen al pod
-# volumes:
-#   home:
-#     type: hostPath
-#     destinationPath: /home/namen/_home
-#     path: /home/namen/_home
-#   data:
-#     type: pvc
-#     destinationPath: /data
-#     create: true
-#     storageClass: lala
-#     size: sor
-#     pvcName: kara #optional si no existe toma el nombre de la ms-name-$key
-#   laslreaeraw:
-#     destinationPath: /laslreaeraw
-#     create: true
-#   dataLoca:
-#     destinationPath: /data
-#     pvcName: jorge # optional si no existe toma la key
-#     create: false
-#     readOnly: true
-#   nfs:
-#     destinationPath: /data
-#     nfs: 
-#       server: my-nfs-server.example.com
-#       path: /my-nfs-volume
-#       readOnly: true
-#   lala:
-#     emptyDir: true
-#     destination: /lala
-#   otro:
-#     emptyDir:
-#       sizeLimit: 50Mi
-#       medium: memory
-
+# Additional environment variables (merged with envs above)
 # envs:
-#   JORGE: sarasa
-#   DB_USER:
-#     type: secret
-#     name: saladenga
-#     key: kaka
-#   lala: pep
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#   EXTRA_VAR: value
 
 ######################
+# Kast system configuration
 ######################
-# esto es herencia desde kast
 spellbook:
   name: default
 chapter:
   name: default
-glyphs: {}
+
+# Additional glyphs can be added here
+# vault:
+# - type: secret
+#   name: app-secrets
+# istio:
+# - type: peerAuthentication
+#   mtls:
+#     mode: STRICT
