@@ -55,7 +55,8 @@ spec:
     path "{{ $vaultConf.secretPath }}/{{ $root.Values.spellbook.name }}/pipelines/*" {
       capabilities = [ "read", "list"]
     }
-    path "sys/policies/password/simple-password-policy/*" {
+    {{/* Allow access to all password policies */}}
+    path "sys/policies/password/*" {
       capabilities = [ "read","list"]
     }
     {{- if ($root.Values.spellbook.prolicy).extraPolicy }}
