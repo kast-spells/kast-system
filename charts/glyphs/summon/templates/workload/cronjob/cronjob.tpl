@@ -36,6 +36,8 @@ spec:
         metadata:
           labels:
             {{- include "common.selectorLabels" $root | nindent 12 }}
+          annotations:
+            {{- include "summon.checksums.annotations" $root | nindent 12 }}
         spec:
           serviceAccountName: {{ include "common.serviceAccountName" $root }}
           {{- if $root.Values.workload.restartPolicy }}
