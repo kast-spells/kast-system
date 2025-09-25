@@ -22,27 +22,28 @@ apiVersion: v1
 metadata:
   name: {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}
 data:
-  {{- if eq $glyphDefinition.definition.type "env" }}
-  {{/* Para type: env, crear cada key-value como entrada separada en el ConfigMap */}}
+{{- $contentType := default "file" $glyphDefinition.definition.contentType }}
+{{- if eq $contentType "env" }}
+  {{/* Para contentType: env, crear cada key-value como entrada separada en el ConfigMap */}}
   {{- if kindIs "map" $glyphDefinition.definition.content }}
   {{- range $key, $value := $glyphDefinition.definition.content }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}
   {{- else }}
-  {{/* Si type: env pero content es string, crear una sola entrada */}}
+  {{/* Si contentType: env pero content es string, crear una sola entrada */}}
   {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: {{ $glyphDefinition.definition.content | quote }}
   {{- end }}
   {{- else }}
-  {{/* Para otros tipos (file, etc), crear una sola entrada con el contenido formateado */}}
+  {{/* Para otros tipos (file, yaml, json, toml), crear una sola entrada con el contenido formateado */}}
   {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: |
-  {{- if eq $glyphDefinition.definition.contentType "yaml" }}
+  {{- if eq $contentType "yaml" }}
     {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
-  {{- else if eq $glyphDefinition.definition.contentType "json" }}
+  {{- else if eq $contentType "json" }}
     {{- $glyphDefinition.definition.content | toJson | nindent 4 }}
-  {{- else if eq $glyphDefinition.definition.contentType "toml" }}
+  {{- else if eq $contentType "toml" }}
     {{- $glyphDefinition.definition.content | toToml | nindent 4 }}
   {{- else }}
-    {{/* Para otros casos, usar content tal cual si es string, o convertir a YAML si es map */}}
+    {{/* Para contentType: file o default, usar content tal cual si es string, o convertir a YAML si es map */}}
     {{- if kindIs "map" $glyphDefinition.definition.content }}
       {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
     {{- else }}

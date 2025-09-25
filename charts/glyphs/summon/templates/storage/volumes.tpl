@@ -51,9 +51,9 @@ volumes:
 
 {{- define "summon.common.volumes.configMaps" -}}
   {{- range $name, $content := .  }}
-    {{- if eq  ( default "file" .type ) "file" }}
+    {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
-  configMap: 
+  configMap:
     name: {{ default $name $content.key }}
     {{- end }}
   {{- end }}
@@ -61,9 +61,9 @@ volumes:
 
 {{- define "summon.common.volumes.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if eq ( default "file" .type ) "file" }}
+    {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
-  secret: 
+  secret:
     secretName: {{ default $name $content.key }}
     {{- end }}
   {{- end }}
