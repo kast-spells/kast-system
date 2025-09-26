@@ -1,0 +1,73 @@
+name: app-with-s3-storage
+namespace: test
+
+image:
+  repository: nginx
+  tag: latest
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+service:
+  enabled: true
+  ports:
+    - port: 80
+      name: http
+
+volumes:
+  # S3 storage with PV creation
+  s3-data:
+    type: pvc
+    storageClass: csi-s3
+    size: 10Gi
+    accessMode: ReadWriteMany
+    destinationPath: /data/s3
+    pv:  # This triggers PV creation
+      driver: ru.yandex.s3.csi
+      volumeHandle: mybucket/data
+      volumeAttributes:
+        mounter: geesefs
+        options: --memory-limit 1000 --dir-mode 0777 --file-mode 0666
+        bucket: mybucket
+        region: us-east-1
+      # Optional: Reference to secret for S3 credentials
+      nodeStageSecretRef:
+        name: s3-secret
+      nodePublishSecretRef:
+        name: s3-secret
+
+  # Using an existing PV
+  existing-storage:
+    type: pvc
+    existingPV: my-existing-s3-pv
+    size: 5Gi
+    accessMode: ReadWriteMany
+    destinationPath: /data/existing
+
+  # Standard dynamic PVC (for comparison)
+  local-data:
+    type: pvc
+    storageClass: standard
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    destinationPath: /data/local
+
+  # EmptyDir volume (existing functionality)
+  temp-data:
+    type: emptyDir
+    size: 500Mi
+    inMemory: true
+    destinationPath: /tmp/cache
+
+# Example secret for S3 credentials (would be created separately)
+# This is just for documentation, not actually created by summon
+# secrets:
+#   s3-secret:
+#     location: external  # Reference existing secret
+#     contentType: env
+#     # Should contain:
+#     # accessKeyID: <S3_ACCESS_KEY>
+#     # secretAccessKey: <S3_SECRET_KEY>
+#     # endpoint: <S3_ENDPOINT>

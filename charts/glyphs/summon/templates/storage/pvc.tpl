@@ -50,14 +50,22 @@ metadata:
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  
-  {{- if $volume.volumeName }}
+  {{/* Handle existingPV for manual binding */}}
+  {{- if $volume.existingPV }}
+  volumeName: {{ $volume.existingPV }}
+  {{/* Handle PV creation - use generated PV name */}}
+  {{- else if $volume.pv }}
+  volumeName: {{ include "common.name" $root }}-{{ $volumeName }}-pv
+  {{/* Standard case - keep existing logic */}}
+  {{- else if $volume.volumeName }}
   volumeName: {{ $volume.volumeName }}
   {{- end }}
   {{- if $volume.storageClassName }}
   storageClassName: {{ $volume.storageClassName }}
+  {{- else if $volume.storageClass }}
+  storageClassName: {{ $volume.storageClass }}
   {{- end }}
-  accessModes: 
+  accessModes:
     - {{ default "ReadWriteOnce" $volume.accessMode }}
   resources:
     requests:
