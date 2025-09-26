@@ -17,6 +17,15 @@ Usage: {{- include "summon.pv" (list $root $name $volume) }}
 {{- $name := index . 1 }}
 {{- $volume := index . 2 }}
 {{- $baseName := default (include "common.name" $root) (index . 3) }}
+{{/* Use Runic Indexer to find CSI configuration from lexicon */}}
+{{- $csiConfig := dict }}
+{{- if and $root.Values.lexicon $volume.storageClass }}
+  {{- $selectors := dict "storageClass" $volume.storageClass }}
+  {{- $runicResult := include "runicIndexer.runicIndexer" (list $root.Values.lexicon $selectors "csi-config" ($root.Values.chapter | default "")) | fromJson }}
+  {{- if $runicResult.results }}
+    {{- $csiConfig = first $runicResult.results }}
+  {{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -51,7 +60,8 @@ spec:
   {{- end }}
   {{- with $volume.pv }}
   csi:
-    driver: {{ .driver }}
+    {{/* Use driver from lexicon if available, otherwise use provided */}}
+    driver: {{ $csiConfig.driver | default .driver }}
     {{- if .volumeHandle }}
     volumeHandle: {{ .volumeHandle }}
     {{- else }}
@@ -63,31 +73,64 @@ spec:
     {{- if .readOnly }}
     readOnly: {{ .readOnly }}
     {{- end }}
+    {{/* Merge volumeAttributes from lexicon defaults and user provided */}}
+    {{- $finalAttributes := dict }}
+    {{- if $csiConfig.defaultAttributes }}
+      {{- range $key, $value := $csiConfig.defaultAttributes }}
+        {{- $_ := set $finalAttributes $key $value }}
+      {{- end }}
+    {{- end }}
     {{- if .volumeAttributes }}
-    volumeAttributes:
       {{- range $key, $value := .volumeAttributes }}
+        {{- $_ := set $finalAttributes $key $value }}
+      {{- end }}
+    {{- end }}
+    {{- if $finalAttributes }}
+    volumeAttributes:
+      {{- range $key, $value := $finalAttributes }}
       {{ $key }}: {{ $value | quote }}
       {{- end }}
     {{- end }}
-    {{- if .nodeStageSecretRef }}
+    {{/* Use secretRefs from lexicon if not provided by user */}}
+    {{- if or .nodeStageSecretRef (and $csiConfig.secretRefs $csiConfig.secretRefs.nodeStageSecretRef) }}
     nodeStageSecretRef:
+      {{- if .nodeStageSecretRef }}
       name: {{ .nodeStageSecretRef.name }}
       namespace: {{ .nodeStageSecretRef.namespace | default $root.Release.Namespace }}
+      {{- else if and $csiConfig.secretRefs $csiConfig.secretRefs.nodeStageSecretRef }}
+      name: {{ $csiConfig.secretRefs.nodeStageSecretRef.name }}
+      namespace: {{ $csiConfig.secretRefs.nodeStageSecretRef.namespace | default $root.Release.Namespace }}
+      {{- end }}
     {{- end }}
-    {{- if .nodePublishSecretRef }}
+    {{- if or .nodePublishSecretRef (and $csiConfig.secretRefs $csiConfig.secretRefs.nodePublishSecretRef) }}
     nodePublishSecretRef:
+      {{- if .nodePublishSecretRef }}
       name: {{ .nodePublishSecretRef.name }}
       namespace: {{ .nodePublishSecretRef.namespace | default $root.Release.Namespace }}
+      {{- else if and $csiConfig.secretRefs $csiConfig.secretRefs.nodePublishSecretRef }}
+      name: {{ $csiConfig.secretRefs.nodePublishSecretRef.name }}
+      namespace: {{ $csiConfig.secretRefs.nodePublishSecretRef.namespace | default $root.Release.Namespace }}
+      {{- end }}
     {{- end }}
-    {{- if .controllerPublishSecretRef }}
+    {{- if or .controllerPublishSecretRef (and $csiConfig.secretRefs $csiConfig.secretRefs.controllerPublishSecretRef) }}
     controllerPublishSecretRef:
+      {{- if .controllerPublishSecretRef }}
       name: {{ .controllerPublishSecretRef.name }}
       namespace: {{ .controllerPublishSecretRef.namespace | default $root.Release.Namespace }}
+      {{- else if and $csiConfig.secretRefs $csiConfig.secretRefs.controllerPublishSecretRef }}
+      name: {{ $csiConfig.secretRefs.controllerPublishSecretRef.name }}
+      namespace: {{ $csiConfig.secretRefs.controllerPublishSecretRef.namespace | default $root.Release.Namespace }}
+      {{- end }}
     {{- end }}
-    {{- if .controllerExpandSecretRef }}
+    {{- if or .controllerExpandSecretRef (and $csiConfig.secretRefs $csiConfig.secretRefs.controllerExpandSecretRef) }}
     controllerExpandSecretRef:
+      {{- if .controllerExpandSecretRef }}
       name: {{ .controllerExpandSecretRef.name }}
       namespace: {{ .controllerExpandSecretRef.namespace | default $root.Release.Namespace }}
+      {{- else if and $csiConfig.secretRefs $csiConfig.secretRefs.controllerExpandSecretRef }}
+      name: {{ $csiConfig.secretRefs.controllerExpandSecretRef.name }}
+      namespace: {{ $csiConfig.secretRefs.controllerExpandSecretRef.namespace | default $root.Release.Namespace }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}

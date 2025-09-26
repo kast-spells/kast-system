@@ -70,11 +70,3 @@ volumes:
       volumeAttributes:
         server: nfs-server.example.com
         share: /exports/data
-
-  # CASO 5: Usando un PV existente (no lo genera)
-  existing-volume:
-    type: pvc
-    existingPV: pre-existing-pv-name
-    size: 500Gi
-    accessMode: ReadWriteMany
-    destinationPath: /mnt/existing

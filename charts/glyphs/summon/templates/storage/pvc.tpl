@@ -13,8 +13,9 @@ Parameters: (list $root $volumeName $volumeDefinition)
 Volume Configuration:
 - volume.name: optional custom PVC name (defaults to {chart-name}-{volumeName})
 - volume.size: required storage size (e.g., "10Gi")
-- volume.storageClassName: optional storage class
+- volume.storageClass: optional storage class
 - volume.accessMode: optional access mode (defaults to "ReadWriteOnce")
+- volume.volumeName: optional PV name to bind to (when using manual binding)
 - volume.labels: optional additional labels
 - volume.annotations: optional additional annotations
 
@@ -50,11 +51,8 @@ metadata:
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  {{/* Handle existingPV for manual binding */}}
-  {{- if $volume.existingPV }}
-  volumeName: {{ $volume.existingPV }}
   {{/* Handle PV creation - use same naming logic as PV template */}}
-  {{- else if $volume.pv }}
+  {{- if $volume.pv }}
     {{- if $volume.volumeName }}
   volumeName: {{ $volume.volumeName }}
     {{- else if $volume.name }}
@@ -66,9 +64,7 @@ spec:
   {{- else if $volume.volumeName }}
   volumeName: {{ $volume.volumeName }}
   {{- end }}
-  {{- if $volume.storageClassName }}
-  storageClassName: {{ $volume.storageClassName }}
-  {{- else if $volume.storageClass }}
+  {{- if $volume.storageClass }}
   storageClassName: {{ $volume.storageClass }}
   {{- end }}
   accessModes:

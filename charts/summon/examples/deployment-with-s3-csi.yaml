@@ -38,14 +38,6 @@ volumes:
       nodePublishSecretRef:
         name: s3-secret
 
-  # Using an existing PV
-  existing-storage:
-    type: pvc
-    existingPV: my-existing-s3-pv
-    size: 5Gi
-    accessMode: ReadWriteMany
-    destinationPath: /data/existing
-
   # Standard dynamic PVC (for comparison)
   local-data:
     type: pvc

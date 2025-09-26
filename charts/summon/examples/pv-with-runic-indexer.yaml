@@ -1,0 +1,86 @@
+# PV with Runic Indexer CSI Configuration
+# This example shows how the Runic Indexer automatically configures CSI drivers
+# based on the storageClass selector from the lexicon
+
+name: app-with-runic-csi
+namespace: test
+
+workload:
+  enabled: true
+  type: deployment
+
+# Include the lexicon with CSI configurations
+lexicon:
+  - name: s3-retriever-config
+    type: csi-config
+    labels:
+      storageClass: s3-retriever
+      provider: yandex
+      default: book
+    driver: ru.yandex.s3.csi
+    defaultAttributes:
+      mounter: geesefs
+      options: --memory-limit 1000 --dir-mode 0777 --file-mode 0666
+    secretRefs:
+      controllerPublishSecretRef:
+        name: csi-s3-secret
+        namespace: kube-system
+      nodePublishSecretRef:
+        name: csi-s3-secret
+        namespace: kube-system
+      nodeStageSecretRef:
+        name: csi-s3-secret
+        namespace: kube-system
+
+volumes:
+  # Volume with automatic CSI configuration from lexicon
+  # The storageClass "s3-retriever" will trigger the Runic Indexer
+  # to find and apply the corresponding CSI configuration
+  series:
+    type: pvc
+    size: 100Gi
+    storageClass: s3-retriever  # This selects the CSI config from lexicon
+    destinationPath: /series
+    accessMode: ReadWriteMany
+    pv:
+      # Only need to specify the volumeHandle
+      # Driver and secretRefs will come from lexicon
+      volumeHandle: radio-pirata/series
+      volumeAttributes:
+        # These will be merged with lexicon defaults
+        custom-option: custom-value
+
+  downloads:
+    type: pvc
+    size: 200Gi
+    storageClass: s3-retriever  # Same storageClass, same CSI config
+    destinationPath: /downloads
+    accessMode: ReadWriteMany
+    pv:
+      volumeHandle: radio-pirata/downloads
+      # volumeAttributes from lexicon will be applied automatically
+
+  # Volume with manual configuration (overrides lexicon)
+  manual-config:
+    type: pvc
+    size: 50Gi
+    storageClass: s3-retriever
+    destinationPath: /manual
+    accessMode: ReadWriteMany
+    pv:
+      driver: ru.yandex.s3.csi  # Explicit driver overrides lexicon
+      volumeHandle: radio-pirata/manual
+      volumeAttributes:
+        mounter: s3fs  # Override lexicon default
+        custom: value
+      # Explicit secretRefs (overrides lexicon)
+      controllerPublishSecretRef:
+        name: custom-secret
+        namespace: default
+
+image:
+  repository: nginx
+  tag: latest
+
+service:
+  enabled: false

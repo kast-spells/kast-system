@@ -34,7 +34,7 @@
 
 
 
-    {{- include (print $content.location".secret") (list $root $glyph ) }}
+    {{- include (print $content.location ".secret") (list $root $glyph ) }}
 
 
   
