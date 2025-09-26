@@ -50,6 +50,10 @@ metadata:
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  
+  {{- if $volume.volumeName }}
+  volumeName: {{ $volume.volumeName }}
+  {{- end }}
   {{- if $volume.storageClassName }}
   storageClassName: {{ $volume.storageClassName }}
   {{- end }}
