@@ -53,10 +53,16 @@ spec:
   {{/* Handle existingPV for manual binding */}}
   {{- if $volume.existingPV }}
   volumeName: {{ $volume.existingPV }}
-  {{/* Handle PV creation - use generated PV name */}}
+  {{/* Handle PV creation - use same naming logic as PV template */}}
   {{- else if $volume.pv }}
-  volumeName: {{ $baseName }}-{{ $volumeName }}-pv
-  {{/* Standard case - keep existing logic */}}
+    {{- if $volume.volumeName }}
+  volumeName: {{ $volume.volumeName }}
+    {{- else if $volume.name }}
+  volumeName: {{ $volume.name }}
+    {{- else }}
+  volumeName: {{ $baseName }}-{{ $volumeName }}
+    {{- end }}
+  {{/* Standard case - explicit volumeName */}}
   {{- else if $volume.volumeName }}
   volumeName: {{ $volume.volumeName }}
   {{- end }}

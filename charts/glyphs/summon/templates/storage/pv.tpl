@@ -22,10 +22,15 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   {{- $pvName := "" }}
-  {{- if $volume.name }}
+  {{- if $volume.volumeName }}
+    {{/* Priority 1: explicit volumeName overrides everything */}}
+    {{- $pvName = $volume.volumeName }}
+  {{- else if $volume.name }}
+    {{/* Priority 2: if name is defined, use it directly */}}
     {{- $pvName = $volume.name }}
   {{- else }}
-    {{- $pvName = print $baseName "-" $name "-pv" }}
+    {{/* Priority 3: default to app-name + volume-key */}}
+    {{- $pvName = printf "%s-%s" $baseName $name }}
   {{- end }}
   name: {{ $pvName }}
   labels:
