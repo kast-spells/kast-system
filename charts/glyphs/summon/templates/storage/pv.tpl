@@ -21,13 +21,13 @@ Usage: {{- include "summon.pv" (list $root $name $volume) }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  {{- $pvcName := "" }}
+  {{- $pvName := "" }}
   {{- if $volume.name }}
-    {{- $pvcName = $volume.name }}
+    {{- $pvName = $volume.name }}
   {{- else }}
-    {{- $pvcName = print $baseName "-" $volumeName }}
+    {{- $pvName = print $baseName "-" $name "-pv" }}
   {{- end }}
-  name: {{ $pvcName }}
+  name: {{ $pvName }}
   labels:
     {{- include "common.labels" $root | nindent 4 }}
     volume: {{ $name }}

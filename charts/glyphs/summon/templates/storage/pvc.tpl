@@ -55,7 +55,7 @@ spec:
   volumeName: {{ $volume.existingPV }}
   {{/* Handle PV creation - use generated PV name */}}
   {{- else if $volume.pv }}
-  volumeName: {{ include "common.name" $root }}-{{ $volumeName }}-pv
+  volumeName: {{ $baseName }}-{{ $volumeName }}-pv
   {{/* Standard case - keep existing logic */}}
   {{- else if $volume.volumeName }}
   volumeName: {{ $volume.volumeName }}

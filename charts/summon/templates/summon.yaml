@@ -68,7 +68,7 @@ root: |
   {{- range $name, $volume := .Values.volumes }}
     {{- if eq $volume.type "pvc" }}
       {{- if and $volume.pv (not $volume.stateClaimTemplate) }}
-        {{- include "summon.pv" (list $ $name $volume) }}
+        {{- include "summon.pv" (list $ $name $volume nil) }}
       {{- end }}
       {{- if not $volume.stateClaimTemplate }}
         {{- include "summon.persistentVolumeClaim" (list $ $name $volume nil) }}
