@@ -29,24 +29,39 @@ Returns: Card with proper summon-style resource definitions
 {{/* Build summon-compatible context for resource generation */}}
 {{- $summonContext := deepCopy $root -}}
 
-{{/* Merge secrets using summon patterns */}}
+{{/* Merge secrets: tarot.secrets < baseCard.secrets < cardDef.secrets */}}
+{{- $tarotSecrets := $root.Values.tarot.secrets | default dict -}}
 {{- $baseSecrets := $baseCard.secrets | default dict -}}
 {{- $overrideSecrets := $cardDef.secrets | default dict -}}
-{{- $mergedSecrets := merge $baseSecrets $overrideSecrets -}}
-{{- $_ := set $summonContext.Values "secrets" $mergedSecrets -}}
+{{- $mergedSecrets := merge $overrideSecrets $baseSecrets $tarotSecrets -}}
 {{- $card = set $card "secrets" $mergedSecrets -}}
 
-{{/* Merge envs using summon patterns */}}
+{{/* Merge configMaps: tarot.configMaps < baseCard.configMaps < cardDef.configMaps */}}
+{{- $tarotConfigMaps := $root.Values.tarot.configMaps | default dict -}}
+{{- $baseConfigMaps := $baseCard.configMaps | default dict -}}
+{{- $overrideConfigMaps := $cardDef.configMaps | default dict -}}
+{{- $mergedConfigMaps := merge $overrideConfigMaps $baseConfigMaps $tarotConfigMaps -}}
+{{- $card = set $card "configMaps" $mergedConfigMaps -}}
+
+{{/* Merge vault: tarot.vault < baseCard.vault < cardDef.vault */}}
+{{- $tarotVault := $root.Values.tarot.vault | default dict -}}
+{{- $baseVault := $baseCard.vault | default dict -}}
+{{- $overrideVault := $cardDef.vault | default dict -}}
+{{- $mergedVault := merge $overrideVault $baseVault $tarotVault -}}
+{{- $card = set $card "vault" $mergedVault -}}
+
+{{/* Merge envs: tarot.envs < baseCard.envs < cardDef.envs */}}
+{{- $tarotEnvs := $root.Values.tarot.envs | default dict -}}
 {{- $baseEnvs := $baseCard.envs | default dict -}}
 {{- $overrideEnvs := $cardDef.envs | default dict -}}
-{{- $mergedEnvs := merge $baseEnvs $overrideEnvs -}}
-{{- $_ := set $summonContext.Values "envs" $mergedEnvs -}}
+{{- $mergedEnvs := merge $overrideEnvs $baseEnvs $tarotEnvs -}}
 {{- $card = set $card "envs" $mergedEnvs -}}
 
-{{/* Merge volumes using summon patterns */}}
-{{- $baseVolumes := $baseCard.volumes | default list -}}
-{{- $overrideVolumes := $cardDef.volumes | default list -}}
-{{- $mergedVolumes := concat $baseVolumes $overrideVolumes -}}
+{{/* Merge volumes: tarot.volumes < baseCard.volumes < cardDef.volumes */}}
+{{- $tarotVolumes := $root.Values.tarot.volumes | default dict -}}
+{{- $baseVolumes := $baseCard.volumes | default dict -}}
+{{- $overrideVolumes := $cardDef.volumes | default dict -}}
+{{- $mergedVolumes := merge $overrideVolumes $baseVolumes $tarotVolumes -}}
 {{- $card = set $card "volumes" $mergedVolumes -}}
 
 {{- $card | toJson -}}

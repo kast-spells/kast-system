@@ -3,9 +3,18 @@ Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
 
-{{- if .Values.rbac.enabled }}
-{{/* Use summon glyph for ServiceAccount instead of custom implementation */}}
-{{- include "summon.serviceAccount" . }}
+{{- if .Values.tarot.rbac.enabled }}
+{{/* ServiceAccount - usa summon glyph con tarot.serviceAccount o hereda del summon */}}
+{{- $saContext := deepCopy . -}}
+{{- if .Values.tarot.serviceAccount.enabled -}}
+  {{/* Usa serviceAccount definido en tarot */}}
+  {{- $_ := set $saContext.Values "serviceAccount" .Values.tarot.serviceAccount -}}
+{{- else if not .Values.serviceAccount.enabled -}}
+  {{/* Si no hay SA en summon ni en tarot, crear uno default */}}
+  {{- $saName := "tarot-runner" -}}
+  {{- $_ := set $saContext.Values "serviceAccount" (dict "enabled" true "name" $saName) -}}
+{{- end -}}
+{{- include "summon.serviceAccount" $saContext }}
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

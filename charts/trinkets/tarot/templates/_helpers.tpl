@@ -26,8 +26,10 @@ Selector labels - use common glyph
 Create the name of the service account to use
 */}}
 {{- define "tarot.serviceAccountName" -}}
-{{- if .Values.workflow.serviceAccount }}
-{{- .Values.workflow.serviceAccount }}
+{{- if .Values.tarot.serviceAccount.name }}
+{{- .Values.tarot.serviceAccount.name }}
+{{- else if .Values.serviceAccount.name }}
+{{- .Values.serviceAccount.name }}
 {{- else }}
 {{- include "common.name" . }}
 {{- end }}
@@ -37,7 +39,7 @@ Create the name of the service account to use
 Generate workflow name
 */}}
 {{- define "tarot.workflowName" -}}
-{{- if .Values.workflow.generateName }}
+{{- if and .Values.tarot.generateName (not .Values.tarot.asTemplate) }}
 {{- printf "%s-" (include "common.name" .) }}
 {{- else }}
 {{- include "common.name" . }}

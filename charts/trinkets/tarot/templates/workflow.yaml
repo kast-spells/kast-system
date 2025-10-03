@@ -17,29 +17,69 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- else if .Values.tarot.reading }}
   {{/* Generate custom workflow from reading */}}
   {{- $resolvedCards := include "tarot.resolveAllCards" (list . .Values.tarot.reading) | fromJson }}
-  
-  {{/* Collect all secrets for secret resource generation */}}
-  {{- $allSecrets := dict }}
-  {{- range $cardName, $cardDef := .Values.tarot.reading }}
-    {{- if $cardDef.secrets }}
-      {{- $allSecrets = merge $allSecrets $cardDef.secrets }}
+
+  {{/* Generate secrets from tarot.secrets (unified: K8s or Vault based on location) */}}
+  {{- if .Values.tarot.secrets }}
+    {{- range $name, $secretDef := .Values.tarot.secrets }}
+      {{- if eq $secretDef.location "vault" }}
+        {{/* Vault secret - use vault glyph */}}
+        {{- include "vault.secret" (list $ (merge $secretDef (dict "name" $name))) }}
+      {{- else if $secretDef.content }}
+        {{/* K8s secret - use summon glyph */}}
+        {{- include "summon.secrets" (list $ (dict "name" $name "definition" $secretDef)) }}
+      {{- end }}
     {{- end }}
   {{- end }}
-  {{- $allSecrets = merge (.Values.secrets | default dict) $allSecrets }}
-  
-  {{/* Generate secret resources if needed */}}
-  {{- if $allSecrets }}
-    {{- include "tarot.generateSecretResources" (list . $allSecrets) }}
+
+  {{/* Generate secrets from cards (card-specific secrets only - skip duplicates) */}}
+  {{- $generatedSecrets := dict }}
+  {{- if .Values.tarot.secrets }}
+    {{- range $name, $_ := .Values.tarot.secrets }}
+      {{- $generatedSecrets = set $generatedSecrets $name true }}
+    {{- end }}
+  {{- end }}
+  {{- range $cardName, $resolvedCard := $resolvedCards }}
+    {{- if $resolvedCard.secrets }}
+      {{- range $name, $secretDef := $resolvedCard.secrets }}
+        {{- if not (hasKey $generatedSecrets $name) }}
+          {{- if eq $secretDef.location "vault" }}
+            {{/* Vault secret from card - use vault glyph */}}
+            {{- include "vault.secret" (list $ (merge $secretDef (dict "name" $name))) }}
+          {{- else if $secretDef.content }}
+            {{/* K8s secret from card - use summon glyph */}}
+            {{- include "summon.secrets" (list $ (dict "name" $name "definition" $secretDef)) }}
+          {{- end }}
+          {{- $generatedSecrets = set $generatedSecrets $name true }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
   {{- end }}
 
-  {{/* Generate PVC resources for volumes with type "pvc" using summon glyph */}}
-  {{- include "tarot.generatePVCResources" (list . $resolvedCards) }}
+  {{/* Generate ConfigMaps from tarot.configMaps (workflow-specific) */}}
+  {{- if .Values.tarot.configMaps }}
+    {{- range $name, $cmDef := .Values.tarot.configMaps }}
+      {{- include "summon.configMap" (list $ (dict "name" $name "definition" $cmDef)) }}
+    {{- end }}
+  {{- end }}
+
+  {{/* Generate PVC resources from tarot.volumes (workflow-specific) */}}
+  {{- if .Values.tarot.volumes }}
+    {{- range $name, $volumeDef := .Values.tarot.volumes }}
+      {{- if or (eq $volumeDef.type "pvc") (eq $volumeDef.type "persistentVolumeClaim") }}
+        {{- include "summon.persistentVolumeClaim" (list $ $name $volumeDef $name) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
 
 ---
 apiVersion: argoproj.io/v1alpha1
+{{- if .Values.tarot.asTemplate }}
+kind: WorkflowTemplate
+{{- else }}
 kind: Workflow
+{{- end }}
 metadata:
-  {{- if .Values.workflow.generateName }}
+  {{- if and (not .Values.tarot.asTemplate) .Values.tarot.generateName }}
   generateName: {{ include "tarot.workflowName" . }}
   {{- else }}
   name: {{ include "tarot.workflowName" . }}
@@ -49,32 +89,38 @@ metadata:
     {{- include "tarot.labels" . | nindent 4 }}
     kast.io/workflow-type: custom
     kast.io/execution-mode: {{ .Values.tarot.executionMode | default "dag" | quote }}
-    {{- if .Values.workflow.labels }}
-    {{- .Values.workflow.labels | toYaml | nindent 4 }}
+    {{- if .Values.tarot.labels }}
+    {{- .Values.tarot.labels | toYaml | nindent 4 }}
     {{- end }}
-  {{- if .Values.workflow.annotations }}
+  {{- if .Values.tarot.annotations }}
   annotations:
-    {{- .Values.workflow.annotations | toYaml | nindent 4 }}
+    {{- .Values.tarot.annotations | toYaml | nindent 4 }}
   {{- end }}
 spec:
   entrypoint: main
   
-  {{/* Service Account */}}
-  {{- if .Values.workflow.serviceAccount }}
-  serviceAccountName: {{ .Values.workflow.serviceAccount | quote }}
+  {{/* Service Account - usa tarot.serviceAccount o hereda del summon */}}
+  {{- $serviceAccount := "" -}}
+  {{- if .Values.tarot.serviceAccount.name -}}
+    {{- $serviceAccount = .Values.tarot.serviceAccount.name -}}
+  {{- else if .Values.serviceAccount.name -}}
+    {{- $serviceAccount = .Values.serviceAccount.name -}}
+  {{- end -}}
+  {{- if $serviceAccount }}
+  serviceAccountName: {{ $serviceAccount | quote }}
   {{- end }}
-  
-  {{/* Global workflow arguments */}}
-  {{- if .Values.workflow.arguments }}
+
+  {{/* Workflow arguments */}}
+  {{- if .Values.tarot.arguments }}
   arguments:
-    {{- .Values.workflow.arguments | toYaml | nindent 4 }}
+    {{- .Values.tarot.arguments | toYaml | nindent 4 }}
   {{- end }}
   
-  {{/* Volumes */}}
-  {{- $volumes := include "tarot.generateVolumes" (list . $resolvedCards) }}
-  {{- if $volumes }}
+  {{/* Volumes - use tarot.volumes (workflow-specific) */}}
+  {{- if .Values.tarot.volumes }}
+  {{- $volumeContext := dict "Values" (dict "volumes" .Values.tarot.volumes) -}}
   volumes:
-    {{- $volumes | nindent 4 }}
+    {{- include "summon.common.volumes.volumes" $volumeContext | nindent 4 }}
   {{- end }}
   
   {{/* Node Selection */}}

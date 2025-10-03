@@ -1,15 +1,15 @@
 # Tarot Trinket Default Values
 # Dynamic workflow composition system
 
-# Workflow execution mode and card reading
+# Tarot configuration - Dynamic workflow composition
 tarot:
-  # Execution mode: container|dag|steps|suspend|resource|script
+  # Execution mode: container|dag|steps|suspend
   executionMode: dag
-  
+
   # Cluster-wide template reference (optional)
   # template: standard-ci-template
-  
-  # Dictionary-based card reading  
+
+  # Dictionary-based card reading
   reading:
     # Default empty reading to pass syntax validation
     _syntax_test:
@@ -18,50 +18,82 @@ tarot:
         image: busybox:latest
         command: ["echo", "default"]
     # Example structure:
-    # checkout:  # Card name
+    # checkout:
+    #   selectors: {category: source, vcs: git}
     #   position: foundation
-    #   with:
-    #     repository: "{{workflow.parameters.repo}}"
     # build:
-    #   selectors:
-    #     builder: buildah
-    #     target: container
+    #   selectors: {category: build, builder: docker}
     #   position: action
     #   depends: [checkout]
-    # custom-step:
-    #   container:
-    #     image: custom:latest
-    #   position: challenge
 
-  # Template parameters (for cluster-wide templates)
-  parameters: {}
+  # ServiceAccount for workflow execution
+  serviceAccount:
+    enabled: true
+    name: tarot-runner
+    labels: {}
+    annotations: {}
+      # Vault integration example:
+      # vault.hashicorp.com/role: tarot-vault-role
 
-# Workflow configuration
-workflow:
-  # Service account for workflow execution
-  serviceAccount: tarot-runner
-  
-  # Global workflow parameters
+  # RBAC for workflow
+  rbac:
+    enabled: true
+    # Custom rules can be added here
+    # rules: []
+
+  # Workflow-specific secrets (unified K8s and Vault)
+  secrets: {}
+    # K8s Secret example:
+    # local-config:
+    #   contentType: env
+    #   content:
+    #     CONFIG_KEY: "value"
+    #
+    # Vault Secret example:
+    # docker-creds:
+    #   location: vault
+    #   path: chapter
+    #   format: env
+    #   keys: [DOCKER_USER, DOCKER_PASS]
+    #
+    # Vault with random password:
+    # api-key:
+    #   location: vault
+    #   path: chapter
+    #   random: true
+    #   randomKey: API_KEY
+    #
+    # Vault with static data:
+    # mixed-secret:
+    #   location: vault
+    #   path: chapter
+    #   keys: [DB_PASS]
+    #   staticData:
+    #     DB_HOST: "localhost"
+
+  # Workflow-specific environment variables
+  envs: {}
+    # Example:
+    # REGISTRY_URL: "registry.company.com"
+
+  # Workflow-specific volumes
+  volumes: {}
+    # Example:
+    # workspace:
+    #   type: emptyDir
+    #   sizeLimit: 5Gi
+
+  # Workflow-specific configmaps
+  configMaps: {}
+
+  # Workflow arguments
   arguments:
     parameters: []
-  
+
   # Workflow metadata
   generateName: true
   labels: {}
   annotations: {}
-
-# Secret and environment variable inheritance
-secrets: {}
-  # Example:
-  # registry-creds:
-  #   type: vault-secret
-  #   path: "secret/registry"
-  #   keys: ["username", "password"]
-
-envs: {}
-  # Example:
-  # REGISTRY_URL: "registry.company.com"
-  # LOG_LEVEL: "info"
 
 # Cards system integration
 cards:
@@ -83,18 +115,19 @@ spellbook:
 chapter:
   name: default
 
-# Lexicon system integration (for cluster templates)
-lexicon:
-  # Default vault server for vault glyph integration
-  - name: default-vault
-    type: vault
-    labels:
-      default: book
-    server: vault.vault.svc.cluster.local:8200
-    auth:
-      kubernetes:
-        path: kubernetes
-        role: tarot-vault-role
+# Lexicon system integration (for cluster templates and vault servers)
+lexicon: []
+  # Example vault server configuration:
+  # - name: default-vault
+  #   type: vault
+  #   labels:
+  #     default: book
+  #   server: vault.vault.svc.cluster.local:8200
+  #   secretPath: secret
+  #   auth:
+  #     kubernetes:
+  #       path: kubernetes
+  #       role: tarot-vault-role
   # Will be populated from bookrack/_lexicon/ directories
 
 # RBAC configuration

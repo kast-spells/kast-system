@@ -35,13 +35,19 @@ Returns: Argo Workflow template definition
       - {{ . | quote }}
     {{- end }}
     {{- end }}
-    {{- if or $root.Values.envs $cardDef.envs $root.Values.secrets $cardDef.secrets }}
-    env:
-      {{- include "tarot.injectEnvironmentVars" (list $root $resolvedCard.container ($cardDef.secrets | default dict) ($cardDef.envs | default dict)) | nindent 6 }}
+    {{/* Environment variables - use summon helper */}}
+    {{- if or $resolvedCard.envs $resolvedCard.secrets $resolvedCard.configMaps }}
+    {{- include "summon.common.envs.env" (dict "Values" $resolvedCard) | nindent 4 }}
     {{- end }}
-    {{- if or $cardDef.volumes $root.Values.secrets $cardDef.secrets }}
-    volumeMounts:
-      {{- include "tarot.injectVolumeMounts" (list $root $resolvedCard.container ($cardDef.secrets | default dict) ($resolvedCard.volumes | default list)) | nindent 6 }}
+    {{/* envFrom for secrets/configMaps with contentType: env */}}
+    {{- if or $resolvedCard.secrets $resolvedCard.configMaps }}
+    {{- include "summon.common.envs.envFrom" (dict "Values" $resolvedCard) | nindent 4 }}
+    {{- end }}
+    {{/* Volume mounts - use summon helper */}}
+    {{- if $resolvedCard.volumes }}
+      {{/* Create compatible context for summon helper - it expects workload.volumeClaimTemplates */}}
+      {{- $volumeContext := dict "Values" (dict "volumes" $resolvedCard.volumes "secrets" $resolvedCard.secrets "configMaps" $resolvedCard.configMaps "workload" dict) }}
+      {{- include "summon.common.volumeMounts" $volumeContext | nindent 4 }}
     {{- end }}
     {{- if $resolvedCard.container.resources }}
     resources:
@@ -61,9 +67,12 @@ Returns: Argo Workflow template definition
     command: {{ $resolvedCard.script.command | default list | toYaml }}
     source: |
       {{- $resolvedCard.script.source | nindent 6 }}
-    {{- if or $root.Values.envs $cardDef.envs }}
-    env:
-      {{- include "tarot.injectEnvironmentVars" (list $root $resolvedCard.script ($cardDef.secrets | default dict) ($cardDef.envs | default dict)) | nindent 6 }}
+    {{/* Environment variables for script - use summon helper */}}
+    {{- if or $resolvedCard.envs $resolvedCard.secrets $resolvedCard.configMaps }}
+    {{- include "summon.common.envs.env" (dict "Values" $resolvedCard) | nindent 4 }}
+    {{- end }}
+    {{- if or $resolvedCard.secrets $resolvedCard.configMaps }}
+    {{- include "summon.common.envs.envFrom" (dict "Values" $resolvedCard) | nindent 4 }}
     {{- end }}
   {{- end }}
   {{- if $resolvedCard.suspend }}
@@ -158,11 +167,19 @@ Returns: Main template definition
 
 - name: main
   {{- if eq $executionMode "container" }}
-  {{/* Single container execution */}}
+  {{/* Single container execution - find the actual card (skip _syntax_test) */}}
   {{- $firstCard := "" -}}
   {{- range $cardName, $cardDef := $allCards -}}
-    {{- if not $firstCard -}}
+    {{- if and (not $firstCard) (ne $cardName "_syntax_test") -}}
       {{- $firstCard = $cardName -}}
+    {{- end -}}
+  {{- end -}}
+  {{/* Fallback to _syntax_test if no other card found */}}
+  {{- if not $firstCard -}}
+    {{- range $cardName, $cardDef := $allCards -}}
+      {{- if not $firstCard -}}
+        {{- $firstCard = $cardName -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
   {{- if $firstCard -}}
@@ -178,6 +195,32 @@ Returns: Main template definition
     {{- if $resolvedCard.container.args }}
     args:
       {{- $resolvedCard.container.args | toYaml | nindent 6 }}
+    {{- end }}
+    {{/* Environment variables - use summon helper */}}
+    {{- if or $resolvedCard.envs $resolvedCard.secrets $resolvedCard.configMaps }}
+    env:
+    {{- include "summon.common.envs.env" (dict "Values" $resolvedCard) | nindent 6 }}
+    {{- end }}
+    {{/* envFrom for secrets/configMaps with contentType: env */}}
+    {{- if or $resolvedCard.secrets $resolvedCard.configMaps }}
+    {{- include "summon.common.envs.envFrom" (dict "Values" $resolvedCard) | nindent 4 }}
+    {{- end }}
+    {{/* Volume mounts - use summon helper */}}
+    {{- if $resolvedCard.volumes }}
+      {{/* Create compatible context for summon helper - it expects workload.volumeClaimTemplates */}}
+      {{- $volumeContext := dict "Values" (dict "volumes" $resolvedCard.volumes "secrets" $resolvedCard.secrets "configMaps" $resolvedCard.configMaps "workload" dict) }}
+      {{- include "summon.common.volumeMounts" $volumeContext | nindent 4 }}
+    {{- end }}
+    {{- if $resolvedCard.container.resources }}
+    resources:
+      {{- $resolvedCard.container.resources | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $resolvedCard.container.securityContext }}
+    securityContext:
+      {{- $resolvedCard.container.securityContext | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $resolvedCard.container.workingDir }}
+    workingDir: {{ $resolvedCard.container.workingDir | quote }}
     {{- end }}
   {{- end }}
   {{- end }}
