@@ -146,6 +146,8 @@ spec:
   {{- $_ =  unset $cleanSpellbook.spellbook "appParams" }}
   {{- $_ =  unset $cleanSpellbook.spellbook "summon" }}
   {{- $_ =  unset $cleanSpellbook.spellbook "kaster" }}
+  {{- $_ =  unset $cleanSpellbook.spellbook "appendix" }}
+  {{- $_ =  unset $cleanSpellbook.spellbook "localAppendix" }}
   sources:
   {{- /* Source 1: Primary source (custom chart OR defaultTrinket) - ALWAYS */}}
   {{- if or $spellDefinition.chart $spellDefinition.path }}
@@ -193,6 +195,10 @@ spec:
           {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
           lexicon:
           {{- toYaml $lexicon | nindent 12 }}
+          {{- if $cards }}
+          cards:
+          {{- toYaml $cards | nindent 12 }}
+          {{- end }}
   {{- end }}
   {{- /* Sources 2..N: Additional trinket sources (dynamic detection) */}}
   {{- range $trinketKey, $trinket := $chapterTrinketsByKey }}
