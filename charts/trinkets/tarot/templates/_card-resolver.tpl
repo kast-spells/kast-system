@@ -133,10 +133,15 @@ Returns: Card definition as JSON or empty string if not found
 {{- $root := index . 0 -}}
 {{- $cardName := index . 1 -}}
 {{- $found := "" -}}
-{{- range $root.Values.cards -}}
-  {{- if eq .name $cardName -}}
-    {{- $found = . | toJson -}}
-    {{- break -}}
+{{/* Cards is now a dictionary - direct lookup */}}
+{{- if $root.Values.cards -}}
+  {{- if hasKey $root.Values.cards $cardName -}}
+    {{- $card := index $root.Values.cards $cardName -}}
+    {{/* Ensure .name exists (use dict key if missing) */}}
+    {{- if not (hasKey $card "name") -}}
+      {{- $_ := set $card "name" $cardName -}}
+    {{- end -}}
+    {{- $found = $card | toJson -}}
   {{- end -}}
 {{- end -}}
 {{- $found -}}

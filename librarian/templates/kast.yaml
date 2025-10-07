@@ -101,29 +101,26 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
       {{- $_ := mergeOverwrite $finalAppendix (deepCopy $spellDefinition.localAppendix) }}
     {{- end }}
 
-    {{/* Convert appendix.lexicon dict to list for backward compatibility */}}
-    {{- $lexicon := list }}
+    {{/* Pass appendix as dictionaries with .name field ensured */}}
+    {{- $lexicon := dict }}
     {{- if $finalAppendix.lexicon }}
       {{- range $name, $lexiconDef := $finalAppendix.lexicon }}
-        {{- $item := deepCopy $lexiconDef }}
-        {{/* Use .name if exists, otherwise use dict key */}}
-        {{- if not (hasKey $item "name") }}
-          {{- $_ := set $item "name" $name }}
+        {{/* Ensure .name exists (use dict key if missing) */}}
+        {{- if not (hasKey $lexiconDef "name") }}
+          {{- $_ := set $lexiconDef "name" $name }}
         {{- end }}
-        {{- $lexicon = append $lexicon $item }}
+        {{- $lexicon = set $lexicon $name $lexiconDef }}
       {{- end }}
     {{- end }}
 
-    {{/* Convert appendix.cards dict to list with name override support */}}
-    {{- $cards := list }}
+    {{- $cards := dict }}
     {{- if $finalAppendix.cards }}
       {{- range $cardKey, $cardDef := $finalAppendix.cards }}
-        {{- $item := deepCopy $cardDef }}
-        {{/* Use .name if exists, otherwise use dict key */}}
-        {{- if not (hasKey $item "name") }}
-          {{- $_ := set $item "name" $cardKey }}
+        {{/* Ensure .name exists (use dict key if missing) */}}
+        {{- if not (hasKey $cardDef "name") }}
+          {{- $_ := set $cardDef "name" $cardKey }}
         {{- end }}
-        {{- $cards = append $cards $item }}
+        {{- $cards = set $cards $cardKey $cardDef }}
       {{- end }}
     {{- end }}
 ---

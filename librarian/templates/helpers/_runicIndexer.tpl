@@ -11,7 +11,12 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- $bookDefault := list -}}
 {{- $chapterDefault := list -}}
 
-{{- range $currrentGlyph := $glyphs -}}
+{{/* Dictionary format - iterate over key/value pairs */}}
+{{- range $glyphName, $currrentGlyph := $glyphs -}}
+  {{/* Ensure .name exists (use dict key if missing) */}}
+  {{- if not (hasKey $currrentGlyph "name") -}}
+    {{- $_ := set $currrentGlyph "name" $glyphName -}}
+  {{- end -}}
   {{- if eq $currrentGlyph.type $type -}}
     {{- range $selector, $value := $selectors -}}
       {{- if (hasKey $currrentGlyph.labels $selector) -}}
