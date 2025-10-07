@@ -7,7 +7,7 @@ chapter:
 
 # Lexicon con vault server
 lexicon:
-  - name: production-vault
+  production-vault:
     type: vault
     labels:
       default: book
@@ -20,7 +20,7 @@ lexicon:
 
 # Cards
 cards:
-  - name: deploy-task
+  deploy-task:
     type: card
     labels:
       category: deploy

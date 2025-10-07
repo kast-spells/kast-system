@@ -2,13 +2,13 @@ name: tarot-simple-dag
 
 # Simple DAG test with two tasks
 cards:
-  - name: first-task
+  first-task:
     type: task
     container:
       image: busybox:latest
       command: ["echo", "first task"]
-      
-  - name: second-task  
+
+  second-task:
     type: task
     container:
       image: busybox:latest

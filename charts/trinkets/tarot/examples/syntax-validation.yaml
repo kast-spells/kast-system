@@ -5,7 +5,7 @@ name: tarot-syntax-test
 
 # Minimal card definition
 cards:
-  - name: test-task
+  test-task:
     type: card
     labels:
       cardType: task

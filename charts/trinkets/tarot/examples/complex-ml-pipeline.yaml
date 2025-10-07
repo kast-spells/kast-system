@@ -28,8 +28,8 @@ envs:
 
 # Cards for ML workloads (simulated)
 cards:
-  - name: data-ingestion
-    type: data
+  data-ingestion:
+    type: card
     labels:
       workload: data-processing
       source: s3
@@ -46,13 +46,13 @@ cards:
           memory: "8Gi"
           cpu: "4"
     volumes:
-      - name: data-volume
+      data-volume:
         type: persistentVolumeClaim
         size: "500Gi"
         mountPath: /data
 
-  - name: spark-preprocessing
-    type: data
+  spark-preprocessing:
+    type: card
     labels:
       framework: spark
       workload: data-preprocessing
@@ -121,7 +121,7 @@ tarot:
       position: action
       depends: [data-preprocessing]
       volumes:
-        - name: feature-store
+        feature-store:
           type: persistentVolumeClaim
           size: "100Gi"
           mountPath: /data/features
@@ -165,7 +165,7 @@ tarot:
           operator: "Exists"
           effect: "NoSchedule"
       volumes:
-        - name: model-output
+        model-output:
           type: persistentVolumeClaim
           size: "50Gi"
           mountPath: /models
@@ -261,7 +261,7 @@ tarot:
       position: outcome
       depends: [model-deployment-staging]
       volumes:
-        - name: test-results
+        test-results:
           type: persistentVolumeClaim
           size: "10Gi"
           mountPath: /results

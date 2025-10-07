@@ -20,7 +20,7 @@ envs:
   
 # Cards available for resolution (simulated)
 cards:
-  - name: git-clone
+  git-clone:
     type: source
     labels:
       vcs: git
@@ -35,11 +35,11 @@ cards:
       branch: string
       path: string
     volumes:
-      - name: source-code
+      source-code:
         type: emptyDir
         mountPath: /workspace
 
-  - name: security-scanner
+  security-scanner:
     type: security
     labels:
       type: security
@@ -50,7 +50,7 @@ cards:
       command: ["trivy"]
       args: ["fs", "--exit-code", "1", "/workspace"]
     volumes:
-      - name: source-code
+      source-code:
         type: inherit
 
 tarot:

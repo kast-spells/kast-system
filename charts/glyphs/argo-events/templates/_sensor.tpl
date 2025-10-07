@@ -34,7 +34,22 @@ Example glyphDefinition:
 {{- $root := index . 0 }}
 {{- $glyphDefinition := index . 1 }}
 {{- $resourceName := default (include "common.name" $root) $glyphDefinition.name }}
+
+{{/* Find EventBus using runicIndexer */}}
 {{- $eventBuses := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "eventbus" $root.Values.chapter.name ) | fromJson) "results" }}
+
+{{/* Find EventSources using runicIndexer if eventSourceSelector is provided */}}
+{{- $eventSources := list }}
+{{- if $glyphDefinition.eventSourceSelector }}
+{{- $eventSources = get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.eventSourceSelector) "eventsource" $root.Values.chapter.name ) | fromJson) "results" }}
+{{- end }}
+
+{{/* Find Triggers using runicIndexer if triggerSelector is provided */}}
+{{- $triggers := list }}
+{{- if $glyphDefinition.triggerSelector }}
+{{- $triggers = get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.triggerSelector) "trigger" $root.Values.chapter.name ) | fromJson) "results" }}
+{{- end }}
+
 {{- range $eventBus := $eventBuses }}
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -93,8 +108,10 @@ spec:
       {{- . | toYaml | nindent 6 }}
     {{- end }}
   {{- end }}
-  {{- if $glyphDefinition.dependencies }}
+  {{- if or $glyphDefinition.dependencies (gt (len $eventSources) 0) }}
   dependencies:
+    {{- if $glyphDefinition.dependencies }}
+    {{/* Use inline dependencies (backward compatibility) */}}
     {{- range $glyphDefinition.dependencies }}
     - name: {{ .name }}
       {{- with .eventSourceName }}
@@ -147,9 +164,23 @@ spec:
         {{- .transform | toYaml | nindent 8 }}
       {{- end }}
     {{- end }}
+    {{- else }}
+    {{/* Build dependencies dynamically from eventSources found by runicIndexer */}}
+    {{- range $eventSource := $eventSources }}
+    - name: {{ $eventSource.name }}
+      eventSourceName: {{ $eventSource.name }}
+      eventName: {{ $eventSource.name }}
+      {{- if $glyphDefinition.dependencyFilters }}
+      filters:
+        {{- $glyphDefinition.dependencyFilters | toYaml | nindent 8 }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
   {{- end }}
-  {{- if $glyphDefinition.triggers }}
+  {{- if or $glyphDefinition.triggers (gt (len $triggers) 0) }}
   triggers:
+    {{- if $glyphDefinition.triggers }}
+    {{/* Use inline triggers (backward compatibility) */}}
     {{- range $glyphDefinition.triggers }}
     - template:
         name: {{ .name }}
@@ -331,6 +362,29 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
+    {{- end }}
+    {{- else }}
+    {{/* Build triggers dynamically from triggers found by runicIndexer */}}
+    {{- range $trigger := $triggers }}
+    - template:
+        name: {{ $trigger.name }}
+        argoWorkflow:
+          operation: {{ default "submit" $trigger.operation }}
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: {{ $trigger.reading }}-
+                namespace: {{ default $root.Release.Namespace $trigger.namespace }}
+              spec:
+                workflowTemplateRef:
+                  name: {{ $trigger.reading }}
+      {{- if $trigger.parameters }}
+      parameters:
+        {{- $trigger.parameters | toYaml | nindent 8 }}
+      {{- end }}
+    {{- end }}
     {{- end }}
   {{- end }}
   {{- if $glyphDefinition.errorOnFailedRound }}

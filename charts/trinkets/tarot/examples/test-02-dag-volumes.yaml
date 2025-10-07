@@ -4,7 +4,7 @@ spellbook: {name: test}
 chapter: {name: intermediate}
 
 cards:
-  - name: write-data
+  write-data:
     type: card
     labels: {category: writer}
     container:
@@ -16,7 +16,7 @@ cards:
         type: emptyDir
         destinationPath: /workspace
 
-  - name: read-data
+  read-data:
     type: card
     labels: {category: reader}
     container:

@@ -32,9 +32,10 @@ envs:
 
 # Enterprise workflow cards (simulated)
 cards:
-  - name: security-compliance-scan
-    type: security
+  security-compliance-scan:
+    type: card
     labels:
+      cardType: security
       security: required
       compliance: sox
       scanner: enterprise
@@ -51,9 +52,10 @@ cards:
           memory: "4Gi"
           cpu: "2"
 
-  - name: approval-gate
-    type: approval
+  approval-gate:
+    type: card
     labels:
+      cardType: approval
       gate: manual
       level: production
       timeout: 24h
@@ -76,7 +78,7 @@ tarot:
         policy_level: "{{envs.SECURITY_POLICY}}"
         compliance_standard: "{{envs.COMPLIANCE_LEVEL}}"
       volumes:
-        - name: scan-results
+        scan-results:
           type: persistentVolumeClaim
           size: "5Gi"
           mountPath: /scan-results
@@ -138,7 +140,7 @@ tarot:
       position: action
       depends: [security-scan, vulnerability-scan, license-compliance]
       volumes:
-        - name: compliance-reports
+        compliance-reports:
           type: persistentVolumeClaim
           size: "1Gi"
           mountPath: /reports

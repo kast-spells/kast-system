@@ -4,7 +4,7 @@ spellbook: {name: test}
 chapter: {name: basic}
 
 cards:
-  - name: hello-task
+  hello-task:
     type: card
     labels: {category: test}
     container:

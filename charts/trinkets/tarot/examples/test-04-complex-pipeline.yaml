@@ -5,7 +5,7 @@ chapter: {name: production}
 
 # Lexicon with vault server
 lexicon:
-  - name: prod-vault
+  prod-vault:
     type: vault
     labels: {default: book}
     server: vault.vault.svc.cluster.local:8200
@@ -16,7 +16,7 @@ lexicon:
         role: prod-vault-role
 
 cards:
-  - name: checkout-code
+  checkout-code:
     type: card
     labels: {category: source, stage: foundation}
     container:
@@ -28,7 +28,7 @@ cards:
         type: emptyDir
         destinationPath: /workspace
 
-  - name: build-app
+  build-app:
     type: card
     labels: {category: build, stage: action}
     container:
@@ -40,7 +40,7 @@ cards:
         type: emptyDir
         destinationPath: /workspace
 
-  - name: run-tests
+  run-tests:
     type: card
     labels: {category: test, stage: action}
     container:
@@ -52,7 +52,7 @@ cards:
         type: emptyDir
         destinationPath: /workspace
 
-  - name: build-docker
+  build-docker:
     type: card
     labels: {category: docker, stage: challenge}
     container:
@@ -68,7 +68,7 @@ cards:
         hostPath: /var/run/docker.sock
         destinationPath: /var/run/docker.sock
 
-  - name: deploy-staging
+  deploy-staging:
     type: card
     labels: {category: deploy, stage: outcome, env: staging}
     container:
@@ -76,7 +76,7 @@ cards:
       command: ["/bin/sh", "-c"]
       args: ["kubectl set image deployment/$APP_NAME $APP_NAME=$REGISTRY/$IMAGE_NAME:$VERSION -n staging"]
 
-  - name: smoke-test
+  smoke-test:
     type: card
     labels: {category: test, stage: outcome, type: smoke}
     container:
@@ -84,7 +84,7 @@ cards:
       command: ["/bin/sh", "-c"]
       args: ["curl -f http://$APP_NAME.staging.svc.cluster.local/health || exit 1"]
 
-  - name: deploy-production
+  deploy-production:
     type: card
     labels: {category: deploy, stage: outcome, env: production}
     container:

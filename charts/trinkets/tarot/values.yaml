@@ -98,15 +98,15 @@ tarot:
 # Cards system integration
 cards:
   # Default card for syntax validation
-  - name: _syntax_test
+  _syntax_test:
     type: card
     labels:
       cardType: test
     container:
       image: busybox:latest
       command: ["echo", "default"]
-  # Will be populated from bookrack/_cards/ directories
-  # via card manager or direct inclusion
+  # Will be populated from bookrack appendix.cards
+  # via librarian card consolidation
 
 # Book/Chapter system integration (for runic indexer and vault glyph)
 spellbook:
@@ -116,9 +116,9 @@ chapter:
   name: default
 
 # Lexicon system integration (for cluster templates and vault servers)
-lexicon: []
+lexicon: {}
   # Example vault server configuration:
-  # - name: default-vault
+  # default-vault:
   #   type: vault
   #   labels:
   #     default: book
@@ -128,7 +128,7 @@ lexicon: []
   #     kubernetes:
   #       path: kubernetes
   #       role: tarot-vault-role
-  # Will be populated from bookrack/_lexicon/ directories
+  # Will be populated from bookrack appendix.lexicon via librarian
 
 # RBAC configuration
 rbac:

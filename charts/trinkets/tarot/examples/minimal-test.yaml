@@ -8,7 +8,7 @@ chapter:
 
 # Cards registry (nivel root)
 cards:
-  - name: simple-task
+  simple-task:
     type: card
     labels:
       cardType: task

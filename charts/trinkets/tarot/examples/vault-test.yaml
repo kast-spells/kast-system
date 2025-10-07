@@ -3,7 +3,7 @@ name: tarot-vault-test
 
 # Simple card for testing
 cards:
-  - name: vault-task
+  vault-task:
     type: card
     labels:
       cardType: task

@@ -34,7 +34,7 @@ envs:
 
 # Comprehensive card library (simulated)
 cards:
-  - name: git-clone
+  git-clone:
     type: card
     labels:
       cardType: source
@@ -46,11 +46,11 @@ cards:
       image: alpine/git:latest
       command: [sh, -c]
     volumes:
-      - name: source-code
+      source-code:
         type: emptyDir
         mountPath: /workspace
 
-  - name: npm-install
+  npm-install:
     type: card
     labels:
       cardType: installer
@@ -60,10 +60,10 @@ cards:
       image: node:18-alpine
       command: ["npm", "ci"]
     volumes:
-      - name: source-code
+      source-code:
         type: inherit
 
-  - name: npm-test
+  npm-test:
     type: card
     labels:
       cardType: test
@@ -73,8 +73,8 @@ cards:
     container:
       image: node:18-alpine
       command: ["npm", "test"]
-    
-  - name: security-scan
+
+  security-scan:
     type: card
     labels:
       cardType: security
@@ -86,7 +86,7 @@ cards:
       image: aquasec/trivy:latest
       command: ["trivy", "fs"]
 
-  - name: docker-build
+  docker-build:
     type: card
     labels:
       cardType: build
@@ -110,7 +110,7 @@ tarot:
         branch: "{{workflow.parameters.git_branch}}"
         depth: "1"
       volumes:
-        - name: workspace
+        workspace:
           type: persistentVolumeClaim
           size: "10Gi"
           mountPath: /workspace
@@ -143,7 +143,7 @@ tarot:
             cpu: "100m"
       position: foundation
       volumes:
-        - name: app-config
+        app-config:
           type: emptyDir
           mountPath: /config
       envs:
@@ -162,7 +162,7 @@ tarot:
         cache_enabled: "true"
         production_only: "false"
       volumes:
-        - name: node-modules
+        node-modules:
           type: emptyDir
           mountPath: /workspace/node_modules
           
@@ -207,7 +207,7 @@ tarot:
       position: action
       depends: [install-deps]
       volumes:
-        - name: test-results
+        test-results:
           type: emptyDir
           mountPath: /test-results
       with:
@@ -283,7 +283,7 @@ tarot:
           - "NODE_ENV=production"
           - "BUILD_DATE={{workflow.creationTimestamp}}"
       volumes:
-        - name: docker-socket
+        docker-socket:
           type: hostPath
           path: /var/run/docker.sock
           mountPath: /var/run/docker.sock
@@ -314,7 +314,7 @@ tarot:
       position: challenge
       depends: [container-build]
       volumes:
-        - name: container-scan-results
+        container-scan-results:
           type: emptyDir
           mountPath: /scan-results
           
