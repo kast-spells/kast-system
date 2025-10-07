@@ -14,35 +14,118 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- $_ := mergeOverwrite $spellbook $default }}
 {{- end }}
 
-## TODO lexicon definition must be from a config map in some place
-{{- $lexiconDefinition := dict }}
-{{- $path := print "bookrack/" $spellbook.name "/_lexicon/*.y*ml"}}
-{{- $lexicon := list }}
-{{- range $lexiconPath, $_ := .Files.Glob $path }}
-  {{- $lexiconDefinitions := ($.Files.Get $lexiconPath | fromYaml).lexicon }}
-  {{- range $lexiconDefinition := $lexiconDefinitions }}
-    {{- $lexicon = append $lexicon $lexiconDefinition }}
-  {{- end }}
-{{- end }}
-##lexicon merge 
+{{/*
+  Two-pass appendix consolidation system:
+  Pass 1: Collect all appendix (book, chapters, files) into $globalAppendix
+  Pass 2: Generate Applications with multi-source trinket detection per-chapter
+*/}}
+{{- $globalAppendix := deepCopy (default dict $spellbook.appendix) }}
 
-{{ range $chapterName := $spellbook.chapters }}
-  {{- $chapter := dict "name" $chapterName }}
+{{/* PASS 1: Collect all appendix from chapters and files */}}
+{{- range $chapterName := $spellbook.chapters }}
   {{- $pathChapter := print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml" }}
   {{- if $.Files.Glob $pathChapter }}
-    {{- $chapter = $.Files.Get $pathChapter | fromYaml }}
+    {{- $chapterDef := $.Files.Get $pathChapter | fromYaml }}
+    {{/* Merge chapter.appendix to global */}}
+    {{- if $chapterDef.appendix }}
+      {{- $_ := mergeOverwrite $globalAppendix (deepCopy $chapterDef.appendix) }}
+    {{- end }}
+  {{- end }}
+  {{/* Collect appendix from all files in chapter */}}
+  {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml"}}
+  {{- range $spellPath, $_ := $.Files.Glob $path }}
+    {{- if not (eq $spellPath (print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml")) }}
+      {{- $spellDefinition := ($.Files.Get $spellPath | fromYaml) }}
+      {{/* Merge file.appendix to global */}}
+      {{- if $spellDefinition.appendix }}
+        {{- $_ := mergeOverwrite $globalAppendix (deepCopy $spellDefinition.appendix) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/* PASS 2: Generate Applications with complete $globalAppendix */}}
+{{ range $chapterName := $spellbook.chapters }}
+  {{- $chapter := dict "name" $chapterName }}
+  {{- $chapterLocalAppendix := dict }}
+
+  {{/* Build trinketsByKey for this chapter: book.trinkets < chapter.trinkets */}}
+  {{- $chapterTrinketsByKey := dict }}
+  {{- if $spellbook.trinkets }}
+    {{- range $name, $trinket := $spellbook.trinkets }}
+      {{- if $trinket.key }}
+        {{- $_ := set $chapterTrinketsByKey $trinket.key (deepCopy $trinket) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+  {{- $pathChapter := print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml" }}
+  {{- if $.Files.Glob $pathChapter }}
+    {{- $chapterDef := $.Files.Get $pathChapter | fromYaml }}
+    {{- $chapter = $chapterDef }}
     {{- if not $chapter.name }}
       {{- $_ := set $chapter "name" $chapterName }}
+    {{- end }}
+    {{/* Store chapter localAppendix for override */}}
+    {{- if $chapterDef.localAppendix }}
+      {{- $chapterLocalAppendix = deepCopy $chapterDef.localAppendix }}
+    {{- end }}
+    {{/* Merge chapter.trinkets to chapterTrinketsByKey */}}
+    {{- if $chapterDef.trinkets }}
+      {{- range $name, $trinket := $chapterDef.trinkets }}
+        {{- if $trinket.key }}
+          {{- if hasKey $chapterTrinketsByKey $trinket.key }}
+            {{- $_ := mergeOverwrite (index $chapterTrinketsByKey $trinket.key) (deepCopy $trinket) }}
+          {{- else }}
+            {{- $_ := set $chapterTrinketsByKey $trinket.key (deepCopy $trinket) }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
     {{- end }}
   {{- end }}
   {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml"}}
   {{- range $spellPath, $_ := $.Files.Glob $path }}
   {{- if not (eq $spellPath (print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml")) }}
-    {{- $appParams := deepCopy $spellbook.appParams }} 
+    {{- $appParams := deepCopy $spellbook.appParams }}
     {{- $spellDefinition := ($.Files.Get $spellPath | fromYaml) }}
     {{- $_ := mergeOverwrite $appParams (deepCopy (default dict $chapter.appParams) ) }}
     {{- $_ := mergeOverwrite $appParams (deepCopy (default dict $spellDefinition.appParams )) }}
     {{- $spell := (dict "name" $spellDefinition.name ) }}
+
+    {{/* Create final appendix: global < chapterLocal < fileLocal */}}
+    {{- $finalAppendix := deepCopy $globalAppendix }}
+    {{- if $chapterLocalAppendix }}
+      {{- $_ := mergeOverwrite $finalAppendix (deepCopy $chapterLocalAppendix) }}
+    {{- end }}
+    {{- if $spellDefinition.localAppendix }}
+      {{- $_ := mergeOverwrite $finalAppendix (deepCopy $spellDefinition.localAppendix) }}
+    {{- end }}
+
+    {{/* Convert appendix.lexicon dict to list for backward compatibility */}}
+    {{- $lexicon := list }}
+    {{- if $finalAppendix.lexicon }}
+      {{- range $name, $lexiconDef := $finalAppendix.lexicon }}
+        {{- $item := deepCopy $lexiconDef }}
+        {{/* Use .name if exists, otherwise use dict key */}}
+        {{- if not (hasKey $item "name") }}
+          {{- $_ := set $item "name" $name }}
+        {{- end }}
+        {{- $lexicon = append $lexicon $item }}
+      {{- end }}
+    {{- end }}
+
+    {{/* Convert appendix.cards dict to list with name override support */}}
+    {{- $cards := list }}
+    {{- if $finalAppendix.cards }}
+      {{- range $cardKey, $cardDef := $finalAppendix.cards }}
+        {{- $item := deepCopy $cardDef }}
+        {{/* Use .name if exists, otherwise use dict key */}}
+        {{- if not (hasKey $item "name") }}
+          {{- $_ := set $item "name" $cardKey }}
+        {{- end }}
+        {{- $cards = append $cards $item }}
+      {{- end }}
+    {{- end }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -64,9 +147,10 @@ spec:
   {{- $_ =  unset $cleanSpellbook.spellbook "summon" }}
   {{- $_ =  unset $cleanSpellbook.spellbook "kaster" }}
   sources:
-  {{- /* spell */}}
+  {{- /* Source 1: Primary source (custom chart OR defaultTrinket) - ALWAYS */}}
   {{- if or $spellDefinition.chart $spellDefinition.path }}
-    - repoURL: {{ $spellDefinition.repository }} #usa repo
+    {{/* Custom chart/path */}}
+    - repoURL: {{ $spellDefinition.repository }}
       {{- if $spellDefinition.chart }}
       chart: {{ $spellDefinition.chart }}
       {{- else }}
@@ -81,26 +165,28 @@ spec:
       {{- if $spellDefinition.values }}
         values: |
           {{- toYaml $spellDefinition.values | nindent 10 }}
-      {{- end }}      
+      {{- end }}
     {{- end }}
   {{- else }}
-  {{- /* summon 
-    ##TODO agregar flag para q no se haga el merge de los configs if needed
-  */}}
-    {{- $summon := mergeOverwrite ( deepCopy (default dict $spellbook.summon ) ) ( deepCopy ( default dict $chapter.summon ) ) }}
-    - repoURL: {{ $summon.repository }}
-      {{- if $summon.chart }}
-      chart: {{ $summon.chart }}
+    {{/* defaultTrinket (summon) */}}
+    {{- $defaultTrinket := default $spellbook.defaultTrinket $chapter.defaultTrinket }}
+    - repoURL: {{ $defaultTrinket.repository }}
+      {{- if $defaultTrinket.chart }}
+      chart: {{ $defaultTrinket.chart }}
       {{- else }}
-      path: {{ $summon.path }}
+      path: {{ $defaultTrinket.path }}
       {{- end }}
-      targetRevision: {{ $summon.revision }}
+      targetRevision: {{ $defaultTrinket.revision }}
       helm:
-        {{- $values := "" }}
-        {{- $values = mergeOverwrite (default dict (deepCopy (default dict $summon.values)) ) $spellDefinition }}
-        {{- $_ =  unset $values "runes" }}
-        {{- $_ =  unset $values "appParams" }}
-        {{- $_ =  unset $values "glyphs" }}
+        {{- $values := mergeOverwrite (default dict (deepCopy (default dict $defaultTrinket.values)) ) $spellDefinition }}
+        {{- $_ :=  unset $values "runes" }}
+        {{- $_ :=  unset $values "appParams" }}
+        {{- $_ :=  unset $values "appendix" }}
+        {{- $_ :=  unset $values "localAppendix" }}
+        {{/* Unset all trinket keys */}}
+        {{- range $key, $_ := $chapterTrinketsByKey }}
+          {{- $_ :=  unset $values $key }}
+        {{- end }}
         values: |
           {{- toYaml $values | nindent 10 }}
           {{- toYaml $cleanSpellbook | nindent 10 }}
@@ -108,23 +194,37 @@ spec:
           lexicon:
           {{- toYaml $lexicon | nindent 12 }}
   {{- end }}
-  {{- /* kaster */}}
-  {{- if $spellDefinition.glyphs }} 
-    {{- $kaster := default $spellbook.kaster $chapter.kaster}}
-    - repoURL: {{ $kaster.repository }}
-      {{- if $kaster.chart }}
-      chart: {{ $kaster.chart }}
+  {{- /* Sources 2..N: Additional trinket sources (dynamic detection) */}}
+  {{- range $trinketKey, $trinket := $chapterTrinketsByKey }}
+    {{- if hasKey $spellDefinition $trinketKey }}
+      {{/* File has this trinket key (e.g., tarot, glyphs, X, etc.) */}}
+    - repoURL: {{ $trinket.repository }}
+      {{- if $trinket.chart }}
+      chart: {{ $trinket.chart }}
       {{- else }}
-      path: {{ $kaster.path }}
+      path: {{ $trinket.path }}
       {{- end }}
-      targetRevision: {{ $kaster.revision }}
+      targetRevision: {{ $trinket.revision }}
       helm:
         values: |
-          {{- toYaml (dict "glyphs" $spellDefinition.glyphs ) | nindent 10 }}
+          {{- if eq $trinketKey "glyphs" }}
+          {{/* kaster - only pass glyphs */}}
+          glyphs:
+          {{- toYaml (index $spellDefinition $trinketKey) | nindent 12 }}
+          {{- else }}
+          {{/* tarot and others - pass the key with its data */}}
+          {{ $trinketKey }}:
+          {{- toYaml (index $spellDefinition $trinketKey) | nindent 12 }}
+          {{- end }}
           {{- toYaml $cleanSpellbook | nindent 10 }}
           {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
           lexicon:
           {{- toYaml $lexicon | nindent 12 }}
+          {{- if and (eq $trinketKey "tarot") $cards }}
+          cards:
+          {{- toYaml $cards | nindent 12 }}
+          {{- end }}
+    {{- end }}
   {{- end }}
   {{- /* runes */}}
   {{- $ignoreDiff := (default list $appParams.ignoreDifferences) }}
