@@ -49,7 +49,7 @@ spec:
   service:
     {{- $glyphDefinition.service | toYaml | nindent 4 }}
   {{- end }}
-  {{- if eq $glyphDefinition.type "github" }}
+  {{- if $glyphDefinition.github }}
   github:
     {{- range $repoName, $repoConfig := $glyphDefinition.github }}
     {{ $repoName }}:
@@ -131,7 +131,7 @@ spec:
         {{- . | toYaml | nindent 8 }}
       {{- end }}
     {{- end }}
-  {{- else if eq $glyphDefinition.type "gitlab" }}
+  {{- else if $glyphDefinition.gitlab }}
   gitlab:
     {{- range $repoName, $repoConfig := $glyphDefinition.gitlab }}
     {{ $repoName }}:
@@ -200,7 +200,7 @@ spec:
         {{- end }}
       {{- end }}
     {{- end }}
-  {{- else if eq $glyphDefinition.type "webhook" }}
+  {{- else if $glyphDefinition.webhook }}
   webhook:
     {{- range $webhookName, $webhookConfig := $glyphDefinition.webhook }}
     {{ $webhookName }}:
@@ -225,7 +225,7 @@ spec:
         {{- . | toYaml | nindent 8 }}
       {{- end }}
     {{- end }}
-  {{- else if eq $glyphDefinition.type "bitbucket" }}
+  {{- else if $glyphDefinition.bitbucket }}
   bitbucket:
     {{- range $repoName, $repoConfig := $glyphDefinition.bitbucket }}
     {{ $repoName }}:
