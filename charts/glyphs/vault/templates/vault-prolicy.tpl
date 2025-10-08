@@ -14,7 +14,7 @@ TODO el selector esta hardcoded lo q evita multiples vaults
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: Policy
 metadata:
-  name:  {{ default ( include "common.name" $root ) $glyph.name }}
+  name:  {{ default ( include "common.name" $root ) $glyph.nameOverride }}
   namespace: {{ default "vault" $vaultConf.namespace }}
 spec:
 {{- include "vault.connect" (list $root $vaultConf  "True")  |nindent 2}}
@@ -98,7 +98,7 @@ spec:
   {{- include "vault.connect" (list $root $vaultConf  "True") |nindent 2 }}
   path: {{ default $root.Values.spellbook.name $vaultConf.path }}
   policies:
-    - {{ default ( include "common.name" $root ) $glyph.name }}
+    - {{ default ( include "common.name" $root ) $glyph.nameOverride }}
   targetServiceAccounts:
     - {{  default (include "common.name" $root) $glyph.serviceAccount }}
   targetNamespaces:

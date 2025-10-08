@@ -17,7 +17,7 @@ glyphs:
   vault:
     # Create the prolicy that should have access to all password policies
     - type: prolicy
-      name: test-app-policy
+      nameOverride: test-app-policy
       serviceAccount: test-app-sa
       extraPolicy:
         - path: "auth/token/*"
