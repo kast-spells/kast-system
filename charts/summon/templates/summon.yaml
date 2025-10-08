@@ -20,10 +20,11 @@ root: |
 
 {{- range $chartName, $_ := $root.Subcharts }}
   {{- if ne $chartName "summon" }}
-    {{- range $_, $glyph:= get $root.Values $chartName }}
-      {{- if and (ne $_ "global") $glyph (gt (len $glyph) 0) }}
+    {{- range $glyphName, $glyph:= get $root.Values $chartName }}
+      {{- if and $glyph (gt (len $glyph) 0) }}
         {{- if $glyph.type }}
-          {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyph ) }}
+          {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+          {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyphWithName ) }}
         {{- end }}
       {{- end }}
     {{- end }}

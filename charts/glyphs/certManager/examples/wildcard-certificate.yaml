@@ -7,19 +7,20 @@ chapter:
   name: production
 
 lexicon:
-  cert-issuer:
-    letsencrypt-prod:
-      name: letsencrypt-production
-      server: https://acme-v02.api.letsencrypt.org/directory
-      email: admin@platform.com
-      selector:
-        environment: production
-    letsencrypt-staging:
-      name: letsencrypt-staging
-      server: https://acme-staging-v02.api.letsencrypt.org/directory
-      email: admin@platform.com
-      selector:
-        environment: staging
+  letsencrypt-prod:
+    type: cert-issuer
+    name: letsencrypt-production
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@platform.com
+    labels:
+      environment: production
+  letsencrypt-staging:
+    type: cert-issuer
+    name: letsencrypt-staging
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@platform.com
+    labels:
+      environment: staging
 
 glyphs:
   certManager:

@@ -143,7 +143,7 @@ test-glyph-%:
 	for example in $$glyph_dir/examples/*.yaml; do \
 		if [ -f "$$example" ]; then \
 			example_name=$$(basename $$example .yaml); \
-			test_name="tdd-$$glyph_name-$$example_name"; \
+			test_name=$$(echo "tdd-$$glyph_name-$$example_name" | tr '[:upper:]' '[:lower:]'); \
 			echo "$(BLUE)  Testing $$example_name...$(RESET)"; \
 			if helm template $$test_name $(KASTER_DIR) -f $$example > $(OUTPUT_TEST_DIR)/$$glyph_name/$$example_name.yaml 2>/dev/null; then \
 				expected_file="$(OUTPUT_TEST_DIR)/$$glyph_name/$$example_name.expected.yaml"; \
