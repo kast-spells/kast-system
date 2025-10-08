@@ -18,12 +18,16 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     {{- $_ := set $currrentGlyph "name" $glyphName -}}
   {{- end -}}
   {{- if eq $currrentGlyph.type $type -}}
+    {{/* Check if ALL selectors match (AND logic) */}}
+    {{- $allSelectorsMatch := true -}}
     {{- range $selector, $value := $selectors -}}
-      {{- if (hasKey $currrentGlyph.labels $selector) -}}
-        {{- if eq (index $currrentGlyph.labels $selector) $value -}}
-            {{- $results = append $results $currrentGlyph -}}
-        {{- end -}}
+      {{- if not (and (hasKey $currrentGlyph.labels $selector) (eq (index $currrentGlyph.labels $selector) $value)) -}}
+        {{- $allSelectorsMatch = false -}}
       {{- end -}}
+    {{- end -}}
+    {{/* Only add to results if ALL selectors matched */}}
+    {{- if $allSelectorsMatch -}}
+      {{- $results = append $results $currrentGlyph -}}
     {{- end -}}
     {{- if and (hasKey $currrentGlyph.labels "default") (eq (len $results) 0) -}}
       {{- if eq (index $currrentGlyph.labels "default") "book" -}}

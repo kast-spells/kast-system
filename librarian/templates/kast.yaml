@@ -258,7 +258,7 @@ spec:
     {{- $cluster := "" }}
     {{- $clusterSelector := default (default $spellbook.clusterSelector $chapter.clusterSelector ) $spellDefinition.clusterSelector }}
     {{- if $clusterSelector }}
-      {{- $clusters := get (include "glyph.runicIndexer" (list $lexicon $clusterSelector "k8s-cluster" $chapter.name ) | fromJson) "results" }}
+      {{- $clusters := get (include "runicIndexer.runicIndexer" (list $lexicon $clusterSelector "k8s-cluster" $chapter.name ) | fromJson) "results" }}
       {{- range $clusters }}
         {{- $cluster = .clusterURL}}
       {{- end }}
