@@ -5,7 +5,7 @@ argo-events:
   production-eventbus:
     type: eventBus
     jetstream:
-      version: "2.10.1"
+      version: "2.10.10"
       replicas: 5
       persistence:
         storageClassName: fast-ssd

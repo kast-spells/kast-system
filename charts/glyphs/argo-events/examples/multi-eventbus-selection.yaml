@@ -15,7 +15,7 @@ lexicon:
       environment: production
       tier: high-availability
     jetstream:
-      version: "2.10.1"
+      version: "2.10.10"
       replicas: 5
       persistence:
         storageClassName: fast-ssd
@@ -29,7 +29,7 @@ lexicon:
       environment: development
       tier: lightweight
     jetstream:
-      version: "2.10.1"
+      version: "2.10.10"
       replicas: 1
       persistence:
         storageClassName: standard
@@ -44,7 +44,7 @@ lexicon:
       tier: medium
       default: book  # This will be used as fallback if no selector matches
     jetstream:
-      version: "2.10.1"
+      version: "2.10.10"
       replicas: 3
       persistence:
         storageClassName: standard

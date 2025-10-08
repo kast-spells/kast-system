@@ -14,7 +14,7 @@ lexicon:
       environment: development
       default: book
     jetstream:
-      version: "2.10.1"
+      version: "2.10.10"
       replicas: 3
 
 # Test basic GitHub webhook with EventBus selection via runic indexer
