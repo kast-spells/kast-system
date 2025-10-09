@@ -25,8 +25,8 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
         {{- $allSelectorsMatch = false -}}
       {{- end -}}
     {{- end -}}
-    {{/* Only add to results if ALL selectors matched */}}
-    {{- if $allSelectorsMatch -}}
+    {{/* Only add to results if selectors exist AND ALL selectors matched */}}
+    {{- if and (gt (len $selectors) 0) $allSelectorsMatch -}}
       {{- $results = append $results $currrentGlyph -}}
     {{- end -}}
     {{- if and (hasKey $currrentGlyph.labels "default") (eq (len $results) 0) -}}
