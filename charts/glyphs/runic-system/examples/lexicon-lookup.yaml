@@ -1,24 +1,34 @@
 # Lexicon Lookup Example
-# Tests runicIndexer functionality for finding infrastructure references
+# Tests runicIndexer functionality for finding infrastructure references with AND logic
 
-# Mock lexicon data structure for testing
+# Mock lexicon data structure for testing (dictionary format)
 lexicon:
-  - name: external-gateway
+  external-gateway:
     type: istio-gw
     labels:
       access: external
       environment: staging
       default: book
     gateway: istio-system/external-gateway
-    
-  - name: internal-gateway  
+    baseURL: example.com
+
+  internal-gateway:
     type: istio-gw
     labels:
       access: internal
       environment: staging
     gateway: istio-system/internal-gateway
-    
-  - name: postgres-primary
+    baseURL: int.example.com
+
+  external-prod:
+    type: istio-gw
+    labels:
+      access: external
+      environment: production
+    gateway: istio-system/external-prod
+    baseURL: prod.example.com
+
+  postgres-primary:
     type: database
     labels:
       engine: postgres
@@ -26,11 +36,21 @@ lexicon:
       default: chapter
     connectionString: postgres.production.svc:5432
 
-# Test selector criteria
-selectors:
-  access: external
-  environment: staging
+# Expected result: Only external-gateway
+# Selector requires BOTH access=external AND environment=staging (AND logic)
+# external-gateway: ✅ matches both
+# internal-gateway: ❌ access=internal (doesn't match)
+# external-prod: ❌ environment=production (doesn't match)
 
-# Test parameters
-type: istio-gw
-chapter: staging
+glyphs:
+  istio:
+    test-vs:
+      type: virtualService
+      enabled: true
+      selector:
+        access: external
+        environment: staging
+      subdomain: test
+      httpRules:
+        - prefix: /
+          port: 8080

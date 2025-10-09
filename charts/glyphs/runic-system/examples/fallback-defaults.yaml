@@ -1,33 +1,49 @@
 # Fallback Defaults Example
 # Tests runicIndexer default fallback behavior (book vs chapter defaults)
 
-# Lexicon with default configurations
+chapter:
+  name: production
+
+# Lexicon with default configurations (dictionary format)
 lexicon:
-  - name: book-default-gateway
+  book-default-gateway:
     type: istio-gw
     labels:
       access: public
       default: book
     gateway: istio-system/book-gateway
-    
-  - name: chapter-default-gateway
+    baseURL: book.example.com
+
+  chapter-default-gateway:
     type: istio-gw
     labels:
       access: public
       default: chapter
     chapter: production
     gateway: istio-system/chapter-gateway
-    
-  - name: specific-gateway
+    baseURL: chapter.example.com
+
+  specific-gateway:
     type: istio-gw
     labels:
       access: private
     gateway: istio-system/private-gateway
+    baseURL: private.example.com
 
-# Test fallback when no exact match found
-selectors:
-  access: unknown
+# Expected result: chapter-default-gateway
+# Selector access=unknown doesn't match any gateway
+# Falls back to chapter default first (chapter=production), then book default
+# chapter-default-gateway: ✅ default=chapter AND chapter=production
+# book-default-gateway: ✅ default=book (but chapter default takes precedence)
 
-# Should fall back to defaults
-type: istio-gw
-chapter: production
+glyphs:
+  istio:
+    test-fallback:
+      type: virtualService
+      enabled: true
+      selector:
+        access: unknown
+      subdomain: fallback-test
+      httpRules:
+        - prefix: /
+          port: 8080

@@ -387,3 +387,31 @@ clean: ## Clean up generated test files
 	@echo "$(BLUE)🧹 TDD: Cleaning up test files...$(RESET)"
 	@rm -rf $(OUTPUT_TEST_DIR)
 	@echo "$(GREEN)✅ Cleanup completed$(RESET)"
+# RunicIndexer Tests
+.PHONY: test-runic-indexer test-runic-and-logic test-runic-fallback test-runic-empty
+
+test-runic-indexer: test-runic-and-logic test-runic-fallback test-runic-empty
+
+test-runic-and-logic:
+	@echo "🧪 Testing runicIndexer AND logic (multi-selector)..."
+	@echo "Expected: Only external-gateway (matches access=external AND environment=staging)"
+	@helm template test-lexicon charts/kaster -f charts/glyphs/runic-system/examples/lexicon-lookup.yaml 2>&1 | \
+		grep -E "(kind: VirtualService|name: test-|hosts:)" | \
+		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
+	@echo ""
+
+test-runic-fallback:
+	@echo "🧪 Testing runicIndexer fallback to chapter/book defaults..."
+	@echo "Expected: chapter-default-gateway (selector doesn't match, falls back to chapter default)"
+	@helm template test-fallback charts/kaster -f charts/glyphs/runic-system/examples/fallback-defaults.yaml 2>&1 | \
+		grep -E "(kind: VirtualService|name:|hosts:)" | \
+		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
+	@echo ""
+
+test-runic-empty:
+	@echo "🧪 Testing runicIndexer with empty selector..."
+	@echo "Expected: chapter-default (NOT all gateways!)"
+	@helm template test-empty charts/kaster -f charts/glyphs/runic-system/examples/empty-selector.yaml 2>&1 | \
+		grep -E "(kind: VirtualService|name:|hosts:)" | \
+		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
+	@echo ""
