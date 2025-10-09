@@ -43,7 +43,7 @@ metadata:
 {{- end }}
 spec:
   hosts:
-    - {{ if default $glyphDefinition.subdomain (default $root.Values.spellbook.subdomain $root.Values.chapter.subdomain ) }}{{ default $glyphDefinition.subdomain (default $root.Values.spellbook.subdomain $root.Values.chapter.subdomain ) }}.{{ end }}{{ $gateway.baseURL  }}
+    - {{ if default (default $root.Values.spellbook.subdomain $root.Values.chapter.subdomain) $glyphDefinition.subdomain }}{{ default (default $root.Values.spellbook.subdomain $root.Values.chapter.subdomain) $glyphDefinition.subdomain }}.{{ end }}{{ $gateway.baseURL  }}
   gateways:
     - {{ $gateway.gateway }}
   {{- if and (not $glyphDefinition.httpRules ) (not $glyphDefinition.tcpRules) }}
