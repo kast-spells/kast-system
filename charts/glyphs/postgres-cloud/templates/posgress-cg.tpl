@@ -48,7 +48,10 @@ spec:
 
   # superuser XXX
   enableSuperuserAccess: {{ default "enabled" ($glyphDefinition.superuser).enabled }}
-  superuserSecret: {{ default (print "superuser-pg-" (default (include "common.name" $root ) $glyphDefinition.name)) .secret }} 
+  {{- if $glyphDefinition.secret }}
+  superuserSecret:
+    name: {{ $glyphDefinition.secret }}
+  {{- end }} 
 
 
   # Bootstrap XXX 
@@ -98,10 +101,14 @@ spec:
 
   # storage XXX
   storage:
-    {{- with $glyphDefinition.storage.storageClass }} 
+    {{- if $glyphDefinition.storage }}
+    {{- with $glyphDefinition.storage.storageClass }}
     storageClass: {{ . }}
     {{- end}}
     size: {{ default "1Gi" $glyphDefinition.storage.size }}
+    {{- else }}
+    size: 1Gi
+    {{- end }}
 
   # resourses XXX
   {{- with $glyphDefinition.resources }} 
