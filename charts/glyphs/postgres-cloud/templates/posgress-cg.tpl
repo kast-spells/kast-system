@@ -54,11 +54,11 @@ spec:
   {{- end }} 
 
 
-  # Bootstrap XXX 
+  # Bootstrap XXX
 {{/*# example*/}}
-{{- if or $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
+{{- if or $glyphDefinition.dbName $glyphDefinition.userName $glyphDefinition.secret $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
   bootstrap:
-    initdb: 
+    initdb:
       database: {{ default (include "common.name" $root ) $glyphDefinition.dbName }}
       owner: {{ default (include "common.name" $root ) $glyphDefinition.userName }}
 
@@ -72,20 +72,20 @@ spec:
       {{- with $glyphDefinition.postInitApp }} #leer la funcion de cofnigmap en summon
 
       {{- if .type eq "cm"}}
-       
+
       {{- if .create eq true }}
 
       # XXX configmap creation
       {{- $defaultValues := dict "name" (default (print "posgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
 
-      {{- include "summon.configmap" ( list $root $defaultValues ) }} 
+      {{- include "summon.configmap" ( list $root $defaultValues ) }}
 
       {{- end}}
 
 
       # XXX postInitApplicationSQLRefs
-      postInitApplicationSQLRefs: 
-        configMapRefs:  #create by summon.configmap 
+      postInitApplicationSQLRefs:
+        configMapRefs:  #create by summon.configmap
           - name: {{ default (print "posgres-postinit-app" $glyphDefinition.name) .name }} #NOTE no sure if works
             key: {{ default (print "posgres-postinit-app" $glyphDefinition.name) ( default .name .key) }}
 
@@ -93,11 +93,11 @@ spec:
     #    secretRefs: # secret true mean uses secret directly, for prod #TODO
     #      - name: hildy-initdb #name
     #        key: configmap.sql #key
-    
+
       {{- end }} #if for cm or secret
 
       {{- end }} #end for post init
-    {{- end}}
+{{- end}}
 
   # storage XXX
   storage:
