@@ -1,5 +1,5 @@
 apiVersion: v2
-name: posgres
+name: postgre
 version: 1.0.0
 description: posgrescn glyphs for kast
 home: https://github.com/kast-spells
