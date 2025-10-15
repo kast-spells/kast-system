@@ -1,0 +1,9 @@
+# Member: John Doe
+# Filename determines member name: john-doe.yaml → john-doe
+email: john.doe@test.local
+firstName: John
+lastName: Doe
+realmRoles:
+  - developer
+  - admin
+  - platform-lead

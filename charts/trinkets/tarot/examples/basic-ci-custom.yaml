@@ -3,21 +3,6 @@ name: tarot-basic-ci-custom
 # Basic CI pipeline using custom workflow with mixed card types
 # Demonstrates: name resolution, selector resolution, and inline definitions
 
-# Application secrets (inherited by all cards)
-secrets:
-  github-token:
-    type: vault-secret
-    path: "secret/github/ci"
-    keys: ["token"]
-  registry-creds:
-    type: k8s-secret
-    name: harbor-registry-secret
-
-# Application environment variables
-envs:
-  REGISTRY_URL: "registry.company.com"
-  BUILD_CONTEXT: "/workspace"
-  
 # Cards available for resolution (simulated)
 cards:
   git-clone:
@@ -53,8 +38,27 @@ cards:
       source-code:
         type: inherit
 
+# Application environment variables (root level for tarot.resolveValue)
+envs:
+  REGISTRY_URL: "registry.company.com"
+  BUILD_CONTEXT: "/workspace"
+
 tarot:
   executionMode: dag
+
+  # Application secrets (inherited by all cards)
+  secrets:
+    github-token:
+      location: vault
+      path: chapter
+      format: env
+      keys: ["GITHUB_TOKEN"]
+    registry-creds:
+      contentType: env
+      content:
+        REGISTRY_USER: "ci-user"
+        REGISTRY_PASS: "ci-password"
+
   reading:
     # Uses registered card by name (git-clone)
     git-clone:
@@ -99,9 +103,10 @@ tarot:
       depends: [git-clone]  # Changed from [security-scan] due to commented card
       secrets:
         build-secrets:
-          type: vault-secret
-          path: "secret/build/credentials"
-          keys: ["username", "password"]
+          location: vault
+          path: chapter
+          format: env
+          keys: ["BUILD_USERNAME", "BUILD_PASSWORD"]
       envs:
         BUILDAH_FORMAT: "docker"
         STORAGE_DRIVER: "vfs"

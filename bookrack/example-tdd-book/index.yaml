@@ -34,17 +34,24 @@ appParams:
         factor: 2
         maxDuration: 3m
 
-# Summon configuration (for application spells)
-summon:
-  repository: ghcr.io/kast-spells/summon
-  chart: summon
-  revision: 0.1.0
+# Default trinket (summon) - used when no chart/path specified
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: feature/coding-standards
 
-# Kaster configuration (for infrastructure spells with glyphs)
-kaster:
-  repository: ghcr.io/kast-spells/kaster  
-  chart: kaster
-  revision: 0.1.0
+# Trinkets registry (for multi-source detection)
+trinkets:
+  kaster:
+    key: glyphs
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/kaster
+    revision: feature/coding-standards
+  tarot:
+    key: tarot
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/trinkets/tarot
+    revision: feature/coding-standards
 
 # Default cluster targeting
 clusterSelector:

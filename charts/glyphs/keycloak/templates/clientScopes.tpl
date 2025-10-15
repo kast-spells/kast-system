@@ -1,55 +1,69 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
+
+keycloak.clientScope creates KeycloakClientScope resources for custom OIDC scopes and mappers.
+Uses the EDP Keycloak Operator CRDs.
+
+Parameters:
+- $root: Chart root context (index . 0)
+- $glyphDefinition: Client scope configuration object (index . 1)
+
+Required Configuration:
+- glyphDefinition.realmRef: Keycloak realm name
+- glyphDefinition.scopeName: Name of the client scope
+
+Optional Configuration:
+- glyphDefinition.name: Resource name (defaults to common.name)
+- glyphDefinition.description: Scope description (defaults to scopeName)
+- glyphDefinition.protocol: Protocol type (default: openid-connect)
+- glyphDefinition.default: Default scope flag (default: false)
+- glyphDefinition.protocolMappers: List of protocol mapper configurations
+
+Protocol Mapper Structure:
+- name: Mapper name
+- protocol: Protocol type (openid-connect, saml)
+- protocolMapper: Mapper type (e.g., oidc-usermodel-client-role-mapper)
+- config: Key-value pairs for mapper configuration
+
+Usage: {{- include "keycloak.clientScope" (list $root $glyph) }}
 */}}
-{{- define "keycloaj.clientScope" }}
+{{- define "keycloak.clientScope" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 ---
 apiVersion: v1.edp.epam.com/v1
 kind: KeycloakClientScope
+metadata:
+  name: {{ default (include "common.name" $root) $glyphDefinition.name }}
   labels:
-    {{- include "common.infra.labels" $root | nindent 4}}
-  name: {{ $glyphDefinition.name }}
+    {{- include "common.labels" $root | nindent 4}}
+  {{- with $glyphDefinition.annotations }}
   annotations:
-    {{- include "common.infra.annotations" $root | nindent 4}}
+    {{- toYaml . | nindent 4}}
+  {{- end }}
 spec:
   realmRef:
-    name: {{ $glyphDefinition.realmRef }}
+    name: {{ required "glyphDefinition.realmRef is required" $glyphDefinition.realmRef }}
     kind: {{ default "KeycloakRealm" $glyphDefinition.realmRefKind }}
-  name: {{ default $glyphDefinition.name $glyphDefinition.scopeName }}
-  description: {{ default $glyphDefinition.name $glyphDefinition.description }}
-  protocol: {{ default "openid-connect" $glyphDefinition.realmRef }}
-  default: {{ default true $glyphDefinition.realmRef }}
+  name: {{ required "glyphDefinition.scopeName is required" $glyphDefinition.scopeName }}
+  {{- if $glyphDefinition.description }}
+  description: {{ $glyphDefinition.description }}
+  {{- end }}
+  protocol: {{ default "openid-connect" $glyphDefinition.protocol }}
+  default: {{ default false $glyphDefinition.default }}
+  {{- if $glyphDefinition.protocolMappers }}
   protocolMappers:
-    - name: roles
-      protocol: openid-connect
-      protocolMapper: "oidc-usermodel-client-role-mapper"
+  {{- range $glyphDefinition.protocolMappers }}
+    - name: {{ .name }}
+      protocol: {{ .protocol }}
+      protocolMapper: {{ .protocolMapper }}
+      {{- if .config }}
       config:
-        "multivalued": "true"
-        "client.id": "grafana"
-        "id.token.claim": "true"
-        "access.token.claim": "true"
-        "userinfo.token.claim": "true"
-        "claim.name": "resource_access.${client_id}.roles"
+        {{- range $key, $value := .config }}
+        {{ $key | quote }}: {{ $value | quote }}
+        {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
 {{- end }}
-# ---
-#   protocolMappers:
-#     - name: groups
-#       protocol: openid-connect
-#       protocolMapper: "oidc-group-membership-mapper"
-#       config:
-#         "access.token.claim": "true"
-#         "claim.name": "groups"
-#         "full.path": "false"
-#         "id.token.claim": "true"
-#         "userinfo.token.claim": "true"
-# ---
-#   protocolMappers:
-#     - name: Audience for NetBird Management API
-#       protocol: openid-connect
-#       protocolMapper: oidc-audience-mapper
-#       config:
-#         included.client.audience: netbird
-#         id.token.claim: "false"
-#         access.token.claim: "true"

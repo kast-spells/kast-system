@@ -1,0 +1,23 @@
+# Basic Covenant Example
+# Tests covenant consolidation and Keycloak resource generation
+
+name: basic-covenant
+
+covenant:
+  realm:
+    name: test-realm
+    displayName: "Test Realm"
+
+  integrations:
+    clients:
+      vault:
+        enabled: true
+        clientId: vault
+        webUrl: https://vault.test.local
+
+lexicon:
+  test-realm:
+    type: keycloak-realm
+    labels:
+      default: book
+    realmName: test-realm

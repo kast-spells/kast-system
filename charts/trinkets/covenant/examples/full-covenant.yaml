@@ -1,0 +1,41 @@
+name: full-covenant
+
+covenant:
+  # Use covenant-test-full book instead of default 'covenant'
+  bookPath: covenant-test-full
+
+# Book and chapter for resource scoping
+spellbook:
+  name: covenant-test-full
+
+chapter:
+  name: base-system
+
+# NOTE: All other configuration (realm, client scopes, IDPs, auth flows, integrations)
+# will be read from the bookrack/covenant-test-full/ structure:
+# - index.yaml → realm + roles
+# - conventions/client-scopes/*.yaml
+# - conventions/identity-providers/*.yaml
+# - conventions/auth-flows/*.yaml
+# - conventions/integrations/*.yaml
+# - engineering/index.yaml → chapter config
+# - engineering/platform/*.yaml → members
+
+# Lexicon: System resources for runicIndexer
+lexicon:
+  # Vault server for secret management
+  - type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: kubernetes
+    secretPath: identity/oidc
+    labels:
+      default: book
+
+  # Keycloak instance for identity management
+  - type: keycloak
+    url: http://keycloak.keycloak.svc
+    namespace: keycloak
+    labels:
+      default: book

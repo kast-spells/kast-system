@@ -1,0 +1,18 @@
+# Integration: ArgoCD
+# ArgoCD OIDC client for GitOps deployments
+
+enabled: true
+clientId: argocd
+webUrl: https://argocd.test.local
+
+redirectUris:
+  - https://argocd.test.local/auth/callback
+
+defaultClientScopes:
+  - profile
+  - email
+  - groups
+
+secret: keycloak-client-argocd
+directAccess: true
+public: false

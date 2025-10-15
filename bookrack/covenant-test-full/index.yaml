@@ -1,0 +1,51 @@
+name: covenant-test-full
+description: "Complete test covenant - demonstrates all features with distributed configuration"
+
+# ===========================================================================
+# REALM CONFIGURATION - The Keycloak realm for this organization
+# ===========================================================================
+realm:
+  name: kast-test-full
+  displayName: "Kast Test Organization - Full Features"
+  enabled: true
+  keycloakRef: main
+  sslRequired: external
+
+  passwordPolicy:
+    - type: length
+      value: "12"
+    - type: upperCase
+      value: "1"
+    - type: digits
+      value: "1"
+    - type: specialChars
+      value: "1"
+    - type: forceExpiredPasswordChange
+      value: "365"
+
+  themes:
+    login: keycloak
+    account: keycloak
+    admin: keycloak
+    email: keycloak
+
+  tokenSettings:
+    accessTokenLifespan: 300
+    refreshTokenMaxReuse: 0
+    revokeRefreshToken: true
+    defaultSignatureAlgorithm: RS256
+
+# ===========================================================================
+# GLOBAL ORGANIZATION ROLES - Available across all chapters
+# ===========================================================================
+roles:
+  org-admin:
+    description: "Organization administrator with full access"
+  org-viewer:
+    description: "Organization-wide read-only access"
+  security-admin:
+    description: "Security and compliance administrator"
+  developer:
+    description: "Developer role"
+  user:
+    description: "Basic user role"

@@ -1,0 +1,10 @@
+# Backend Developer
+email: bob.jones@test.local
+firstName: Bob
+lastName: Jones
+status: active
+emailVerified: true
+
+realmRoles:
+  - developer
+  - backend-engineer

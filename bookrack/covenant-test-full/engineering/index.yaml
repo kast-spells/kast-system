@@ -1,0 +1,24 @@
+name: engineering
+description: "Engineering department"
+
+# Member defaults for all engineering members
+memberDefaults:
+  enabled: true
+  emailVerified: true
+  status: active
+  realmRoles:
+    - developer
+    - user
+
+# Engineering-specific roles
+roles:
+  engineering-lead:
+    description: "Engineering department lead"
+  platform-engineer:
+    description: "Platform/infrastructure engineer"
+  backend-engineer:
+    description: "Backend developer"
+  frontend-engineer:
+    description: "Frontend developer"
+  sre:
+    description: "Site reliability engineer"

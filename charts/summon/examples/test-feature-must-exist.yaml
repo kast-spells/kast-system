@@ -1,0 +1,19 @@
+# Este test DEBE FALLAR si la feature no existe
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+# Feature que queremos: podDisruptionBudget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+image:
+  repository: nginx
+  tag: alpine
+
+service:
+  enabled: true
+  ports:
+    - port: 80

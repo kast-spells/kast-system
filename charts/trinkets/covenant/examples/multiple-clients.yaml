@@ -1,0 +1,44 @@
+name: covenant-multiple-clients
+
+covenant:
+  realm:
+    name: test-realm
+    displayName: "Test Realm with Multiple Clients"
+
+  # Test multiple client integrations
+  integrations:
+    clients:
+      vault:
+        enabled: true
+        clientId: vault
+        webUrl: https://vault.test.local
+        redirectUris:
+          - https://vault.test.local/ui/vault/auth/oidc/oidc/callback
+          - https://vault.test.local/oidc/callback
+        defaultClientScopes:
+          - profile
+          - email
+          - roles
+          - groups
+
+      argocd:
+        enabled: true
+        clientId: argocd
+        webUrl: https://argocd.test.local
+        redirectUris:
+          - https://argocd.test.local/auth/callback
+        defaultClientScopes:
+          - profile
+          - email
+          - groups
+
+      grafana:
+        enabled: true
+        clientId: grafana
+        webUrl: https://grafana.test.local
+        redirectUris:
+          - https://grafana.test.local/login/generic_oauth
+        defaultClientScopes:
+          - profile
+          - email
+          - roles

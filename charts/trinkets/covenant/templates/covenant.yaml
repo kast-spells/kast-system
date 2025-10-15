@@ -1,0 +1,416 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+
+Covenant Resource Generator
+Reads bookrack/covenant/ structure and generates Keycloak resources via glyphs
+
+Capabilities:
+- Generates KeycloakRealm per book
+- Generates realm roles and client roles
+- Creates users, groups, clients
+- Configures Identity Providers (IDPs)
+- Defines authentication flows
+- Creates custom client scopes
+- Integrates with Vault for OIDC secrets
+*/}}
+
+{{- if .Values.covenant }}
+{{- $root := . }}
+{{- $covenant := .Values.covenant }}
+
+{{/* Determine bookPath - default to 'covenant' or use configured path */}}
+{{- $bookPath := default "covenant" $covenant.bookPath }}
+
+{{/* Read covenant book index */}}
+{{- $covenantIndexPath := printf "bookrack/%s/index.yaml" $bookPath }}
+{{- if .Files.Glob $covenantIndexPath }}
+{{- $covenantIndex := .Files.Get $covenantIndexPath | fromYaml }}
+
+{{/* Use realm from index.yaml if exists, otherwise use values */}}
+{{- $finalRealm := default $covenant.realm $covenantIndex.realm }}
+
+{{/* Consolidated data structures */}}
+{{- $consolidatedMembers := dict }}
+{{- $consolidatedChapels := dict }}
+{{- $consolidatedAreas := dict }}
+{{- $consolidatedClientScopes := dict }}
+{{- $consolidatedIDPs := dict }}
+{{- $consolidatedAuthFlows := dict }}
+{{- $consolidatedIntegrations := dict }}
+{{- $consolidatedPostProvisioning := dict }}
+{{- $consolidatedRoles := default dict $covenantIndex.roles }}
+
+{{/* CONSOLIDATION: Read post-provisioning definitions from conventions/post-provisioning/*.yaml */}}
+{{- range $postProvPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/post-provisioning/*.yaml" $bookPath) }}
+  {{- $postProvName := trimSuffix ".yaml" (base $postProvPath) }}
+  {{- $postProvDef := ($.Files.Get $postProvPath | fromYaml) }}
+  {{- if (default true $postProvDef.enabled) }}
+    {{- $_ := set $consolidatedPostProvisioning $postProvName $postProvDef }}
+  {{- end }}
+{{- end }}
+
+{{/* CONSOLIDATION: Read client scopes from conventions/client-scopes/*.yaml */}}
+{{- range $scopePath, $_ := .Files.Glob (printf "bookrack/%s/conventions/client-scopes/*.yaml" $bookPath) }}
+  {{- $scopeName := trimSuffix ".yaml" (base $scopePath) }}
+  {{- $scopeDef := ($.Files.Get $scopePath | fromYaml) }}
+  {{- $_ := set $consolidatedClientScopes $scopeName $scopeDef }}
+{{- end }}
+
+{{/* CONSOLIDATION: Read identity providers from conventions/identity-providers/*.yaml */}}
+{{- range $idpPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/identity-providers/*.yaml" $bookPath) }}
+  {{- $idpName := trimSuffix ".yaml" (base $idpPath) }}
+  {{- $idpDef := ($.Files.Get $idpPath | fromYaml) }}
+  {{- $_ := set $consolidatedIDPs $idpName $idpDef }}
+{{- end }}
+
+{{/* CONSOLIDATION: Read auth flows from conventions/auth-flows/*.yaml */}}
+{{- range $flowPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/auth-flows/*.yaml" $bookPath) }}
+  {{- $flowName := trimSuffix ".yaml" (base $flowPath) }}
+  {{- $flowDef := ($.Files.Get $flowPath | fromYaml) }}
+  {{- $_ := set $consolidatedAuthFlows $flowName $flowDef }}
+{{- end }}
+
+{{/* CONSOLIDATION: Read integrations from conventions/integrations/*.yaml */}}
+{{- range $integrationPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/integrations/*.yaml" $bookPath) }}
+  {{- $integrationName := trimSuffix ".yaml" (base $integrationPath) }}
+  {{- $integrationDef := ($.Files.Get $integrationPath | fromYaml) }}
+  {{- $_ := set $consolidatedIntegrations $integrationName $integrationDef }}
+{{- end }}
+
+{{/* PASS 1: Scan all chapters */}}
+{{- range $chapterPath, $_ := .Files.Glob (printf "bookrack/%s/*/index.yaml" $bookPath) }}
+  {{- $chapterName := base (dir $chapterPath) }}
+  {{- $chapterDef := ($.Files.Get $chapterPath | fromYaml) }}
+  {{- $_ := set $consolidatedAreas $chapterName (deepCopy $chapterDef) }}
+
+  {{/* Consolidate chapter-level roles */}}
+  {{- if $chapterDef.roles }}
+    {{- range $roleName, $roleDef := $chapterDef.roles }}
+      {{- $chapterRoleKey := printf "%s-%s" $chapterName $roleName }}
+      {{- if not (hasKey $consolidatedRoles $chapterRoleKey) }}
+        {{- $_ := set $consolidatedRoles $chapterRoleKey $roleDef }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+  {{/* PASS 2: Scan all chapels (subdirectories) */}}
+  {{- $chapelGlob := printf "bookrack/%s/%s/*/*.yaml" $bookPath $chapterName }}
+  {{- range $memberPath, $_ := $.Files.Glob $chapelGlob }}
+    {{- $memberFileName := base $memberPath }}
+    {{- $chapelName := base (dir $memberPath) }}
+    {{- $memberName := trimSuffix ".yaml" (trimSuffix ".yml" $memberFileName) }}
+
+    {{/* Register chapel if not seen */}}
+    {{- $chapelKey := printf "%s/%s" $chapterName $chapelName }}
+    {{- if not (hasKey $consolidatedChapels $chapelKey) }}
+      {{- $_ := set $consolidatedChapels $chapelKey (dict "name" $chapelName "chapter" $chapterName) }}
+    {{- end }}
+
+    {{/* Read member file - file itself is the member definition */}}
+    {{- $memberDef := ($.Files.Get $memberPath | fromYaml) }}
+
+    {{/* Merge with chapter defaults */}}
+    {{- $merged := deepCopy $memberDef }}
+    {{- if $chapterDef.memberDefaults }}
+      {{- $merged = mergeOverwrite (deepCopy $chapterDef.memberDefaults) $merged }}
+    {{- end }}
+
+    {{/* Add context */}}
+    {{- $_ := set $merged "chapter" $chapterName }}
+    {{- $_ := set $merged "chapel" $chapelName }}
+
+    {{/* Auto-assign groups if not specified */}}
+    {{- if not $merged.groups }}
+      {{- $_ := set $merged "groups" (list $chapelKey $chapterName) }}
+    {{- end }}
+
+    {{- $fullMemberKey := printf "%s/%s/%s" $chapterName $chapelName $memberName }}
+    {{- $_ := set $consolidatedMembers $fullMemberKey $merged }}
+  {{- end }}
+{{- end }}
+
+{{/* Now generate glyphs for kaster to process */}}
+{{- $keycloakGlyphs := dict }}
+{{- $vaultGlyphs := dict }}
+
+{{/* STEP 1: Generate KeycloakRealm for this covenant book */}}
+{{- if $finalRealm }}
+{{- $realmKey := print "realm-" (default "kast" $finalRealm.name) }}
+{{- $_ := set $keycloakGlyphs $realmKey (dict
+  "type" "realm"
+  "realmName" (default "kast" $finalRealm.name)
+  "displayName" (default "Kast Organization" $finalRealm.displayName)
+  "keycloakRef" (default "main" $finalRealm.keycloakRef)
+  "enabled" (default true $finalRealm.enabled)
+  "passwordPolicy" $finalRealm.passwordPolicy
+  "themes" $finalRealm.themes
+  "eventConfig" $finalRealm.eventConfig
+  "tokenSettings" $finalRealm.tokenSettings
+  "sslRequired" $finalRealm.sslRequired
+) }}
+{{- end }}
+
+{{/* STEP 1.5: Generate Realm Roles from consolidated roles (book + chapters) */}}
+{{- range $roleName, $roleDef := $consolidatedRoles }}
+{{- $roleKey := printf "role-%s" $roleName }}
+{{- $_ := set $keycloakGlyphs $roleKey (dict
+  "type" "realmRole"
+  "realmRef" (default "kast" $finalRealm.name)
+  "roleName" $roleName
+  "description" (default "" $roleDef.description)
+  "composite" (default false $roleDef.composite)
+  "compositeRoles" $roleDef.compositeRoles
+  "attributes" $roleDef.attributes
+) }}
+{{- end }}
+
+{{/* STEP 2: Generate groups for chapters (areas) */}}
+{{- range $chapterName, $chapterDef := $consolidatedAreas }}
+{{- $groupKey := printf "area-%s" $chapterName }}
+{{- $_ := set $keycloakGlyphs $groupKey (dict
+  "type" "group"
+  "name" $chapterName
+  "realmRef" (default "kast" $finalRealm.name)
+  "realmRoles" (default list $chapterDef.realmRoles)
+) }}
+{{- end }}
+
+{{/* STEP 3: Generate groups for chapels */}}
+{{- range $chapelKey, $chapelDef := $consolidatedChapels }}
+{{- $groupGlyphKey := printf "chapel-%s" ($chapelKey | replace "/" "-") }}
+{{- $_ := set $keycloakGlyphs $groupGlyphKey (dict
+  "type" "group"
+  "name" $chapelKey
+  "realmRef" (default "kast" $finalRealm.name)
+) }}
+{{- end }}
+
+{{/* STEP 4: Generate users for members */}}
+{{- range $memberKey, $member := $consolidatedMembers }}
+{{- $userGlyphKey := $memberKey | replace "/" "-" }}
+{{- $_ := set $keycloakGlyphs $userGlyphKey (dict
+  "type" "user"
+  "realmRef" (default "kast" $finalRealm.name)
+  "username" (default $member.email $member.username)
+  "email" $member.email
+  "firstName" (default "" $member.firstName)
+  "lastName" (default "" $member.lastName)
+  "enabled" (ne (default "active" $member.status) "suspended")
+  "emailVerified" (default true $member.emailVerified)
+  "groups" $member.groups
+) }}
+{{- end }}
+
+{{/* STEP 5: Generate custom Client Scopes from consolidated configuration */}}
+{{- range $scopeName, $scopeDef := $consolidatedClientScopes }}
+{{- $scopeKey := printf "scope-%s" $scopeName }}
+{{- $_ := set $keycloakGlyphs $scopeKey (dict
+  "type" "clientScope"
+  "realmRef" (default "kast" $finalRealm.name)
+  "scopeName" $scopeName
+  "description" $scopeDef.description
+  "protocol" (default "openid-connect" $scopeDef.protocol)
+  "default" (default false $scopeDef.default)
+  "protocolMappers" $scopeDef.protocolMappers
+) }}
+{{- end }}
+
+{{/* STEP 6: Generate Identity Providers (IDPs) from consolidated configuration */}}
+{{- range $idpName, $idpDef := $consolidatedIDPs }}
+{{- if (default true $idpDef.enabled) }}
+{{- $idpKey := printf "idp-%s" $idpName }}
+{{- $_ := set $keycloakGlyphs $idpKey (dict
+  "type" "idp"
+  "realmRef" (default "kast" $finalRealm.name)
+  "alias" $idpName
+  "providerId" $idpDef.providerId
+  "displayName" $idpDef.displayName
+  "enabled" (default true $idpDef.enabled)
+  "trustEmail" (default true $idpDef.trustEmail)
+  "storeToken" (default true $idpDef.storeToken)
+  "linkOnly" $idpDef.linkOnly
+  "firstBrokerLoginFlowAlias" $idpDef.firstBrokerLoginFlowAlias
+  "postBrokerLoginFlowAlias" $idpDef.postBrokerLoginFlowAlias
+  "config" $idpDef.config
+) }}
+{{- end }}
+{{- end }}
+
+{{/* STEP 7: Generate Authentication Flows from consolidated configuration */}}
+{{- range $flowName, $flowDef := $consolidatedAuthFlows }}
+{{- $flowKey := printf "flow-%s" $flowName }}
+{{- $_ := set $keycloakGlyphs $flowKey (dict
+  "type" "flow"
+  "realmRef" (default "kast" $finalRealm.name)
+  "alias" $flowName
+  "builtIn" (default false $flowDef.builtIn)
+  "providerId" (default "basic-flow" $flowDef.providerId)
+  "topLevel" (default true $flowDef.topLevel)
+  "authenticationExecutions" $flowDef.authenticationExecutions
+) }}
+{{- end }}
+
+{{/* STEP 8: Generate Keycloak clients from consolidated integrations */}}
+{{- range $clientName, $clientDef := $consolidatedIntegrations }}
+{{- if (default true $clientDef.enabled) }}
+{{- $_ := set $keycloakGlyphs $clientName (dict
+  "type" "client"
+  "realmRef" (default "kast" $finalRealm.name)
+  "clientId" (default $clientName $clientDef.clientId)
+  "webUrl" $clientDef.webUrl
+  "redirectUris" (default (list (printf "%s/*" $clientDef.webUrl)) $clientDef.redirectUris)
+  "defaultClientScopes" (default (list "profile" "email" "roles" "groups") $clientDef.defaultClientScopes)
+  "directAccess" (default true $clientDef.directAccess)
+  "stdFlow" (default true $clientDef.standardFlowEnabled)
+  "public" (default false $clientDef.public)
+  "protocol" (default "openid-connect" $clientDef.protocol)
+  "webOrigins" (default list $clientDef.webOrigins)
+  "secret" $clientDef.secret
+) }}
+
+{{/* STEP 8.1: Generate Vault RandomSecret for OIDC client_secret if configured */}}
+{{- if $clientDef.secret }}
+{{- $secretKey := printf "secret-%s" $clientName }}
+{{- $_ := set $vaultGlyphs $secretKey (dict
+  "type" "randomSecret"
+  "name" $clientDef.secret
+  "randomKey" "client_secret"
+  "passPolicyName" (default "simple-password-policy" $clientDef.passPolicyName)
+  "selector" (default dict $clientDef.vaultSelector)
+) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/* STEP 9: Generate Post-Provisioning Jobs for members */}}
+{{- range $memberKey, $member := $consolidatedMembers }}
+  {{- $memberName := $member.username | default $member.email }}
+  {{- $memberRoles := default list $member.realmRoles }}
+  {{- $memberGroups := default list $member.groups }}
+
+  {{/* Loop through each post-provisioning definition */}}
+  {{- range $postProvName, $postProvDef := $consolidatedPostProvisioning }}
+    {{- $conditionsMet := false }}
+
+    {{/* Check if user has any required roles */}}
+    {{- if $postProvDef.conditions.roles }}
+      {{- range $requiredRole := $postProvDef.conditions.roles }}
+        {{- if has $requiredRole $memberRoles }}
+          {{- $conditionsMet = true }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{/* Check if user has any required groups */}}
+    {{- if $postProvDef.conditions.groups }}
+      {{- range $requiredGroup := $postProvDef.conditions.groups }}
+        {{- if has $requiredGroup $memberGroups }}
+          {{- $conditionsMet = true }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
+    {{/* If conditions are met, generate the Job */}}
+    {{- if $conditionsMet }}
+      {{- $jobName := printf "%s-%s-%s" $postProvName ($memberKey | replace "/" "-") "provision" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $jobName }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $postProvName }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $root.Release.Service }}
+    covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+    covenant.kast.io/post-provisioning: {{ $postProvName }}
+  annotations:
+    covenant.kast.io/member-email: {{ $member.email }}
+    covenant.kast.io/member-username: {{ $memberName }}
+spec:
+  {{- if $postProvDef.job.backoffLimit }}
+  backoffLimit: {{ $postProvDef.job.backoffLimit }}
+  {{- end }}
+  {{- if $postProvDef.job.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ $postProvDef.job.activeDeadlineSeconds }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $postProvName }}
+        app.kubernetes.io/instance: {{ $root.Release.Name }}
+        covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+    spec:
+      {{- if $postProvDef.job.restartPolicy }}
+      restartPolicy: {{ $postProvDef.job.restartPolicy }}
+      {{- else }}
+      restartPolicy: Never
+      {{- end }}
+      containers:
+        - name: {{ $postProvDef.container.name }}
+          image: {{ $postProvDef.container.image.name }}:{{ $postProvDef.container.image.tag }}
+          {{- if $postProvDef.container.command }}
+          command:
+            {{- range $postProvDef.container.command }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- if $postProvDef.container.args }}
+          args:
+            {{- range $arg := $postProvDef.container.args }}
+            {{- $templatedArg := $arg }}
+            {{- $templatedArg = $templatedArg | replace "{{ .username }}" $memberName }}
+            {{- $templatedArg = $templatedArg | replace "{{ .email }}" $member.email }}
+            {{- $templatedArg = $templatedArg | replace "{{ .firstName }}" (default "" $member.firstName) }}
+            {{- $templatedArg = $templatedArg | replace "{{ .lastName }}" (default "" $member.lastName) }}
+            {{- $templatedArg = $templatedArg | replace "{{ .groups | join \",\" }}" (join "," $memberGroups) }}
+            {{- $templatedArg = $templatedArg | replace "{{ .groups | toJson }}" (toJson $memberGroups) }}
+            - {{ $templatedArg | quote }}
+            {{- end }}
+          {{- end }}
+          {{- if $postProvDef.container.env }}
+          env:
+            {{- toYaml $postProvDef.container.env | nindent 12 }}
+          {{- end }}
+          {{- if $postProvDef.container.resources }}
+          resources:
+            {{- toYaml $postProvDef.container.resources | nindent 12 }}
+          {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/* Generate Keycloak resources using glyphs */}}
+{{- range $glyphName, $glyph := $keycloakGlyphs }}
+  {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+  {{- if eq $glyph.type "realm" }}
+    {{- include "keycloak.realm" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "realmRole" }}
+    {{- include "keycloak.realmRole" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "clientScope" }}
+    {{- include "keycloak.clientScope" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "idp" }}
+    {{- include "keycloak.idp" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "flow" }}
+    {{- include "keycloak.flow" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "group" }}
+    {{- include "keycloak.group" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "user" }}
+    {{- include "keycloak.user" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "client" }}
+    {{- include "keycloak.client" (list $root $glyphWithName) }}
+  {{- end }}
+{{- end }}
+
+{{/* Generate Vault resources using glyphs */}}
+{{- range $glyphName, $glyph := $vaultGlyphs }}
+  {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+  {{- if eq $glyph.type "randomSecret" }}
+    {{- include "vault.randomSecret" (list $root $glyphWithName) }}
+  {{- end }}
+{{- end }}
+
+{{- end }}
+{{- end }}

@@ -1,0 +1,68 @@
+# Post-Provisioning: Stalwart Email
+# Creates email account for user when they have email permissions
+
+# Enable this post-provisioning action
+enabled: true
+
+# Conditions: When to run this container
+# User must have at least ONE of these groups or roles
+conditions:
+  groups:
+    - email-users
+  roles:
+    - email-access
+    - developer  # Developers get email by default
+
+# Container configuration (summon sidecar format)
+container:
+  name: stalwart-provisioner
+  image:
+    name: curlimages/curl
+    tag: latest
+  command:
+    - /bin/sh
+    - -c
+  args:
+    - |
+      echo "Provisioning email for user: {{ .username }}"
+      echo "Email: {{ .email }}"
+      echo "Groups: {{ .groups | join "," }}"
+
+      # Stalwart API call to create email account
+      curl -X POST http://stalwart.mail.svc:8080/api/v1/accounts \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $STALWART_API_TOKEN" \
+        -d '{
+          "username": "{{ .username }}",
+          "email": "{{ .email }}",
+          "displayName": "{{ .firstName }} {{ .lastName }}",
+          "groups": {{ .groups | toJson }},
+          "quota": "10GB",
+          "enabled": true
+        }'
+
+      echo "Email account provisioned successfully"
+
+  env:
+    - name: STALWART_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: stalwart-api-credentials
+          key: token
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Job configuration
+job:
+  # Backoff limit for retries
+  backoffLimit: 3
+  # Timeout in seconds
+  activeDeadlineSeconds: 300
+  # Restart policy
+  restartPolicy: OnFailure

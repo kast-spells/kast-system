@@ -1,25 +1,55 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
+
+keycloak.client creates KeycloakClient resources for OIDC/SAML client configuration.
+Uses the EDP Keycloak Operator CRDs.
+
+Parameters:
+- $root: Chart root context (index . 0)
+- $glyphDefinition: Client configuration object (index . 1)
+
+Required Configuration:
+- glyphDefinition.realmRef: Keycloak realm name
+- glyphDefinition.webUrl: Client web URL
+
+Optional Configuration:
+- glyphDefinition.name: Resource name (defaults to common.name)
+- glyphDefinition.clientId: Client ID (defaults to name)
+- glyphDefinition.protocol: Protocol type (default: openid-connect)
+- glyphDefinition.public: Public client flag (default: false)
+- glyphDefinition.directAccess: Direct access grants enabled (default: true)
+- glyphDefinition.stdFlow: Standard flow enabled (default: true)
+- glyphDefinition.redirectUris: List of valid redirect URIs
+- glyphDefinition.webOrigins: List of valid web origins
+- glyphDefinition.defaultClientScopes: List of default scopes
+- glyphDefinition.optionalClientScopes: List of optional scopes
+- glyphDefinition.clientRoles: List of client roles
+- glyphDefinition.serviceAccount: Service account configuration
+- glyphDefinition.attributes: Additional client attributes
+
+Usage: {{- include "keycloak.client" (list $root $glyph) }}
 */}}
-{{- define "keycloaj.client" }}
+{{- define "keycloak.client" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 ---
 apiVersion: v1.edp.epam.com/v1
 kind: KeycloakClient
 metadata:
+  name: {{ default (include "common.name" $root) $glyphDefinition.name }}
   labels:
-    {{- include "common.infra.labels" $root | nindent 4}}
-  name: {{ $glyphDefinition.name }}
+    {{- include "common.labels" $root | nindent 4}}
+  {{- with $glyphDefinition.annotations }}
   annotations:
-    {{- include "common.infra.annotations" $root | nindent 4}}
+    {{- toYaml . | nindent 4}}
+  {{- end }}
 spec:
   realmRef:
-    name: {{ $glyphDefinition.realmRef }}
+    name: {{ required "glyphDefinition.realmRef is required" $glyphDefinition.realmRef }}
     kind: {{ default "KeycloakRealm" $glyphDefinition.realmRefKind }}
   advancedProtocolMappers: {{ default "true" $glyphDefinition.advMappers }}
-  clientId: {{ default $glyphDefinition.name $glyphDefinition.clientId }}
+  clientId: {{ default (default (include "common.name" $root) $glyphDefinition.name) $glyphDefinition.clientId }}
   directAccess: {{ default true $glyphDefinition.directAccess }}
   {{- if $glyphDefinition.public }}
   public: true
@@ -27,10 +57,9 @@ spec:
   {{- if $glyphDefinition.protocol }}
   protocol: {{ $glyphDefinition.protocol }}
   {{- end }}
-  secret: ${{ default "keycloak-client.client_id" $glyphDefinition.secret }}
-  webUrl: {{ $glyphDefinition.webUrl }}
+  secret: {{ default (printf "keycloak-client-%s" (default (include "common.name" $root) $glyphDefinition.name)) $glyphDefinition.secret }}
+  webUrl: {{ required "glyphDefinition.webUrl is required" $glyphDefinition.webUrl }}
   standardFlowEnabled: {{ default true $glyphDefinition.stdFlow }}
-  # implicitFlowEnabled: false
   {{- if $glyphDefinition.attributes }}
   attributes:
     {{- if $glyphDefinition.attributes.logoutURL }}
@@ -46,13 +75,17 @@ spec:
     protocol: {{ $glyphDefinition.protocol }}
     {{- end }}
   {{- end }}
+  {{- if $glyphDefinition.defaultClientScopes }}
   defaultClientScopes:
   {{- range $glyphDefinition.defaultClientScopes }}
     - {{ . }}
   {{- end }}
+  {{- end }}
+  {{- if $glyphDefinition.redirectUris }}
   redirectUris:
   {{- range $glyphDefinition.redirectUris }}
     - {{ . }}
+  {{- end }}
   {{- end }}
   {{- if $glyphDefinition.optionalClientScopes }}
   optionalClientScopes:
@@ -78,8 +111,8 @@ spec:
     {{- if $glyphDefinition.serviceAccount.clientRoles }}
     clientRoles:
     {{- range $glyphDefinition.serviceAccount.clientRoles }}
-      - {{ toYaml . }}
+      - {{ toYaml . | nindent 8 }}
     {{- end }}
-  {{- end }}
+    {{- end }}
   {{- end }}
 {{- end }}

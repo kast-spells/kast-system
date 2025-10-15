@@ -1,0 +1,68 @@
+# Test: Multi-workload app using rune fallback
+# Use case: API server (Deployment) + Background worker (Deployment) + Database (StatefulSet)
+
+name: rune-multi-workload
+
+# Source 1: API Server (Deployment)
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: my-api
+  tag: v1.0.0
+
+service:
+  enabled: true
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Source 2: Background Worker (Deployment) - via rune fallback
+runes:
+  - values:
+      workload:
+        enabled: true
+        type: deployment
+        replicas: 5
+      image:
+        repository: my-worker
+        tag: v1.0.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+      envs:
+        WORKER_MODE: "true"
+
+# Source 3: Database (StatefulSet) - via rune fallback
+  - values:
+      workload:
+        enabled: true
+        type: statefulset
+        replicas: 1
+        volumeClaimTemplates:
+          data:
+            size: 10Gi
+            destinationPath: /var/lib/postgresql/data
+      image:
+        repository: postgres
+        tag: "15"
+      service:
+        enabled: true
+        ports:
+          - port: 5432
+            name: postgres
+      envs:
+        POSTGRES_DB: myapp
+        POSTGRES_USER: myapp

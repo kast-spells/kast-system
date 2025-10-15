@@ -1,0 +1,20 @@
+name: keycloak-basic-auth-flow
+
+glyphs:
+  keycloak:
+    - type: flow
+      name: test-auth-flow-link-user
+      alias: link-existing-user
+      realmRef: test-realm
+      builtIn: false
+      providerId: basic-flow
+      topLevel: true
+      authenticationExecutions:
+        - authenticator: idp-review-profile
+          requirement: REQUIRED
+          priority: 0
+          authenticatorFlow: false
+        - authenticator: idp-auto-link
+          requirement: REQUIRED
+          priority: 1
+          authenticatorFlow: false

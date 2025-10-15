@@ -1,0 +1,14 @@
+# Identity Provider: Google OAuth
+# External authentication via Google accounts
+
+enabled: true
+providerId: google
+displayName: "Google"
+trustEmail: true
+storeToken: true
+firstBrokerLoginFlowAlias: link-existing-user
+
+config:
+  clientId: "$google-oauth:client_id"
+  clientSecret: "$google-oauth:client_secret"
+  defaultScope: "openid email profile"

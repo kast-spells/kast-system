@@ -1,0 +1,19 @@
+name: business
+description: "Business department"
+
+# Member defaults for business
+memberDefaults:
+  enabled: true
+  emailVerified: true
+  status: active
+  realmRoles:
+    - user
+
+# Business-specific roles
+roles:
+  business-lead:
+    description: "Business department lead"
+  sales-rep:
+    description: "Sales representative"
+  marketing-specialist:
+    description: "Marketing specialist"

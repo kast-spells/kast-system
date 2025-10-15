@@ -1,6 +1,31 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
+
+keycloak.idp creates KeycloakRealmIdentityProvider resources for external identity provider integration.
+Uses the EDP Keycloak Operator CRDs.
+
+Parameters:
+- $root: Chart root context (index . 0)
+- $glyphDefinition: Identity provider configuration object (index . 1)
+
+Required Configuration:
+- glyphDefinition.realmRef: Keycloak realm name
+- glyphDefinition.providerId: Provider type (google, github, oidc, saml, etc.)
+- glyphDefinition.alias: IDP alias/identifier
+
+Optional Configuration:
+- glyphDefinition.name: Resource name (defaults to common.name)
+- glyphDefinition.displayName: Display name for IDP
+- glyphDefinition.enabled: Enable/disable IDP (default: true)
+- glyphDefinition.trustEmail: Trust email from IDP (default: true)
+- glyphDefinition.storeToken: Store tokens (default: true)
+- glyphDefinition.linkOnly: Link accounts only (default: false)
+- glyphDefinition.firstBrokerLoginFlowAlias: First broker login flow
+- glyphDefinition.postBrokerLoginFlowAlias: Post broker login flow
+- glyphDefinition.config: Provider-specific configuration (clientId, clientSecret, URLs, etc.)
+
+Usage: {{- include "keycloak.idp" (list $root $glyph) }}
 */}}
 {{- define "keycloak.idp" }}
 {{- $root := index . 0 -}}
@@ -9,36 +34,38 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: v1.edp.epam.com/v1
 kind: KeycloakRealmIdentityProvider
 metadata:
+  name: {{ default (include "common.name" $root) $glyphDefinition.name }}
   labels:
-    {{- include "common.infra.labels" $root | nindent 4}}
-  name: {{ $glyphDefinition.name }}
+    {{- include "common.labels" $root | nindent 4}}
+  {{- with $glyphDefinition.annotations }}
   annotations:
-    {{- include "common.infra.annotations" $root | nindent 4}}
+    {{- toYaml . | nindent 4}}
+  {{- end }}
 spec:
   realmRef:
-    name: {{ $glyphDefinition.realmRef }}
+    name: {{ required "glyphDefinition.realmRef is required" $glyphDefinition.realmRef }}
     kind: {{ default "KeycloakRealm" $glyphDefinition.realmRefKind }}
-  alias: {{ default $glyphDefinition.name $glyphDefinition.scopeName }}
-  enabled: true
-  displayName: {{ default $glyphDefinition.name $glyphDefinition.displayName }}
-  providerId: google
-  {{- if $glyphDefinition.firstFlow }}
-  firstBrokerLoginFlowAlias: {{ $glyphDefinition.firstFlow }}
+  alias: {{ required "glyphDefinition.alias is required" $glyphDefinition.alias }}
+  enabled: {{ default true $glyphDefinition.enabled }}
+  {{- if $glyphDefinition.displayName }}
+  displayName: {{ $glyphDefinition.displayName }}
   {{- end }}
-  trustEmail: true
+  providerId: {{ required "glyphDefinition.providerId is required" $glyphDefinition.providerId }}
+  {{- if $glyphDefinition.firstBrokerLoginFlowAlias }}
+  firstBrokerLoginFlowAlias: {{ $glyphDefinition.firstBrokerLoginFlowAlias }}
+  {{- end }}
+  {{- if $glyphDefinition.postBrokerLoginFlowAlias }}
+  postBrokerLoginFlowAlias: {{ $glyphDefinition.postBrokerLoginFlowAlias }}
+  {{- end }}
+  trustEmail: {{ default true $glyphDefinition.trustEmail }}
   storeToken: {{ default true $glyphDefinition.storeToken }}
+  {{- if $glyphDefinition.linkOnly }}
+  linkOnly: {{ $glyphDefinition.linkOnly }}
+  {{- end }}
+  {{- if $glyphDefinition.config }}
   config:
-    clientId: {{ default "$google-oauth:client_id" $glyphDefinition.clientId }}
-    clientSecret: {{ default "$google-oauth:client_secret" $glyphDefinition.clientSecret }}
-    redirectUri: "{{ $glyphDefinition.realmRef }}/realms/{{ $glyphDefinition.realmRef }}/broker/google/endpoint"
-    authorizationUrl: "https://accounts.google.com/o/oauth2/auth?hd={{ $glyphDefinition.authURl }}"
-    tokenUrl: "https://accounts.google.com/o/oauth2/token"
-    userInfoUrl: "https://www.googleapis.com/oauth2/v3/userinfo"
-    logoutUrl: "https://accounts.google.com/o/oauth2/revoke"
-    defaultScope: {{ default "openid email profile" $glyphDefinition.realmRefKind }}
-    {{- if $glyphDefinition.accessType }}
-    accessType: {{ $glyphDefinition.accessType }}
+    {{- range $key, $value := $glyphDefinition.config }}
+    {{ $key }}: {{ $value | quote }}
     {{- end }}
-    # accessType: "offline"
-    syncMode: IMPORT
+  {{- end }}
 {{- end }}

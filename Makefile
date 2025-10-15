@@ -46,11 +46,67 @@ tdd-refactor: ## TDD Refactor: Run tests after refactoring (should still pass)
 # CORE TESTING TARGETS
 # =============================================================================
 
-test: test-comprehensive test-tarot lint ## Run comprehensive TDD tests
+test: test-comprehensive test-tarot lint ## Run comprehensive TDD tests (original)
 	@echo "$(GREEN)✅ TDD tests completed successfully!$(RESET)"
 
-test-all: test-comprehensive test-glyphs-all test-tarot lint validate-completeness ## Run all TDD tests
+test-all: test-comprehensive test-snapshots test-glyphs-all test-tarot lint ## Run all TDD tests (comprehensive + snapshots + glyphs)
 	@echo "$(GREEN)✅ All TDD tests completed successfully!$(RESET)"
+
+test-status: ## Show testing status for all charts, glyphs, and trinkets
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BLUE)📊 Testing Status Report$(RESET)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo ""
+	@echo "$(BLUE)📦 Main Charts:$(RESET)"
+	@find . -name "Chart.yaml" -not -path "./charts/glyphs/*" -not -path "./charts/trinkets/*" | while read chart_file; do \
+		chart_dir=$$(dirname $$chart_file); \
+		chart_name=$$(basename $$chart_dir); \
+		if [ -d "$$chart_dir/examples" ]; then \
+			example_count=$$(find $$chart_dir/examples -name "*.yaml" -type f 2>/dev/null | wc -l); \
+			snapshot_count=$$(find output-test/$$chart_name -name "*.expected.yaml" -type f 2>/dev/null | wc -l); \
+			if [ $$snapshot_count -gt 0 ]; then \
+				echo "  $(GREEN)✅ $$chart_name: $$example_count examples ($$snapshot_count snapshots)$(RESET)"; \
+			else \
+				echo "  $(YELLOW)⚠️  $$chart_name: $$example_count examples (no snapshots)$(RESET)"; \
+			fi; \
+		else \
+			echo "  $(RED)❌ $$chart_name: NO examples/$(RESET)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(BLUE)🎭 Glyphs:$(RESET)"
+	@for glyph_dir in charts/glyphs/*/; do \
+		glyph_name=$$(basename $$glyph_dir); \
+		if [ -d "$$glyph_dir/examples" ]; then \
+			example_count=$$(find $$glyph_dir/examples -name "*.yaml" -type f 2>/dev/null | wc -l); \
+			snapshot_count=$$(find output-test/$$glyph_name -name "*.expected.yaml" -type f 2>/dev/null | wc -l); \
+			if [ $$snapshot_count -gt 0 ]; then \
+				echo "  $(GREEN)✅ $$glyph_name: $$example_count examples ($$snapshot_count snapshots)$(RESET)"; \
+			else \
+				echo "  $(YELLOW)⚠️  $$glyph_name: $$example_count examples (no snapshots)$(RESET)"; \
+			fi; \
+		else \
+			echo "  $(RED)❌ $$glyph_name: NO examples/$(RESET)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(BLUE)🔮 Trinkets:$(RESET)"
+	@for trinket_dir in charts/trinkets/*/; do \
+		trinket_name=$$(basename $$trinket_dir); \
+		if [ -d "$$trinket_dir/examples" ]; then \
+			example_count=$$(find $$trinket_dir/examples -name "*.yaml" -type f 2>/dev/null | wc -l); \
+			snapshot_count=$$(find output-test/$$trinket_name -name "*.expected.yaml" -type f 2>/dev/null | wc -l); \
+			if [ $$snapshot_count -gt 0 ]; then \
+				echo "  $(GREEN)✅ $$trinket_name: $$example_count examples ($$snapshot_count snapshots)$(RESET)"; \
+			else \
+				echo "  $(YELLOW)⚠️  $$trinket_name: $$example_count examples (no snapshots)$(RESET)"; \
+			fi; \
+		else \
+			echo "  $(RED)❌ $$trinket_name: NO examples/$(RESET)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
 
 test-syntax: ## Quick syntax validation for all charts
 	@echo "$(BLUE)🚀 TDD: Running syntax validation...$(RESET)"
@@ -83,6 +139,73 @@ test-comprehensive: ## Test charts with comprehensive validation (rendering + re
 					else \
 						echo "$(RED)❌ $$chart_name-$$example_name (rendering failed)$(RESET)"; \
 					fi; \
+				fi \
+			done \
+		else \
+			echo "$(YELLOW)⚠️  $$chart_name has no examples/ directory - create test examples for TDD$(RESET)"; \
+			helm template test-$$chart_name $$chart_dir > /dev/null && \
+				echo "$(GREEN)✅ $$chart_name-basic$(RESET)" || \
+				echo "$(RED)❌ $$chart_name-basic$(RESET)"; \
+		fi \
+	done
+
+test-snapshots: ## Test charts with snapshot validation + K8s schema (dry-run)
+	@echo "$(BLUE)📸 TDD: Snapshot + K8s schema validation...$(RESET)"
+	@find . -name "Chart.yaml" -not -path "./charts/glyphs/*" | while read chart_file; do \
+		chart_dir=$$(dirname $$chart_file); \
+		chart_name=$$(basename $$chart_dir); \
+		echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"; \
+		echo "$(BLUE)Testing chart: $$chart_name$(RESET)"; \
+		echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"; \
+		if [ -d "$$chart_dir/examples" ]; then \
+			for example in $$chart_dir/examples/*.yaml; do \
+				if [ -f "$$example" ]; then \
+					example_name=$$(basename $$example .yaml); \
+					test_name="tdd-$$chart_name-$$example_name"; \
+					echo "$(BLUE)  Testing $$example_name...$(RESET)"; \
+					mkdir -p $(OUTPUT_TEST_DIR)/$$chart_name; \
+					actual_output="$(OUTPUT_TEST_DIR)/$$chart_name/$$example_name.yaml"; \
+					expected_output="$(OUTPUT_TEST_DIR)/$$chart_name/$$example_name.expected.yaml"; \
+					issues=0; \
+					\
+					echo "$(BLUE)    [1/3] Rendering template...$(RESET)"; \
+					if helm template $$test_name $$chart_dir -f $$example > $$actual_output 2>/dev/null; then \
+						echo "$(GREEN)      ✅ Rendered successfully$(RESET)"; \
+					else \
+						echo "$(RED)      ❌ Rendering failed$(RESET)"; \
+						issues=$$((issues + 1)); \
+					fi; \
+					\
+					if [ $$issues -eq 0 ]; then \
+						echo "$(BLUE)    [2/3] Snapshot comparison...$(RESET)"; \
+						if [ -f "$$expected_output" ]; then \
+							if diff -q $$actual_output $$expected_output > /dev/null 2>&1; then \
+								echo "$(GREEN)      ✅ Snapshot matches$(RESET)"; \
+							else \
+								echo "$(RED)      ❌ Snapshot differs$(RESET)"; \
+								echo "$(YELLOW)      💡 diff $$actual_output $$expected_output$(RESET)"; \
+								echo "$(YELLOW)      💡 make update-snapshot CHART=$$chart_name EXAMPLE=$$example_name$(RESET)"; \
+								issues=$$((issues + 1)); \
+							fi; \
+						else \
+							echo "$(YELLOW)      ⚠️  No snapshot (run: make generate-snapshots CHART=$$chart_name)$(RESET)"; \
+						fi; \
+						\
+						echo "$(BLUE)    [3/3] K8s schema validation...$(RESET)"; \
+						if helm install $$test_name $$chart_dir -f $$example --dry-run --namespace validate-ns --create-namespace > /dev/null 2>&1; then \
+							echo "$(GREEN)      ✅ Schema valid$(RESET)"; \
+						else \
+							echo "$(RED)      ❌ Schema validation failed$(RESET)"; \
+							issues=$$((issues + 1)); \
+						fi; \
+					fi; \
+					\
+					if [ $$issues -eq 0 ]; then \
+						echo "$(GREEN)  ✅ $$chart_name-$$example_name$(RESET)"; \
+					else \
+						echo "$(RED)  ❌ $$chart_name-$$example_name ($$issues issues)$(RESET)"; \
+					fi; \
+					echo ""; \
 				fi \
 			done \
 		else \
@@ -269,6 +392,104 @@ clean-output-tests: ## Clean generated output test files
 	@echo "$(BLUE)🧽 Cleaning output test files...$(RESET)"
 	@rm -rf $(OUTPUT_TEST_DIR)
 	@echo "$(GREEN)✅ Output test files cleaned$(RESET)"
+
+# =============================================================================
+# SNAPSHOT MANAGEMENT (for all charts)
+# =============================================================================
+
+generate-snapshots: ## Generate expected snapshots for chart (Usage: make generate-snapshots CHART=summon)
+	@if [ -z "$(CHART)" ]; then \
+		echo "$(RED)Usage: make generate-snapshots CHART=summon$(RESET)"; \
+		echo "$(BLUE)Available charts:$(RESET)"; \
+		find . -name "Chart.yaml" -not -path "./charts/glyphs/*" -exec dirname {} \; | xargs -n1 basename | sed 's/^/  - /'; \
+		exit 1; \
+	fi
+	@chart_dir="charts/$(CHART)"; \
+	if [ "$(CHART)" = "microspell" ] || [ "$(CHART)" = "tarot" ] || [ "$(CHART)" = "covenant" ]; then \
+		chart_dir="charts/trinkets/$(CHART)"; \
+	elif [ "$(CHART)" = "librarian" ]; then \
+		chart_dir="librarian"; \
+	fi; \
+	if [ ! -d "$$chart_dir" ]; then \
+		echo "$(RED)❌ Chart $(CHART) not found in $$chart_dir$(RESET)"; \
+		exit 1; \
+	fi; \
+	if [ ! -d "$$chart_dir/examples" ]; then \
+		echo "$(RED)❌ No examples/ directory in $$chart_dir$(RESET)"; \
+		exit 1; \
+	fi; \
+	mkdir -p $(OUTPUT_TEST_DIR)/$(CHART); \
+	echo "$(BLUE)📸 Generating snapshots for $(CHART)...$(RESET)"; \
+	for example in $$chart_dir/examples/*.yaml; do \
+		if [ -f "$$example" ]; then \
+			example_name=$$(basename $$example .yaml); \
+			test_name="tdd-$(CHART)-$$example_name"; \
+			expected_output="$(OUTPUT_TEST_DIR)/$(CHART)/$$example_name.expected.yaml"; \
+			echo "$(BLUE)  Generating $$example_name.expected.yaml...$(RESET)"; \
+			if helm template $$test_name $$chart_dir -f $$example > $$expected_output 2>/dev/null; then \
+				echo "$(GREEN)    ✅ Generated $$expected_output$(RESET)"; \
+			else \
+				echo "$(RED)    ❌ Failed to generate snapshot$(RESET)"; \
+			fi; \
+		fi; \
+	done
+
+update-snapshot: ## Update specific snapshot (Usage: make update-snapshot CHART=summon EXAMPLE=basic-deployment)
+	@if [ -z "$(CHART)" ] || [ -z "$(EXAMPLE)" ]; then \
+		echo "$(RED)Usage: make update-snapshot CHART=summon EXAMPLE=basic-deployment$(RESET)"; \
+		exit 1; \
+	fi
+	@chart_dir="charts/$(CHART)"; \
+	if [ "$(CHART)" = "microspell" ] || [ "$(CHART)" = "tarot" ] || [ "$(CHART)" = "covenant" ]; then \
+		chart_dir="charts/trinkets/$(CHART)"; \
+	elif [ "$(CHART)" = "librarian" ]; then \
+		chart_dir="librarian"; \
+	fi; \
+	example_file="$$chart_dir/examples/$(EXAMPLE).yaml"; \
+	if [ ! -f "$$example_file" ]; then \
+		echo "$(RED)❌ Example file not found: $$example_file$(RESET)"; \
+		exit 1; \
+	fi; \
+	mkdir -p $(OUTPUT_TEST_DIR)/$(CHART); \
+	test_name="tdd-$(CHART)-$(EXAMPLE)"; \
+	expected_output="$(OUTPUT_TEST_DIR)/$(CHART)/$(EXAMPLE).expected.yaml"; \
+	echo "$(BLUE)📸 Updating snapshot for $(CHART)/$(EXAMPLE)...$(RESET)"; \
+	if helm template $$test_name $$chart_dir -f $$example_file > $$expected_output 2>/dev/null; then \
+		echo "$(GREEN)✅ Updated $$expected_output$(RESET)"; \
+	else \
+		echo "$(RED)❌ Failed to update snapshot$(RESET)"; \
+		exit 1; \
+	fi
+
+update-all-snapshots: ## Update all snapshots for all charts
+	@echo "$(BLUE)📸 Updating all snapshots...$(RESET)"
+	@find . -name "Chart.yaml" -not -path "./charts/glyphs/*" | while read chart_file; do \
+		chart_dir=$$(dirname $$chart_file); \
+		chart_name=$$(basename $$chart_dir); \
+		if [ -d "$$chart_dir/examples" ]; then \
+			echo "$(BLUE)Updating snapshots for $$chart_name...$(RESET)"; \
+			$(MAKE) generate-snapshots CHART=$$chart_name; \
+		fi; \
+	done
+	@echo "$(GREEN)✅ All snapshots updated$(RESET)"
+
+show-snapshot-diff: ## Show diff for specific snapshot (Usage: make show-snapshot-diff CHART=summon EXAMPLE=basic-deployment)
+	@if [ -z "$(CHART)" ] || [ -z "$(EXAMPLE)" ]; then \
+		echo "$(RED)Usage: make show-snapshot-diff CHART=summon EXAMPLE=basic-deployment$(RESET)"; \
+		exit 1; \
+	fi
+	@actual="$(OUTPUT_TEST_DIR)/$(CHART)/$(EXAMPLE).yaml"; \
+	expected="$(OUTPUT_TEST_DIR)/$(CHART)/$(EXAMPLE).expected.yaml"; \
+	if [ ! -f "$$actual" ]; then \
+		echo "$(RED)❌ Actual output not found. Run 'make test-comprehensive' first$(RESET)"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "$$expected" ]; then \
+		echo "$(RED)❌ Expected snapshot not found. Run 'make generate-snapshots CHART=$(CHART)' first$(RESET)"; \
+		exit 1; \
+	fi; \
+	echo "$(BLUE)🔍 Showing diff for $(CHART)/$(EXAMPLE)...$(RESET)"; \
+	diff -u $$expected $$actual || echo "$(YELLOW)Files differ (see above)$(RESET)"
 
 # =============================================================================
 # DEVELOPMENT WORKFLOW

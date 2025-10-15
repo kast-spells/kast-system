@@ -22,29 +22,38 @@ make tdd-red         # Run tests expecting failures (Red phase)
 make tdd-green       # Run tests expecting success (Green phase)
 make tdd-refactor    # Run tests after refactoring (Blue phase)
 
+# Testing Status & Discovery
+make test-status     # Show testing status for all charts/glyphs/trinkets (automatic discovery)
+
 # Core Testing
-make test            # Run comprehensive TDD tests
-make test-all        # Run all tests including glyph validation
+make test            # Run comprehensive TDD tests (rendering + resource completeness)
+make test-all        # Run ALL tests (comprehensive + snapshots + glyphs + tarot)
+make test-comprehensive  # Test rendering + resource completeness (original TDD)
+make test-snapshots  # Test snapshots + K8s schema validation (helm dry-run)
 make test-syntax     # Quick syntax validation
+
+# Snapshot Testing
+make generate-snapshots CHART=<name>     # Generate snapshots for chart
+make update-snapshot CHART=<name> EXAMPLE=<example>  # Update specific snapshot
+make update-all-snapshots                # Update all snapshots
+make show-snapshot-diff CHART=<name> EXAMPLE=<example>  # Show diff
 
 # Validation
 make validate-completeness  # Ensure all expected resources are generated
 make lint                  # Helm lint all charts
 
-# Glyph Testing (Dynamic System)
+# Glyph Testing (Automatic Discovery)
 make glyphs <name>         # Test specific glyph (e.g., make glyphs vault)
 make test-glyphs-all       # Test all glyphs automatically
 make list-glyphs           # List all available glyphs
-
-# Output Validation & Diff Testing
 make generate-expected GLYPH=<name>     # Generate expected outputs for glyph
-make show-glyph-diff GLYPH=<name> EXAMPLE=<example>  # Show diff between actual/expected
-make clean-output-tests    # Clean generated output test files
+make show-glyph-diff GLYPH=<name> EXAMPLE=<example>  # Show diff
 
 # Development Helpers
 make create-example CHART=summon EXAMPLE=my-test  # Create new test
 make inspect-chart CHART=summon EXAMPLE=basic-deployment  # Debug output
 make watch          # Auto-run tests on file changes
+make clean-output-tests    # Clean generated test outputs
 ```
 
 ## Project Structure
@@ -63,7 +72,169 @@ make watch          # Auto-run tests on file changes
     - **<example>.yaml** - Actual rendered output
     - **<example>.expected.yaml** - Expected output for diff validation
 
+## Testing System Overview
+
+kast-system uses a **dual testing approach** that automatically discovers all charts, glyphs, and trinkets:
+
+### Testing Layers
+
+1. **Syntax Validation** (`make test-syntax`)
+   - Validates Helm template syntax
+   - Fast feedback during development
+   - No K8s cluster required
+
+2. **Comprehensive Testing** (`make test-comprehensive`)
+   - Rendering validation
+   - Resource completeness checks
+   - Validates expected K8s resources are generated
+
+3. **Snapshot Testing** (`make test-snapshots`)
+   - **Snapshot comparison**: Output matches expected YAML
+   - **K8s schema validation**: `helm install --dry-run` validates against K8s API
+   - Detects unintended changes and invalid values
+
+4. **Glyph Testing** (`make test-glyphs-all`)
+   - Tests all glyphs through kaster orchestration
+   - Automatic discovery of glyphs with examples/
+   - Snapshot-based validation
+
+### Current Testing Status
+
+Run `make test-status` to see automatic discovery of all tests:
+
+```bash
+$ make test-status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Testing Status Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 Main Charts:
+  ✅ summon: 17 examples (17 snapshots)
+  ⚠️  kaster: 1 examples (no snapshots)
+  ❌ librarian: NO examples/
+
+🎭 Glyphs:
+  ✅ argo-events: 5 examples (5 snapshots)
+  ✅ vault: 11 examples (11 snapshots)
+  ✅ istio: 2 examples (2 snapshots)
+  ⚠️  certManager: 2 examples (no snapshots)
+  ❌ keycloak: NO examples/
+  ...
+
+🔮 Trinkets:
+  ⚠️  microspell: 8 examples (no snapshots)
+  ⚠️  tarot: 14 examples (no snapshots)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Legend:
+  ✅ = Examples + Snapshots complete
+  ⚠️  = Examples exist, snapshots needed
+  ❌ = No examples (needs TDD work)
+```
+
 ## TDD Development Workflow
+
+### Understanding the TDD Cycle Mechanics
+
+The TDD commands (`tdd-red`, `tdd-green`, `tdd-refactor`) have different behaviors that enforce the Red-Green-Refactor cycle:
+
+#### How `tdd-red` Works (Red Phase)
+
+```makefile
+tdd-red: ## TDD Red: Run tests expecting failures
+	@echo "🔴 TDD RED: Running tests expecting failures..."
+	@$(MAKE) test-comprehensive || echo "✅ Good! Tests are failing - now implement"
+```
+
+**Key mechanic:** Uses the `||` operator (logical OR)
+- Runs `test-comprehensive`
+- If tests **FAIL** → executes the echo message (celebrates failure!)
+- If tests **PASS** → shows nothing special (unexpected at this phase)
+- **Philosophy:** You're writing tests for features that don't exist yet, so failures are GOOD
+
+**When to use:**
+- After writing new test examples
+- Before implementing new features
+- To verify your test actually tests something (not a false positive)
+
+#### How `tdd-green` Works (Green Phase)
+
+```makefile
+tdd-green: ## TDD Green: Run tests expecting success
+	@echo "🟢 TDD GREEN: Running tests expecting success..."
+	@$(MAKE) test-comprehensive
+```
+
+**Key mechanic:** No `||` operator - direct execution
+- Runs `test-comprehensive`
+- If tests **PASS** → exits successfully (good!)
+- If tests **FAIL** → Make will exit with error code (bad!)
+- **Philosophy:** You've implemented the feature, tests should now pass
+
+**When to use:**
+- After implementing features
+- To verify your implementation works
+- Before committing code
+
+#### How `tdd-refactor` Works (Refactor Phase)
+
+```makefile
+tdd-refactor: ## TDD Refactor: Run tests after refactoring
+	@echo "🔵 TDD REFACTOR: Running tests after refactoring..."
+	@$(MAKE) test-all
+```
+
+**Key mechanic:** Runs the comprehensive test suite (`test-all`)
+- Executes ALL tests (comprehensive + snapshots + glyphs)
+- Ensures your refactoring didn't break anything
+- **Philosophy:** Code improvement should not change behavior
+
+**When to use:**
+- After cleaning up code
+- After optimizing implementations
+- Before finalizing work
+
+#### Comparison Table
+
+| Command | What Runs | Expected Result | Exit Code if Fail |
+|---------|-----------|-----------------|-------------------|
+| `tdd-red` | `test-comprehensive` | Failures are OK | 0 (success) |
+| `tdd-green` | `test-comprehensive` | Must pass | Non-zero (error) |
+| `tdd-refactor` | `test-all` | Must pass | Non-zero (error) |
+
+#### Live Example: Adding PodDisruptionBudget
+
+```bash
+# RED PHASE - Write test first
+cat > charts/summon/examples/test-pod-disruption.yaml <<EOF
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+EOF
+
+# Confirm test fails (feature doesn't exist yet)
+make tdd-red
+# Output: ❌ summon-test-pod-disruption (expectations failed)
+#         ✅ Good! Tests are failing - now implement
+
+# GREEN PHASE - Implement feature
+# Edit charts/summon/templates/pod-disruption-budget.yaml
+# Add template logic for PDB
+
+# Verify test passes
+make tdd-green
+# Output: ✅ summon-test-pod-disruption
+
+# REFACTOR PHASE - Improve implementation
+# Clean up code, add comments, optimize
+make tdd-refactor
+# Output: All tests pass including snapshots and glyphs
+```
 
 ### 1. Adding New Features (TDD Approach)
 
@@ -83,13 +254,17 @@ make tdd-red
 # Add necessary template logic
 
 # 4. Verify test passes
-make tdd-green  
+make tdd-green
 # Should show: ✅ summon-my-new-feature
 
 # 5. REFACTOR PHASE - Clean up implementation
 # Improve code quality, add documentation, optimize
 make tdd-refactor
 # Should still show: ✅ summon-my-new-feature
+
+# 6. SNAPSHOT PHASE - Lock in the expected output
+make generate-snapshots CHART=summon
+# Creates output-test/summon/my-new-feature.expected.yaml
 ```
 
 ### 2. TDD Workflow for Glyphs
@@ -385,3 +560,72 @@ make tdd-refactor # Should still pass after cleanup
 ```
 
 Remember: **TDD isn't just testing - it's a design methodology that leads to better, more reliable code.**
+
+---
+
+## Testing Coverage Status (Auto-Discovered)
+
+The testing system automatically discovers all charts, glyphs, and trinkets. Use `make test-status` to see current coverage.
+
+### Fully Tested (✅ Examples + Snapshots)
+**Main Charts:**
+- summon: 17 examples with full snapshot coverage
+
+**Glyphs:**
+- argo-events: 5 examples
+- vault: 11 examples
+- istio: 2 examples
+- common: 2 examples
+
+### Needs Snapshots (⚠️ Examples exist, snapshots missing)
+**Main Charts:**
+- kaster: 1 example
+
+**Glyphs:**
+- certManager: 2 examples
+- crossplane: 2 examples
+- freeForm: 2 examples
+- gcp: 3 examples
+- runic-system: 3 examples
+
+**Trinkets:**
+- microspell: 8 examples
+- tarot: 14 examples
+
+**Action:** Run `make update-all-snapshots` to generate all missing snapshots.
+
+### Needs TDD Work (❌ No examples/)
+**Main Charts:**
+- librarian: Infrastructure chart (may not need examples)
+
+**Glyphs:**
+- default-verbs: Utility glyph
+- keycloak: Integration glyph
+- postgres-cloud: Integration glyph
+- trinkets: Meta glyph
+
+**Trinkets:**
+- covenant: New trinket (in development)
+
+**Action:** Create examples/ directories and add test cases following TDD workflow.
+
+### How to Improve Coverage
+
+```bash
+# 1. Check current status
+make test-status
+
+# 2. For items with examples but no snapshots
+make update-all-snapshots
+
+# 3. For items without examples, create them (TDD approach)
+make create-example CHART=kaster EXAMPLE=basic-glyph
+# Edit the example file
+make tdd-red
+# Implement feature
+make tdd-green
+make generate-snapshots CHART=kaster
+
+# 4. Verify everything works
+make test-all
+```

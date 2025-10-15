@@ -1,0 +1,17 @@
+# Client Scope: custom-roles
+# Custom roles scope for advanced role mapping in OIDC tokens
+
+description: "Custom roles scope for advanced role mapping"
+protocol: openid-connect
+default: true
+
+protocolMappers:
+  - name: client-roles-mapper
+    protocol: openid-connect
+    protocolMapper: oidc-usermodel-client-role-mapper
+    config:
+      multivalued: "true"
+      access.token.claim: "true"
+      id.token.claim: "true"
+      userinfo.token.claim: "true"
+      claim.name: roles

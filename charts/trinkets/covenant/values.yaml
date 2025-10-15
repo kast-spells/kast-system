@@ -1,0 +1,236 @@
+# Covenant Trinket - Complete Identity Management System
+# Generates Keycloak realms, users, groups, clients, IDPs, auth flows, and integrates with Vault
+
+covenant:
+  # ===========================================================================
+  # REALM CONFIGURATION - One realm per covenant book
+  # ===========================================================================
+  realm:
+    name: kast
+    displayName: "Kast Organization"
+    enabled: true
+    keycloakRef: main  # Reference to Keycloak instance (from keycloak.keycloak glyph)
+
+    # SSL requirement: external, none, all
+    sslRequired: external
+
+    # Password policies
+    passwordPolicy:
+      - type: length
+        value: "12"
+      - type: upperCase
+        value: "1"
+      - type: lowerCase
+        value: "1"
+      - type: digits
+        value: "1"
+      - type: specialChars
+        value: "1"
+      - type: notUsername
+        value: ""
+      - type: forceExpiredPasswordChange
+        value: "365"
+
+    # Themes
+    themes:
+      login: keycloak
+      account: keycloak
+      admin: keycloak
+      email: keycloak
+
+    # Event logging configuration
+    eventConfig:
+      adminEventsDetailsEnabled: true
+      adminEventsEnabled: true
+      eventsEnabled: true
+      eventsExpiration: 15000
+      enabledEventTypes:
+        - LOGIN
+        - LOGOUT
+        - REGISTER
+        - UPDATE_EMAIL
+        - UPDATE_PASSWORD
+      eventsListeners:
+        - jboss-logging
+
+    # Token settings
+    tokenSettings:
+      accessTokenLifespan: 300        # 5 minutes
+      accessCodeLifespan: 60          # 1 minute
+      accessToken: 300
+      actionTokenGeneratedByAdminLifespan: 43200  # 12 hours
+      actionTokenGeneratedByUserLifespan: 300     # 5 minutes
+      refreshTokenMaxReuse: 0         # Single use refresh tokens
+      revokeRefreshToken: true
+      defaultSignatureAlgorithm: RS256
+
+  # ===========================================================================
+  # CLIENT SCOPES - Custom OIDC scopes and protocol mappers
+  # ===========================================================================
+  clientScopes: {}
+    # Example: Custom roles scope
+    # roles:
+    #   description: "Client roles scope for role mapping"
+    #   protocol: openid-connect
+    #   default: true
+    #   protocolMappers:
+    #     - name: client-roles-mapper
+    #       protocol: openid-connect
+    #       protocolMapper: oidc-usermodel-client-role-mapper
+    #       config:
+    #         multivalued: "true"
+    #         access.token.claim: "true"
+    #         id.token.claim: "true"
+    #         userinfo.token.claim: "true"
+    #         claim.name: roles
+
+  # ===========================================================================
+  # IDENTITY PROVIDERS (IDPs) - External authentication providers
+  # ===========================================================================
+  identityProviders: {}
+    # Example: Google OAuth
+    # google:
+    #   enabled: true
+    #   providerId: google
+    #   displayName: "Google"
+    #   trustEmail: true
+    #   storeToken: true
+    #   firstBrokerLoginFlowAlias: link-existing-user
+    #   config:
+    #     clientId: "$google-oauth:client_id"      # Reference to Vault secret
+    #     clientSecret: "$google-oauth:client_secret"
+    #     defaultScope: "openid email profile"
+    #
+    # Example: GitHub
+    # github:
+    #   enabled: true
+    #   providerId: github
+    #   displayName: "GitHub"
+    #   trustEmail: true
+    #   config:
+    #     clientId: "$github-oauth:client_id"
+    #     clientSecret: "$github-oauth:client_secret"
+    #
+    # Example: Generic OIDC
+    # corporate-idp:
+    #   enabled: true
+    #   providerId: oidc
+    #   displayName: "Corporate SSO"
+    #   config:
+    #     clientId: "kast"
+    #     clientSecret: "$corporate-idp:client_secret"
+    #     authorizationUrl: "https://idp.corp.com/oauth/authorize"
+    #     tokenUrl: "https://idp.corp.com/oauth/token"
+    #     userInfoUrl: "https://idp.corp.com/oauth/userinfo"
+    #     defaultScope: "openid email profile"
+
+  # ===========================================================================
+  # AUTHENTICATION FLOWS - Custom authentication sequences
+  # ===========================================================================
+  authFlows: {}
+    # Example: Auto-link existing users on first broker login
+    # link-existing-user:
+    #   builtIn: false
+    #   providerId: basic-flow
+    #   topLevel: true
+    #   authenticationExecutions:
+    #     - authenticator: idp-review-profile
+    #       requirement: REQUIRED
+    #       priority: 0
+    #       authenticatorFlow: false
+    #     - authenticator: idp-auto-link
+    #       requirement: REQUIRED
+    #       priority: 1
+    #       authenticatorFlow: false
+
+  # ===========================================================================
+  # INTEGRATIONS - Service clients and external systems
+  # ===========================================================================
+  integrations:
+    # Keycloak OIDC clients for services
+    clients: {}
+      # Example clients:
+      # vault:
+      #   enabled: true
+      #   clientId: vault
+      #   webUrl: https://vault.example.com
+      #   redirectUris:
+      #     - https://vault.example.com/ui/vault/auth/oidc/oidc/callback
+      #   defaultClientScopes:
+      #     - profile
+      #     - email
+      #     - roles
+      #     - groups
+      #   secret: keycloak-client-vault  # Secret name for client_secret (generated by Vault)
+      #
+      # argocd:
+      #   enabled: true
+      #   clientId: argocd
+      #   webUrl: https://argocd.example.com
+      #   redirectUris:
+      #     - https://argocd.example.com/auth/callback
+      #
+      # grafana:
+      #   enabled: true
+      #   clientId: grafana
+      #   webUrl: https://grafana.example.com
+      #   public: false
+      #   directAccess: true
+
+    # Vault integration for secret management
+    vault:
+      enabled: true
+      # Automatically create Vault secrets for OIDC client_secrets
+      autoGenerateSecrets: true
+      # Path prefix in Vault
+      pathPrefix: identity/oidc
+      # Vault glyph integration
+      vaultRef: vault-main
+
+  # ===========================================================================
+  # REALM ROLES - Global roles for the organization
+  # ===========================================================================
+  roles: {}
+    # Example roles:
+    # org-admin:
+    #   description: "Organization administrator with full access"
+    #   composite: true
+    #   compositeRoles:
+    #     - user-manager
+    #     - realm-admin
+    # developer:
+    #   description: "Developer role"
+    #   composite: false
+    # viewer:
+    #   description: "Read-only access"
+    #   composite: false
+
+  # ===========================================================================
+  # AUTHORIZATION (future expansion for fine-grained permissions)
+  # ===========================================================================
+  # authorizationServices:
+  #   enabled: false
+  #   policies: []
+  #   resources: []
+  #   scopes: []
+
+# ===========================================================================
+# BOOKRACK INTEGRATION
+# ===========================================================================
+# The covenant trinket reads from bookrack/covenant/ structure:
+#
+# bookrack/covenant/
+# ├── index.yaml                    # Book index
+# ├── <chapter>/                    # Area/Department (e.g., engineering)
+# │   ├── index.yaml               # Chapter defaults (memberDefaults, roles)
+# │   └── <chapel>/                # Team (e.g., platform, backend)
+# │       └── <member>.yaml        # User file with members.<name> key
+#
+# Example member file (bookrack/covenant/engineering/platform/john-doe.yaml):
+# members:
+#   john-doe:
+#     email: john.doe@example.com
+#     firstName: John
+#     lastName: Doe
+#     realmRoles: [developer, admin]
+#     # groups auto-assigned: [engineering, engineering/platform]
