@@ -47,7 +47,7 @@ spec:
   {{- end}}
 
   # superuser XXX
-  enableSuperuserAccess: {{ default "enabled" ($glyphDefinition.superuser).enabled }}
+  enableSuperuserAccess: {{ default true ($glyphDefinition.superuser).enabled }}
   {{- if $glyphDefinition.secret }}
   superuserSecret:
     name: {{ $glyphDefinition.secret }}
