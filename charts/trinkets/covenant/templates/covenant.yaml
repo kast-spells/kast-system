@@ -15,20 +15,18 @@ Capabilities:
 - Integrates with Vault for OIDC secrets
 */}}
 
-{{- if .Values.covenant }}
 {{- $root := . }}
-{{- $covenant := .Values.covenant }}
 
-{{/* Determine bookPath - default to 'covenant' or use configured path */}}
-{{- $bookPath := default "covenant" $covenant.bookPath }}
+{{/* Use .Values.name (from librarian) as bookPath, like librarian does */}}
+{{- $bookPath := default .Release.Name .Values.name }}
 
 {{/* Read covenant book index */}}
 {{- $covenantIndexPath := printf "bookrack/%s/index.yaml" $bookPath }}
 {{- if .Files.Glob $covenantIndexPath }}
 {{- $covenantIndex := .Files.Get $covenantIndexPath | fromYaml }}
 
-{{/* Use realm from index.yaml if exists, otherwise use values */}}
-{{- $finalRealm := default $covenant.realm $covenantIndex.realm }}
+{{/* Use realm from index.yaml */}}
+{{- $finalRealm := $covenantIndex.realm }}
 
 {{/* Consolidated data structures */}}
 {{- $consolidatedMembers := dict }}
@@ -412,5 +410,4 @@ spec:
   {{- end }}
 {{- end }}
 
-{{- end }}
 {{- end }}
