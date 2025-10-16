@@ -161,10 +161,21 @@ spec:
       {{- if ($spellDefinition.appParams).skipCrds }}
         skipCrds: true
       {{- end }}
-      {{- if $spellDefinition.values }}
         values: |
+          {{- if $spellDefinition.values }}
           {{- toYaml $spellDefinition.values | nindent 10 }}
-      {{- end }}
+          {{- end }}
+          {{- if ($spellDefinition.appParams).bookData }}
+          {{/* Pass complete book context (spellbook, chapter, lexicon) like defaultTrinket does */}}
+          {{- toYaml $cleanSpellbook | nindent 10 }}
+          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
+          lexicon:
+          {{- toYaml $lexicon | nindent 12 }}
+          {{- if $cards }}
+          cards:
+          {{- toYaml $cards | nindent 12 }}
+          {{- end }}
+          {{- end }}
     {{- end }}
   {{- else }}
     {{/* defaultTrinket (summon) */}}
