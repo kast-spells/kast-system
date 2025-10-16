@@ -27,6 +27,14 @@ glyphs:
       domain: test.example.com
       comment: "DKIM for test.example.com"
 
+    # Test with RSA DKIM
+    - type: cryptoKey
+      name: test-rsa-dkim
+      algorithm: rsa
+      bits: 2048
+      domain: test2.example.com
+      comment: "RSA DKIM for test2.example.com"
+
   # Then create DNSEndpoint that reads from the secret
   certManager:
     # Test DKIM DNS record with format string
@@ -45,14 +53,6 @@ glyphs:
       recordType: "TXT"
       sourceSecret: test-dkim
       sourceKey: public_key
-
-    # Test with RSA DKIM
-    - type: cryptoKey
-      name: test-rsa-dkim
-      algorithm: rsa
-      bits: 2048
-      domain: test2.example.com
-      comment: "RSA DKIM for test2.example.com"
 
     - type: dnsEndpointSourced
       name: test-rsa-dkim-record
