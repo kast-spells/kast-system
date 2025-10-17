@@ -2,13 +2,33 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
-summon.pv generates PersistentVolume resources for custom storage backends like CSI.
+summon.pv generates PersistentVolume resources for custom storage backends (CSI, local, etc).
 Follows standard glyph parameter pattern for consistency.
 
 Parameters:
 - $root: Chart root context
 - $name: Volume name
 - $volume: Volume configuration with PV details
+
+Backend Types:
+- local: Use .pv.path to trigger local backend
+  Example:
+    pv:
+      path: /storage/weedfs
+      type: Directory  # optional: Directory, DirectoryOrCreate, etc
+      nodeAffinity:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values: [node-name]
+
+- csi: Use .pv.driver to trigger CSI backend
+  Example:
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: bucket-name
+      volumeAttributes: {...}
 
 Usage: {{- include "summon.pv" (list $root $name $volume) }}
 */}}
@@ -59,6 +79,19 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   {{- end }}
   {{- with $volume.pv }}
+  {{- if .path }}
+  {{/* Local PersistentVolume backend */}}
+  local:
+    path: {{ .path }}
+    {{- if .type }}
+    type: {{ .type }}
+    {{- end }}
+  {{- if .nodeAffinity }}
+  nodeAffinity:
+    {{- toYaml .nodeAffinity | nindent 4 }}
+  {{- end }}
+  {{- else if .driver }}
+  {{/* CSI PersistentVolume backend */}}
   csi:
     {{/* Use driver from lexicon if available, otherwise use provided */}}
     driver: {{ $csiConfig.driver | default .driver }}
@@ -132,5 +165,6 @@ spec:
       namespace: {{ $csiConfig.secretRefs.controllerExpandSecretRef.namespace | default $root.Release.Namespace }}
       {{- end }}
     {{- end }}
+  {{- end }}
   {{- end }}
 {{- end }}
