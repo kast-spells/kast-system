@@ -16,12 +16,14 @@ Required Configuration:
 Optional Configuration:
 - glyphDefinition.name: Resource name (defaults to common.name)
 - glyphDefinition.displayName: Realm display name
-- glyphDefinition.enabled: Enable/disable realm (default: true)
 - glyphDefinition.passwordPolicy: List of password policy rules
 - glyphDefinition.themes: Theme configuration (login, account, admin, email)
 - glyphDefinition.eventConfig: Event logging configuration
 - glyphDefinition.tokenSettings: Token lifetime settings
-- glyphDefinition.sslRequired: SSL requirement (external, none, all)
+
+Note: The EDP Keycloak Operator CRD does not support 'enabled' or 'sslRequired' fields.
+Realms are enabled by default when created. SSL configuration must be done at the
+Keycloak server level, not per-realm.
 
 Usage: {{- include "keycloak.realm" (list $root $glyph) }}
 */}}
@@ -45,13 +47,9 @@ spec:
   {{- if $glyphDefinition.displayName }}
   displayName: {{ $glyphDefinition.displayName }}
   {{- end }}
-  enabled: {{ default true $glyphDefinition.enabled }}
   keycloakRef:
     name: {{ required "glyphDefinition.keycloakRef is required" $glyphDefinition.keycloakRef }}
     kind: {{ default "Keycloak" $glyphDefinition.keycloakRefKind }}
-  {{- if $glyphDefinition.sslRequired }}
-  sslRequired: {{ $glyphDefinition.sslRequired }}
-  {{- end }}
   {{- if $glyphDefinition.passwordPolicy }}
   passwordPolicy:
   {{- range $glyphDefinition.passwordPolicy }}
