@@ -95,7 +95,7 @@ VAULT_ADDR="%s" VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount
 
 echo "Keypair stored in Vault: %s"
 echo "Done"
-` $glyphDefinition.name $vaultConf.address $vaultPath $keyComment $vaultConf.address $vaultPath $domainParam $vaultPath }}
+` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment $vaultConf.url $vaultPath $domainParam $vaultPath }}
 {{- else if eq $algorithm "rsa" }}
 {{- $keygenScript = printf `#!/bin/sh
 set -e
@@ -130,7 +130,7 @@ VAULT_ADDR="%s" VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount
 
 echo "Keypair stored in Vault: %s"
 echo "Done"
-` $bits $glyphDefinition.name $vaultConf.address $vaultPath $bits $keyComment $vaultConf.address $vaultPath $domainParam $vaultPath }}
+` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment $vaultConf.url $vaultPath $domainParam $vaultPath }}
 {{- end }}
 
 {{/* Build summon-compatible Values for Job */}}
