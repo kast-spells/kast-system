@@ -64,8 +64,8 @@ spec:
   {{- else if $volume.volumeName }}
   volumeName: {{ $volume.volumeName }}
   {{- end }}
-  {{- if $volume.storageClass }}
-  storageClassName: {{ $volume.storageClass }}
+  {{- if hasKey $volume "storageClass" }}
+  storageClassName: {{ $volume.storageClass | quote }}
   {{- end }}
   accessModes:
     - {{ default "ReadWriteOnce" $volume.accessMode }}

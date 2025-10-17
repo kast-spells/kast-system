@@ -66,8 +66,8 @@ metadata:
     {{- include "common.labels" $root | nindent 4 }}
     volume: {{ $name }}
 spec:
-  {{- if $volume.storageClass }}
-  storageClassName: {{ $volume.storageClass }}
+  {{- if hasKey $volume "storageClass" }}
+  storageClassName: {{ $volume.storageClass | quote }}
   {{- end }}
   capacity:
     storage: {{ default "10Gi" $volume.size }}
@@ -83,9 +83,6 @@ spec:
   {{/* Local PersistentVolume backend */}}
   local:
     path: {{ .path }}
-    {{- if .type }}
-    type: {{ .type }}
-    {{- end }}
   {{- if .nodeAffinity }}
   nodeAffinity:
     {{- toYaml .nodeAffinity | nindent 4 }}
