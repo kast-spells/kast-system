@@ -54,7 +54,7 @@ volumes:
     {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   configMap:
-    name: {{ default $name $content.key }}
+    name: {{ ( default $name $content.name ) | replace "." "-" }}
     {{- end }}
   {{- end }}
 {{- end -}}
@@ -64,7 +64,7 @@ volumes:
     {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   secret:
-    secretName: {{ default $name $content.key }}
+    secretName: {{ ( default $name $content.name ) | replace "." "-" }}
     {{- end }}
   {{- end }}
 {{- end -}}

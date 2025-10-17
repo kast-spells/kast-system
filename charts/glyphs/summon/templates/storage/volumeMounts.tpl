@@ -33,7 +33,7 @@ volumeMounts:
     {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   mountPath: {{ $content.mountPath }}
-  subPath: {{ default $name $content.key }}
+  subPath: {{ ( default $name $content.name ) | replace "." "-" }}
     {{- end }}
   {{- end }}
 {{- end -}}
@@ -43,7 +43,7 @@ volumeMounts:
     {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   mountPath: {{ $content.mountPath }}
-  subPath: {{ default $name $content.key }}
+  subPath: {{ ( default $name $content.name ) | replace "." "-" }}
     {{- end }}
   {{- end }}
 {{- end -}}
