@@ -47,10 +47,9 @@ spec:
   composite: {{ default false $glyphDefinition.composite }}
   {{- if and $glyphDefinition.composite $glyphDefinition.compositeRoles }}
   composites:
-    realm:
-    {{- range $glyphDefinition.compositeRoles }}
-      - {{ . }}
-    {{- end }}
+  {{- range $glyphDefinition.compositeRoles }}
+    - name: {{ . }}
+  {{- end }}
   {{- end }}
   {{- if $glyphDefinition.attributes }}
   attributes:
