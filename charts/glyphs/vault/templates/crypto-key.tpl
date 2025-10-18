@@ -180,8 +180,8 @@ echo "Done"
     "backoffLimit" 3
   )
   "serviceAccount" (dict
-    "enabled" true
-    "name" (printf "%s-keygen" $glyphDefinition.name)
+    "enabled" false
+    "name" (include "common.name" $root)
   )
   "service" (dict
     "enabled" false
