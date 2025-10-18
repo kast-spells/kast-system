@@ -90,13 +90,32 @@ echo "Generated keypair successfully"
 echo "Storing keypair in Vault..."
 CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
 
-# Build JSON payload
-JSON_PAYLOAD=$(cat <<EOF
+# Escape JSON strings properly (replace " with \" and \ with \\)
+escape_json() {
+  echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+PRIVATE_KEY_ESC=$(escape_json "$PRIVATE_KEY")
+PUBLIC_KEY_ESC=$(escape_json "$PUBLIC_KEY")
+PUBLIC_KEY_B64_ESC=$(escape_json "$PUBLIC_KEY_B64")
+
+# Build JSON payload using jq for proper JSON encoding
+if command -v jq >/dev/null 2>&1; then
+  JSON_PAYLOAD=$(jq -n \
+    --arg pk "$PRIVATE_KEY" \
+    --arg pubk "$PUBLIC_KEY" \
+    --arg pubk64 "$PUBLIC_KEY_B64" \
+    --arg created "$CREATED_AT" \
+    %s \
+    '{data: {private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "ed25519"%s, created_at: $created}}')
+else
+  # Fallback to manual JSON construction
+  JSON_PAYLOAD=$(cat <<EOF
 {
   "data": {
-    "private_key": "$PRIVATE_KEY",
-    "public_key": "$PUBLIC_KEY",
-    "public_key_base64": "$PUBLIC_KEY_B64",
+    "private_key": "$PRIVATE_KEY_ESC",
+    "public_key": "$PUBLIC_KEY_ESC",
+    "public_key_base64": "$PUBLIC_KEY_B64_ESC",
     "algorithm": "ed25519",
     %s
     "created_at": "$CREATED_AT"
@@ -104,11 +123,9 @@ JSON_PAYLOAD=$(cat <<EOF
 }
 EOF
 )
+fi
 
 echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
-echo "JSON Payload (first 500 chars):"
-echo "$JSON_PAYLOAD" | head -c 500
-echo "..."
 echo "Sending request to Vault..."
 
 RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
@@ -128,7 +145,7 @@ fi
 
 echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
+` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment (ternary (printf "--arg domain \"%s\"" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) (ternary ", domain: $domain" "" (ne $glyphDefinition.domain nil)) (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
 {{- else if eq $algorithm "rsa" }}
 {{- $keygenScript = printf `#!/bin/sh
 set -e
@@ -158,13 +175,32 @@ echo "Generated keypair successfully"
 echo "Storing keypair in Vault..."
 CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
 
-# Build JSON payload
-JSON_PAYLOAD=$(cat <<EOF
+# Escape JSON strings properly (replace " with \" and \ with \\)
+escape_json() {
+  echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+PRIVATE_KEY_ESC=$(escape_json "$PRIVATE_KEY")
+PUBLIC_KEY_ESC=$(escape_json "$PUBLIC_KEY")
+PUBLIC_KEY_B64_ESC=$(escape_json "$PUBLIC_KEY_B64")
+
+# Build JSON payload using jq for proper JSON encoding
+if command -v jq >/dev/null 2>&1; then
+  JSON_PAYLOAD=$(jq -n \
+    --arg pk "$PRIVATE_KEY" \
+    --arg pubk "$PUBLIC_KEY" \
+    --arg pubk64 "$PUBLIC_KEY_B64" \
+    --arg created "$CREATED_AT" \
+    %s \
+    '{data: {private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "rsa"%s, created_at: $created}}')
+else
+  # Fallback to manual JSON construction
+  JSON_PAYLOAD=$(cat <<EOF
 {
   "data": {
-    "private_key": "$PRIVATE_KEY",
-    "public_key": "$PUBLIC_KEY",
-    "public_key_base64": "$PUBLIC_KEY_B64",
+    "private_key": "$PRIVATE_KEY_ESC",
+    "public_key": "$PUBLIC_KEY_ESC",
+    "public_key_base64": "$PUBLIC_KEY_B64_ESC",
     "algorithm": "rsa",
     %s
     "created_at": "$CREATED_AT"
@@ -172,11 +208,9 @@ JSON_PAYLOAD=$(cat <<EOF
 }
 EOF
 )
+fi
 
 echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
-echo "JSON Payload (first 500 chars):"
-echo "$JSON_PAYLOAD" | head -c 500
-echo "..."
 echo "Sending request to Vault..."
 
 RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
@@ -196,7 +230,7 @@ fi
 
 echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
+` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment (ternary (printf "--arg domain \"%s\"" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) (ternary ", domain: $domain" "" (ne $glyphDefinition.domain nil)) (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
 {{- end }}
 
 {{/* Build summon-compatible Values for Job */}}
@@ -231,7 +265,7 @@ echo "Done"
     "pullPolicy" "IfNotPresent"
   )
   "command" (list "/bin/sh")
-  "args" (list "-c" "apk add --no-cache openssh-client curl && /bin/sh /scripts/keygen.sh")
+  "args" (list "-c" "apk add --no-cache openssh-client curl jq && /bin/sh /scripts/keygen.sh")
   "envs" (dict
     "VAULT_SKIP_VERIFY" "true"
   )
