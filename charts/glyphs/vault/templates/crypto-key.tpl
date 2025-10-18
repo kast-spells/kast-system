@@ -125,7 +125,7 @@ fi
 
 echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment (ternary (printf "DOMAIN_FIELD=',\"domain\":\"%s\"'" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
+` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
 {{- else if eq $algorithm "rsa" }}
 {{- $keygenScript = printf `#!/bin/sh
 set -e
@@ -153,17 +153,44 @@ echo "Generated keypair successfully"
 
 # Store in Vault using API
 echo "Storing keypair in Vault..."
-DOMAIN_FIELD=""
-%s
 CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
 
-curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" \
-  -d "{\"data\":{\"private_key\":\"$PRIVATE_KEY\",\"public_key\":\"$PUBLIC_KEY\",\"public_key_base64\":\"$PUBLIC_KEY_B64\",\"algorithm\":\"rsa\"$DOMAIN_FIELD,\"created_at\":\"$CREATED_AT\"}}" \
-  "$VAULT_ADDR/v1/$VAULT_PATH"
+# Build JSON payload
+JSON_PAYLOAD=$(cat <<EOF
+{
+  "data": {
+    "private_key": "$PRIVATE_KEY",
+    "public_key": "$PUBLIC_KEY",
+    "public_key_base64": "$PUBLIC_KEY_B64",
+    "algorithm": "rsa",
+    %s
+    "created_at": "$CREATED_AT"
+  }
+}
+EOF
+)
+
+echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
+echo "Sending request to Vault..."
+
+RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$JSON_PAYLOAD" \
+  "$VAULT_ADDR/v1/$VAULT_PATH")
+
+HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+BODY=$(echo "$RESPONSE" | sed '$d')
+
+if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "204" ]; then
+  echo "Error storing keypair in Vault (HTTP $HTTP_CODE)"
+  echo "Response: $BODY"
+  exit 1
+fi
 
 echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment (ternary (printf "DOMAIN_FIELD=',\"domain\":\"%s\"'" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
+` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
 {{- end }}
 
 {{/* Build summon-compatible Values for Job */}}
