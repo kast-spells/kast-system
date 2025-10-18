@@ -126,6 +126,9 @@ EOF
 fi
 
 echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
+echo "JSON Payload:"
+echo "$JSON_PAYLOAD"
+echo "---"
 echo "Sending request to Vault..."
 
 RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
@@ -211,6 +214,9 @@ EOF
 fi
 
 echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
+echo "JSON Payload:"
+echo "$JSON_PAYLOAD"
+echo "---"
 echo "Sending request to Vault..."
 
 RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
