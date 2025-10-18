@@ -106,6 +106,9 @@ EOF
 )
 
 echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
+echo "JSON Payload (first 500 chars):"
+echo "$JSON_PAYLOAD" | head -c 500
+echo "..."
 echo "Sending request to Vault..."
 
 RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
@@ -171,6 +174,9 @@ EOF
 )
 
 echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
+echo "JSON Payload (first 500 chars):"
+echo "$JSON_PAYLOAD" | head -c 500
+echo "..."
 echo "Sending request to Vault..."
 
 RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
