@@ -247,6 +247,8 @@ kind: VaultSecret
 metadata:
   name: {{ $glyphDefinition.name }}
   namespace: {{ $root.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   refreshPeriod: {{ default "3m0s" $glyphDefinition.refreshPeriod }}
   vaultSecretDefinitions:
