@@ -66,8 +66,12 @@ Usage with dnsEndpointSourced:
 set -e
 echo "Generating ed25519 keypair for %s..."
 
+VAULT_ADDR="%s"
+VAULT_PATH="%s"
+VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+
 # Check if key already exists in Vault
-if VAULT_ADDR="%s" VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" vault kv get %s >/dev/null 2>&1; then
+if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
   echo "Key already exists in Vault, skipping generation"
   exit 0
 fi
@@ -82,27 +86,30 @@ PUBLIC_KEY_B64=$(echo "$PUBLIC_KEY" | awk '{print $2}')
 
 echo "Generated keypair successfully"
 
-# Store in Vault
+# Store in Vault using API
 echo "Storing keypair in Vault..."
-VAULT_ADDR="%s" VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-  vault kv put %s \
-  private_key="$PRIVATE_KEY" \
-  public_key="$PUBLIC_KEY" \
-  public_key_base64="$PUBLIC_KEY_B64" \
-  algorithm="ed25519" \
-  %s \
-  created_at="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
+DOMAIN_FIELD=""
+%s
+CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
 
-echo "Keypair stored in Vault: %s"
+curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" \
+  -d "{\"data\":{\"private_key\":\"$PRIVATE_KEY\",\"public_key\":\"$PUBLIC_KEY\",\"public_key_base64\":\"$PUBLIC_KEY_B64\",\"algorithm\":\"ed25519\"$DOMAIN_FIELD,\"created_at\":\"$CREATED_AT\"}}" \
+  "$VAULT_ADDR/v1/$VAULT_PATH"
+
+echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment $vaultConf.url $vaultPath $domainParam $vaultPath }}
+` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment (ternary (printf "DOMAIN_FIELD=',\"domain\":\"%s\"'" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
 {{- else if eq $algorithm "rsa" }}
 {{- $keygenScript = printf `#!/bin/sh
 set -e
 echo "Generating RSA %d keypair for %s..."
 
+VAULT_ADDR="%s"
+VAULT_PATH="%s"
+VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+
 # Check if key already exists in Vault
-if VAULT_ADDR="%s" VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" vault kv get %s >/dev/null 2>&1; then
+if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
   echo "Key already exists in Vault, skipping generation"
   exit 0
 fi
@@ -117,20 +124,19 @@ PUBLIC_KEY_B64=$(echo "$PUBLIC_KEY" | awk '{print $2}')
 
 echo "Generated keypair successfully"
 
-# Store in Vault
+# Store in Vault using API
 echo "Storing keypair in Vault..."
-VAULT_ADDR="%s" VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-  vault kv put %s \
-  private_key="$PRIVATE_KEY" \
-  public_key="$PUBLIC_KEY" \
-  public_key_base64="$PUBLIC_KEY_B64" \
-  algorithm="rsa" \
-  %s \
-  created_at="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
+DOMAIN_FIELD=""
+%s
+CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
 
-echo "Keypair stored in Vault: %s"
+curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" \
+  -d "{\"data\":{\"private_key\":\"$PRIVATE_KEY\",\"public_key\":\"$PUBLIC_KEY\",\"public_key_base64\":\"$PUBLIC_KEY_B64\",\"algorithm\":\"rsa\"$DOMAIN_FIELD,\"created_at\":\"$CREATED_AT\"}}" \
+  "$VAULT_ADDR/v1/$VAULT_PATH"
+
+echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment $vaultConf.url $vaultPath $domainParam $vaultPath }}
+` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment (ternary (printf "DOMAIN_FIELD=',\"domain\":\"%s\"'" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
 {{- end }}
 
 {{/* Build summon-compatible Values for Job */}}
@@ -165,7 +171,7 @@ echo "Done"
     "pullPolicy" "IfNotPresent"
   )
   "command" (list "/bin/sh")
-  "args" (list "-c" "apk add --no-cache openssh-client && /bin/sh /scripts/keygen.sh")
+  "args" (list "-c" "apk add --no-cache openssh-client curl && /bin/sh /scripts/keygen.sh")
   "envs" (dict
     "VAULT_SKIP_VERIFY" "true"
   )
