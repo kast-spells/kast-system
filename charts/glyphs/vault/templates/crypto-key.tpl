@@ -59,207 +59,76 @@ Usage with dnsEndpointSourced:
 {{- $domainParam = printf "domain=\"%s\"" $glyphDefinition.domain }}
 {{- end }}
 
-{{/* Build keygen script */}}
+{{/* Build keygen script - unified for both algorithms */}}
 {{- $keygenScript := "" }}
+{{- $keygenCmd := "" }}
+{{- $algoName := "" }}
 {{- if eq $algorithm "ed25519" }}
-{{- $keygenScript = printf `#!/bin/sh
-set -e
-echo "Generating ed25519 keypair for %s..."
-
-VAULT_ADDR="%s"
-VAULT_PATH="%s"
-VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
-
-# Check if key already exists in Vault
-echo "Checking if key exists in Vault..."
-GET_RESPONSE=$(curl -s -w "\\n%%{http_code}" -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH")
-GET_HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
-GET_BODY=$(echo "$GET_RESPONSE" | sed '$d')
-
-echo "GET Response (HTTP $GET_HTTP_CODE):"
-echo "$GET_BODY"
-
-if [ "$GET_HTTP_CODE" = "200" ]; then
-  echo "Key already exists in Vault, skipping generation"
-  exit 0
-elif [ "$GET_HTTP_CODE" != "404" ]; then
-  echo "Warning: Unexpected GET response code $GET_HTTP_CODE"
-  echo "Continuing with key generation anyway..."
-fi
-
-# Generate Ed25519 keypair
-ssh-keygen -t ed25519 -f /tmp/key -N "" -C "%s"
-
-# Extract key components
-PRIVATE_KEY=$(cat /tmp/key | base64 -w 0)
-PUBLIC_KEY=$(cat /tmp/key.pub)
-PUBLIC_KEY_B64=$(echo "$PUBLIC_KEY" | awk '{print $2}')
-
-echo "Generated keypair successfully"
-
-# Store in Vault using API
-echo "Storing keypair in Vault..."
-CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
-
-# Escape JSON strings properly (replace " with \" and \ with \\)
-escape_json() {
-  echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
-}
-
-PRIVATE_KEY_ESC=$(escape_json "$PRIVATE_KEY")
-PUBLIC_KEY_ESC=$(escape_json "$PUBLIC_KEY")
-PUBLIC_KEY_B64_ESC=$(escape_json "$PUBLIC_KEY_B64")
-
-# Build JSON payload using jq for proper JSON encoding
-if command -v jq >/dev/null 2>&1; then
-  JSON_PAYLOAD=$(jq -n \
-    --arg pk "$PRIVATE_KEY" \
-    --arg pubk "$PUBLIC_KEY" \
-    --arg pubk64 "$PUBLIC_KEY_B64" \
-    --arg created "$CREATED_AT" \
-    %s \
-    '{data: {private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "ed25519"%s, created_at: $created}}')
-else
-  # Fallback to manual JSON construction
-  JSON_PAYLOAD=$(cat <<EOF
-{
-  "data": {
-    "private_key": "$PRIVATE_KEY_ESC",
-    "public_key": "$PUBLIC_KEY_ESC",
-    "public_key_base64": "$PUBLIC_KEY_B64_ESC",
-    "algorithm": "ed25519",
-    %s
-    "created_at": "$CREATED_AT"
-  }
-}
-EOF
-)
-fi
-
-echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
-echo "JSON Payload:"
-echo "$JSON_PAYLOAD"
-echo "---"
-echo "Sending request to Vault..."
-
-RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
-  -H "X-Vault-Token: $VAULT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$JSON_PAYLOAD" \
-  "$VAULT_ADDR/v1/$VAULT_PATH")
-
-HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-
-if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "204" ]; then
-  echo "Error storing keypair in Vault (HTTP $HTTP_CODE)"
-  echo "Response: $BODY"
-  exit 1
-fi
-
-echo "Keypair stored in Vault: $VAULT_PATH"
-echo "Done"
-` $glyphDefinition.name $vaultConf.url $vaultPath $keyComment (ternary (printf "--arg domain \"%s\"" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) (ternary ", domain: $domain" "" (ne $glyphDefinition.domain nil)) (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
+{{- $keygenCmd = "ssh-keygen -t ed25519 -f /tmp/key -N \"\"" }}
+{{- $algoName = "ed25519" }}
 {{- else if eq $algorithm "rsa" }}
+{{- $keygenCmd = printf "ssh-keygen -t rsa -b %d -f /tmp/key -N \"\"" $bits }}
+{{- $algoName = "rsa" }}
+{{- end }}
+
+{{- $domainArg := "" }}
+{{- $domainField := "" }}
+{{- if $glyphDefinition.domain }}
+{{- $domainArg = printf "--arg domain \"%s\"" $glyphDefinition.domain }}
+{{- $domainField = ", domain: $domain" }}
+{{- end }}
+
 {{- $keygenScript = printf `#!/bin/sh
 set -e
-echo "Generating RSA %d keypair for %s..."
+echo "Generating %s keypair for %s..."
 
 VAULT_ADDR="%s"
 VAULT_PATH="%s"
 VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
 
-# Check if key already exists in Vault
-echo "Checking if key exists in Vault..."
-GET_RESPONSE=$(curl -s -w "\\n%%{http_code}" -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH")
-GET_HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
-GET_BODY=$(echo "$GET_RESPONSE" | sed '$d')
-
-echo "GET Response (HTTP $GET_HTTP_CODE):"
-echo "$GET_BODY"
-
-if [ "$GET_HTTP_CODE" = "200" ]; then
-  echo "Key already exists in Vault, skipping generation"
+# Check if key exists - try KV v2 first, fallback to KV v1
+if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
+  echo "Key already exists (KV v2), skipping"
   exit 0
-elif [ "$GET_HTTP_CODE" != "404" ]; then
-  echo "Warning: Unexpected GET response code $GET_HTTP_CODE"
-  echo "Continuing with key generation anyway..."
 fi
 
-# Generate RSA keypair
-ssh-keygen -t rsa -b %d -f /tmp/key -N "" -C "%s"
+# Try KV v1 path
+VAULT_PATH_V1=$(echo "$VAULT_PATH" | sed 's|/data/|/|')
+if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH_V1" >/dev/null 2>&1; then
+  echo "Key already exists (KV v1), skipping"
+  exit 0
+fi
 
-# Extract key components
-PRIVATE_KEY=$(cat /tmp/key | base64 -w 0)
-PUBLIC_KEY=$(cat /tmp/key.pub)
-PUBLIC_KEY_B64=$(echo "$PUBLIC_KEY" | awk '{print $2}')
+# Generate keypair
+%s -C "%s"
 
-echo "Generated keypair successfully"
+# Build JSON with jq
+JSON_PAYLOAD=$(jq -n \
+  --arg pk "$(cat /tmp/key | base64 -w 0)" \
+  --arg pubk "$(cat /tmp/key.pub)" \
+  --arg pubk64 "$(cat /tmp/key.pub | awk '{print $2}')" \
+  --arg created "$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)" \
+  %s \
+  '{data: {private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "%s"%s, created_at: $created}}')
 
-# Store in Vault using API
-echo "Storing keypair in Vault..."
-CREATED_AT="$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)"
+# Try KV v2 first
+if ! curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
+  -d "$JSON_PAYLOAD" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
 
-# Escape JSON strings properly (replace " with \" and \ with \\)
-escape_json() {
-  echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
-}
-
-PRIVATE_KEY_ESC=$(escape_json "$PRIVATE_KEY")
-PUBLIC_KEY_ESC=$(escape_json "$PUBLIC_KEY")
-PUBLIC_KEY_B64_ESC=$(escape_json "$PUBLIC_KEY_B64")
-
-# Build JSON payload using jq for proper JSON encoding
-if command -v jq >/dev/null 2>&1; then
-  JSON_PAYLOAD=$(jq -n \
-    --arg pk "$PRIVATE_KEY" \
-    --arg pubk "$PUBLIC_KEY" \
-    --arg pubk64 "$PUBLIC_KEY_B64" \
-    --arg created "$CREATED_AT" \
-    %s \
-    '{data: {private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "rsa"%s, created_at: $created}}')
+  # Fallback to KV v1
+  echo "KV v2 failed, trying KV v1..."
+  if ! curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
+    -d "$JSON_PAYLOAD" "$VAULT_ADDR/v1/$VAULT_PATH_V1"; then
+    echo "Failed to store keypair in Vault"
+    exit 1
+  fi
+  echo "Stored in Vault (KV v1): $VAULT_PATH_V1"
 else
-  # Fallback to manual JSON construction
-  JSON_PAYLOAD=$(cat <<EOF
-{
-  "data": {
-    "private_key": "$PRIVATE_KEY_ESC",
-    "public_key": "$PUBLIC_KEY_ESC",
-    "public_key_base64": "$PUBLIC_KEY_B64_ESC",
-    "algorithm": "rsa",
-    %s
-    "created_at": "$CREATED_AT"
-  }
-}
-EOF
-)
+  echo "Stored in Vault (KV v2): $VAULT_PATH"
 fi
 
-echo "Vault URL: $VAULT_ADDR/v1/$VAULT_PATH"
-echo "JSON Payload:"
-echo "$JSON_PAYLOAD"
-echo "---"
-echo "Sending request to Vault..."
-
-RESPONSE=$(curl -s -w "\\n%%{http_code}" -X POST \
-  -H "X-Vault-Token: $VAULT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$JSON_PAYLOAD" \
-  "$VAULT_ADDR/v1/$VAULT_PATH")
-
-HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-
-if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "204" ]; then
-  echo "Error storing keypair in Vault (HTTP $HTTP_CODE)"
-  echo "Response: $BODY"
-  exit 1
-fi
-
-echo "Keypair stored in Vault: $VAULT_PATH"
 echo "Done"
-` $bits $glyphDefinition.name $vaultConf.url $vaultPath $bits $keyComment (ternary (printf "--arg domain \"%s\"" $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) (ternary ", domain: $domain" "" (ne $glyphDefinition.domain nil)) (ternary (printf "\"domain\": \"%s\"," $glyphDefinition.domain) "" (ne $glyphDefinition.domain nil)) }}
-{{- end }}
+` $algoName $glyphDefinition.name $vaultConf.url $vaultPath $keygenCmd $keyComment $domainArg $algoName $domainField }}
 
 {{/* Build summon-compatible Values for Job */}}
 {{- $jobValues := dict
