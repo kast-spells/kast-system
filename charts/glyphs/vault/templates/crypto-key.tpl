@@ -197,8 +197,8 @@ echo "Done"
   {{- if eq $content.location "create" }}
   {{- $glyph := dict "name" $name "definition" $content  }}
     {{- include "summon.configMap" (list $jobRoot $glyph )  }}
-  {{- end -}}
-{{- end -}}
+  {{- end }}
+{{- end }}
 
 {{/* Generate Job using summon workload system */}}
 {{- include "summon.workload.job" $jobRoot }}
