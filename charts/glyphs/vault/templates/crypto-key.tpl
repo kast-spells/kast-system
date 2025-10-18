@@ -71,9 +71,20 @@ VAULT_PATH="%s"
 VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
 
 # Check if key already exists in Vault
-if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
+echo "Checking if key exists in Vault..."
+GET_RESPONSE=$(curl -s -w "\\n%%{http_code}" -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH")
+GET_HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
+GET_BODY=$(echo "$GET_RESPONSE" | sed '$d')
+
+echo "GET Response (HTTP $GET_HTTP_CODE):"
+echo "$GET_BODY"
+
+if [ "$GET_HTTP_CODE" = "200" ]; then
   echo "Key already exists in Vault, skipping generation"
   exit 0
+elif [ "$GET_HTTP_CODE" != "404" ]; then
+  echo "Warning: Unexpected GET response code $GET_HTTP_CODE"
+  echo "Continuing with key generation anyway..."
 fi
 
 # Generate Ed25519 keypair
@@ -159,9 +170,20 @@ VAULT_PATH="%s"
 VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
 
 # Check if key already exists in Vault
-if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
+echo "Checking if key exists in Vault..."
+GET_RESPONSE=$(curl -s -w "\\n%%{http_code}" -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH")
+GET_HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
+GET_BODY=$(echo "$GET_RESPONSE" | sed '$d')
+
+echo "GET Response (HTTP $GET_HTTP_CODE):"
+echo "$GET_BODY"
+
+if [ "$GET_HTTP_CODE" = "200" ]; then
   echo "Key already exists in Vault, skipping generation"
   exit 0
+elif [ "$GET_HTTP_CODE" != "404" ]; then
+  echo "Warning: Unexpected GET response code $GET_HTTP_CODE"
+  echo "Continuing with key generation anyway..."
 fi
 
 # Generate RSA keypair
