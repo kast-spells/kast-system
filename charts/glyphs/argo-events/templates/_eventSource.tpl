@@ -11,7 +11,14 @@ Parameters:
 Usage:
 - {{- include "argo-events.eventSource" (list $root $glyphDefinition) }}
 
-Example glyphDefinition:
+Supported EventSource types:
+- github: GitHub webhook events
+- gitlab: GitLab webhook events
+- webhook: Generic webhook events
+- bitbucket: Bitbucket webhook events
+- resource: Kubernetes resource events (NEW)
+
+Example glyphDefinition (github):
   name: github-webhook
   type: github
   selector:
@@ -25,6 +32,27 @@ Example glyphDefinition:
         endpoint: /github
         port: "12000"
       events: ["push", "pull_request"]
+
+Example glyphDefinition (resource):
+  name: pod-monitor
+  type: resource
+  selector:
+    type: jetstream
+    environment: production
+  resource:
+    pod-monitoring:
+      namespace: default
+      group: ""
+      version: v1
+      resource: pods
+      eventTypes: ["ADD", "UPDATE"]
+      filter:
+        labels:
+          - key: app
+            operation: "="
+            value: myapp
+        expression: |
+          has(body.metadata.annotations['kast.io/action'])
  */}}
 {{- define "argo-events.eventSource" }}
 {{- $root := index . 0 }}
@@ -292,6 +320,72 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- else if $glyphDefinition.resource }}
+  resource:
+    {{- range $resourceName, $resourceConfig := $glyphDefinition.resource }}
+    {{ $resourceName }}:
+      {{- with $resourceConfig.namespace }}
+      namespace: {{ . }}
+      {{- end }}
+      {{- with $resourceConfig.group }}
+      group: {{ . }}
+      {{- end }}
+      {{- with $resourceConfig.version }}
+      version: {{ . }}
+      {{- end }}
+      {{- with $resourceConfig.resource }}
+      resource: {{ . }}
+      {{- end }}
+      {{- with $resourceConfig.eventTypes }}
+      eventTypes:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if $resourceConfig.filter }}
+      filter:
+        {{- if $resourceConfig.filter.prefix }}
+        prefix: {{ $resourceConfig.filter.prefix }}
+        {{- end }}
+        {{- if $resourceConfig.filter.labels }}
+        labels:
+          {{- range $resourceConfig.filter.labels }}
+          - key: {{ .key }}
+            {{- with .operation }}
+            operation: {{ . }}
+            {{- end }}
+            {{- with .value }}
+            value: {{ . }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if $resourceConfig.filter.fields }}
+        fields:
+          {{- range $resourceConfig.filter.fields }}
+          - key: {{ .key }}
+            {{- with .operation }}
+            operation: {{ . }}
+            {{- end }}
+            {{- with .value }}
+            value: {{ . }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- with $resourceConfig.filter.expression }}
+        expression: |
+          {{- . | nindent 10 }}
+        {{- end }}
+        {{- if $resourceConfig.filter.createdBy }}
+        createdBy:
+          {{- $resourceConfig.filter.createdBy | toYaml | nindent 10 }}
+        {{- end }}
+        {{- if $resourceConfig.filter.afterStart }}
+        afterStart: {{ $resourceConfig.filter.afterStart }}
+        {{- end }}
+      {{- end }}
+      {{- with $resourceConfig.metadata }}
+      metadata:
+        {{- . | toYaml | nindent 8 }}
       {{- end }}
     {{- end }}
   {{- end }}

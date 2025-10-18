@@ -1,0 +1,13 @@
+apiVersion: v2
+name: s3
+description: S3 storage glyph for kast - seamless S3 integration
+type: library
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - s3
+  - storage
+  - vault
+  - seaweedfs
+maintainers:
+  - name: kast-system

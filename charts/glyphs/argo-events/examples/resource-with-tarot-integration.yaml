@@ -1,0 +1,119 @@
+name: resource-with-tarot-integration
+
+spellbook:
+  name: example-book
+chapter:
+  name: automation
+
+# Lexicon with EventBus and Tarot reading trigger
+lexicon:
+  - name: automation-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: production
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+  # Trigger that references Tarot reading
+  - name: deployment-restart-trigger
+    type: trigger
+    labels:
+      action: restart
+      resource: deployment
+      default: book
+    reading: deployment-rollout-restart  # References Tarot reading
+    operation: submit
+    namespace: argo-workflows
+
+# ArgoEvents: Monitor and trigger
+glyphs:
+  argo-events:
+    # EventSource: Monitor deployment annotations
+    deployment-annotation-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: production
+      resource:
+        deployment-annotation-monitoring:
+          namespace: default
+          group: apps
+          version: v1
+          resource: deployments
+          eventTypes:
+            - UPDATE
+          filter:
+            expression: |
+              has(body.metadata.annotations) &&
+              has(body.metadata.annotations['kast.io/action']) &&
+              body.metadata.annotations['kast.io/action'] == 'restart'
+
+    # Sensor: Trigger Tarot reading via runicIndexer
+    deployment-restart-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      eventSourceSelector:
+        type: jetstream
+        environment: production
+      triggerSelector:
+        action: restart
+        resource: deployment
+      template:
+        serviceAccountName: deployment-automation
+
+# Tarot: Define the actual workflow that will be triggered
+tarot:
+  # Reading that gets triggered by the sensor
+  readings:
+    deployment-rollout-restart:
+      mode: container
+      cards:
+        restart-deployment:
+          container:
+            image: bitnami/kubectl:latest
+            command: [sh, -c]
+            args:
+              - |
+                echo "🔄 Restarting deployment: $DEPLOYMENT_NAME in namespace: $DEPLOYMENT_NAMESPACE"
+                kubectl rollout restart deployment/$DEPLOYMENT_NAME -n $DEPLOYMENT_NAMESPACE
+                echo "✅ Rollout restart initiated"
+                kubectl rollout status deployment/$DEPLOYMENT_NAME -n $DEPLOYMENT_NAMESPACE --timeout=5m
+          envs:
+            DEPLOYMENT_NAME: "{{workflow.parameters.deployment_name}}"
+            DEPLOYMENT_NAMESPACE: "{{workflow.parameters.deployment_namespace}}"
+
+      # Workflow parameters populated from event data
+      parameters:
+        - name: deployment_name
+          description: "Name of the deployment to restart"
+        - name: deployment_namespace
+          description: "Namespace of the deployment"
+
+      # RBAC for the workflow
+      serviceAccount:
+        name: deployment-automation
+        rules:
+          - apiGroups: ["apps"]
+            resources: ["deployments"]
+            verbs: ["get", "list", "patch"]
+          - apiGroups: ["apps"]
+            resources: ["deployments/status"]
+            verbs: ["get"]
+
+# ServiceAccount for sensor and workflow
+serviceAccount:
+  enabled: true
+  name: deployment-automation
+
+# RBAC for sensor to trigger workflows
+rbac:
+  enabled: true
+  rules:
+    - apiGroups: ["argoproj.io"]
+      resources: ["workflows", "workflowtemplates"]
+      verbs: ["get", "list", "create"]

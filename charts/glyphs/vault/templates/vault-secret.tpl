@@ -44,7 +44,11 @@ keys:
 {{- $vaultServer := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "vault" $root.Values.chapter.name ) | fromJson) "results" }}
 {{- range $vaultConf := $vaultServer }}
 {{- if ne false $glyphDefinition.random }}
-  {{- if or $glyphDefinition.randomKey $glyphDefinition.random }}
+  {{- if $glyphDefinition.randomKeys }}
+    {{- range $keyName := $glyphDefinition.randomKeys }}
+{{ include "vault.randomSecret" (list $root (merge (dict "randomKey" $keyName "name" (printf "%s-%s" $glyphDefinition.name ($keyName | lower | replace "_" "-"))) $glyphDefinition) ) }}
+    {{- end }}
+  {{- else if or $glyphDefinition.randomKey $glyphDefinition.random }}
 {{ include "vault.randomSecret" (list $root $glyphDefinition ) }}
   {{- end }}
 {{- end }}
@@ -53,13 +57,25 @@ apiVersion: redhatcop.redhat.io/v1alpha1
 kind: VaultSecret
 metadata:
   name: {{ $glyphDefinition.name }}
+  {{- if $glyphDefinition.namespace }}
+  namespace: {{ $glyphDefinition.namespace }}
+  {{- end }}
 spec:
   refreshPeriod: {{ default "3m0s" $glyphDefinition.refreshPeriod }}
   vaultSecretDefinitions:
+  {{- if $glyphDefinition.randomKeys }}
+    {{- range $keyName := $glyphDefinition.randomKeys }}
+    - name: {{ $keyName | lower | replace "_" "-" }}
+      requestType: GET
+      path: {{ include "generateSecretPath" (list $root (dict "name" (printf "%s-%s" $glyphDefinition.name ($keyName | lower | replace "_" "-")) "path" $glyphDefinition.path) $vaultConf "") }}
+      {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount)) | nindent 6 }}
+    {{- end }}
+  {{- else }}
     - name: secret
       requestType: GET
       path: {{ include "generateSecretPath" ( list $root $glyphDefinition $vaultConf "" ) }}
       {{- include "vault.connect" (list $root $vaultConf  "" ( default "" $glyphDefinition.serviceAccount )) | nindent 6 }}
+  {{- end }}
   output:
     name: {{ default $glyphDefinition.name $glyphDefinition.nameOverwrite }}
     stringData:
@@ -73,10 +89,13 @@ spec:
         {{ upper $static | replace "-" "_" }}: {{ $data }}
         {{- end }}
       {{- end }}
-      {{-  if $glyphDefinition.randomKey }}
+      {{- if $glyphDefinition.randomKeys }}
+        {{- range $keyName := $glyphDefinition.randomKeys }}
+        {{ upper $keyName | replace "-" "_" }}: '{{ printf `{{ index .%s "%s" }}` ($keyName | lower | replace "_" "-") $keyName }}'
+        {{- end }}
+      {{- else if $glyphDefinition.randomKey }}
         {{ upper $glyphDefinition.randomKey | replace "-" "_" }}: '{{ printf `{{ .secret.%s }}` $glyphDefinition.randomKey  }}'
-      {{- end }}
-      {{-  if $glyphDefinition.random }}
+      {{- else if $glyphDefinition.random }}
         PASSWORD: '{{ printf `{{ .secret.password }}` }}'
       {{- end }}
     {{- else if eq $format "json" }}
@@ -94,10 +113,13 @@ spec:
         {{ $static }}: {{ $data }}
         {{- end }}
       {{- end }}
-      {{-  if $glyphDefinition.randomKey }}
+      {{- if $glyphDefinition.randomKeys }}
+        {{- range $keyName := $glyphDefinition.randomKeys }}
+        {{ $keyName }}: '{{ printf `{{ index .%s "%s" }}` ($keyName | lower | replace "_" "-") $keyName }}'
+        {{- end }}
+      {{- else if $glyphDefinition.randomKey }}
         {{ $glyphDefinition.randomKey  }}: '{{ printf `{{ index .secret "%s" }}` $glyphDefinition.randomKey  }}'
-      {{- end }}
-      {{-  if and $glyphDefinition.random (not $glyphDefinition.randomKey)}}
+      {{- else if and $glyphDefinition.random (not $glyphDefinition.randomKey) }}
         password: '{{ printf `{{ .secret.password }}` }}'
       {{- end }}
     {{- end }}
