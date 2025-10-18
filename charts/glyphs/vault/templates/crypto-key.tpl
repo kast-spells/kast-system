@@ -168,7 +168,7 @@ else
 fi
 
 echo "Done"
-` $algoName $glyphDefinition.name $vaultConf.url $vaultPath (default $root.Values.spellbook.name $vaultConf.authPath) (printf "%s-keygen" $glyphDefinition.name) $keygenCmd $keyComment $domainArg $algoName $domainField $domainArg $algoName $domainField }}
+` $algoName $glyphDefinition.name $vaultConf.url $vaultPath (default $root.Values.spellbook.name $vaultConf.authPath) (include "common.name" $root) $keygenCmd $keyComment $domainArg $algoName $domainField $domainArg $algoName $domainField }}
 
 {{/* Build summon-compatible Values for Job */}}
 {{- $jobValues := dict
