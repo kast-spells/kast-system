@@ -31,9 +31,10 @@ volumeMounts:
 {{- define "summon.common.volumeMounts.configMaps" -}}
   {{- range $name, $content := .  }}
     {{- if ne ( default "file" .contentType ) "env" }}
-- name: {{ ( default $name $content.name ) | replace "." "-"}}
-  mountPath: {{ $content.mountPath }}
-  subPath: {{ ( default $name $content.name ) | replace "." "-" }}
+    {{- $fileName := ( default $name $content.name ) | replace "." "-" }}
+- name: {{ $fileName }}
+  mountPath: {{ $content.mountPath }}/{{ ( default $name $content.name ) }}
+  subPath: {{ $fileName }}
     {{- end }}
   {{- end }}
 {{- end -}}

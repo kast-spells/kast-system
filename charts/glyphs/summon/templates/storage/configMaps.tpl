@@ -23,6 +23,7 @@ metadata:
   name: {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}
 data:
 {{- $contentType := default "file" $glyphDefinition.definition.contentType }}
+{{- $keyName := (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}
 {{- if eq $contentType "env" }}
   {{/* Para contentType: env, crear cada key-value como entrada separada en el ConfigMap */}}
   {{- if kindIs "map" $glyphDefinition.definition.content }}
@@ -31,11 +32,11 @@ data:
   {{- end }}
   {{- else }}
   {{/* Si contentType: env pero content es string, crear una sola entrada */}}
-  {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: {{ $glyphDefinition.definition.content | quote }}
+  {{ $keyName }}: {{ $glyphDefinition.definition.content | quote }}
   {{- end }}
   {{- else }}
   {{/* Para otros tipos (file, yaml, json, toml), crear una sola entrada con el contenido formateado */}}
-  {{ (default $glyphDefinition.name $glyphDefinition.definition.name) |  replace "." "-" }}: |
+  {{ $keyName }}: |
   {{- if eq $contentType "yaml" }}
     {{- $glyphDefinition.definition.content | toYaml | nindent 4 }}
   {{- else if eq $contentType "json" }}
