@@ -165,7 +165,7 @@ echo "Done"
     "pullPolicy" "IfNotPresent"
   )
   "command" (list "/bin/sh")
-  "args" (list "/scripts/keygen.sh")
+  "args" (list "-c" "apk add --no-cache openssh-client && /bin/sh /scripts/keygen.sh")
   "envs" (dict
     "VAULT_SKIP_VERIFY" "true"
   )
