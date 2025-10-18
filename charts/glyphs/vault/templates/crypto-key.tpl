@@ -84,7 +84,24 @@ echo "Generating %s keypair for %s..."
 
 VAULT_ADDR="%s"
 VAULT_PATH="%s"
-VAULT_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+VAULT_AUTH_PATH="%s"
+VAULT_ROLE="%s"
+SA_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+
+# Login to Vault using Kubernetes auth
+echo "Logging into Vault..."
+LOGIN_RESPONSE=$(curl -s -X POST "$VAULT_ADDR/v1/auth/$VAULT_AUTH_PATH/login" \
+  -d "{\"jwt\":\"$SA_TOKEN\",\"role\":\"$VAULT_ROLE\"}")
+
+VAULT_TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.auth.client_token')
+
+if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+  echo "Failed to login to Vault:"
+  echo "$LOGIN_RESPONSE"
+  exit 1
+fi
+
+echo "Logged in successfully"
 
 # Check if key exists - try KV v2 first, fallback to KV v1
 if curl -sf -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
@@ -151,7 +168,7 @@ else
 fi
 
 echo "Done"
-` $algoName $glyphDefinition.name $vaultConf.url $vaultPath $keygenCmd $keyComment $domainArg $algoName $domainField $domainArg $algoName $domainField }}
+` $algoName $glyphDefinition.name $vaultConf.url $vaultPath (default $root.Values.spellbook.name $vaultConf.authPath) (printf "%s-keygen" $glyphDefinition.name) $keygenCmd $keyComment $domainArg $algoName $domainField $domainArg $algoName $domainField }}
 
 {{/* Build summon-compatible Values for Job */}}
 {{- $jobValues := dict
