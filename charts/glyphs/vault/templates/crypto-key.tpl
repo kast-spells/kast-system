@@ -102,8 +102,8 @@ fi
 # Generate keypair
 %s -C "%s"
 
-# Build JSON with jq
-JSON_PAYLOAD=$(jq -n \
+# Build JSON payloads for both KV versions
+JSON_V2=$(jq -n \
   --arg pk "$(cat /tmp/key | base64 -w 0)" \
   --arg pubk "$(cat /tmp/key.pub)" \
   --arg pubk64 "$(cat /tmp/key.pub | awk '{print $2}')" \
@@ -111,24 +111,47 @@ JSON_PAYLOAD=$(jq -n \
   %s \
   '{data: {private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "%s"%s, created_at: $created}}')
 
-# Try KV v2 first
-if ! curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
-  -d "$JSON_PAYLOAD" "$VAULT_ADDR/v1/$VAULT_PATH" >/dev/null 2>&1; then
+JSON_V1=$(jq -n \
+  --arg pk "$(cat /tmp/key | base64 -w 0)" \
+  --arg pubk "$(cat /tmp/key.pub)" \
+  --arg pubk64 "$(cat /tmp/key.pub | awk '{print $2}')" \
+  --arg created "$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)" \
+  %s \
+  '{private_key: $pk, public_key: $pubk, public_key_base64: $pubk64, algorithm: "%s"%s, created_at: $created}')
 
-  # Fallback to KV v1
-  echo "KV v2 failed, trying KV v1..."
-  if ! curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" -H "Content-Type: application/json" \
-    -d "$JSON_PAYLOAD" "$VAULT_ADDR/v1/$VAULT_PATH_V1"; then
-    echo "Failed to store keypair in Vault"
+# Try KV v2 first
+RESULT=$(curl -s -w "\\n%%{http_code}" -X POST \
+  -H "X-Vault-Token: $VAULT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$JSON_V2" "$VAULT_ADDR/v1/$VAULT_PATH")
+
+HTTP_CODE=$(echo "$RESULT" | tail -n1)
+BODY=$(echo "$RESULT" | sed '$d')
+
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ]; then
+  echo "Stored in Vault (KV v2): $VAULT_PATH"
+else
+  echo "KV v2 failed (HTTP $HTTP_CODE): $BODY"
+  echo "Trying KV v1..."
+
+  RESULT_V1=$(curl -s -w "\\n%%{http_code}" -X POST \
+    -H "X-Vault-Token: $VAULT_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$JSON_V1" "$VAULT_ADDR/v1/$VAULT_PATH_V1")
+
+  HTTP_CODE_V1=$(echo "$RESULT_V1" | tail -n1)
+  BODY_V1=$(echo "$RESULT_V1" | sed '$d')
+
+  if [ "$HTTP_CODE_V1" = "200" ] || [ "$HTTP_CODE_V1" = "204" ]; then
+    echo "Stored in Vault (KV v1): $VAULT_PATH_V1"
+  else
+    echo "KV v1 failed (HTTP $HTTP_CODE_V1): $BODY_V1"
     exit 1
   fi
-  echo "Stored in Vault (KV v1): $VAULT_PATH_V1"
-else
-  echo "Stored in Vault (KV v2): $VAULT_PATH"
 fi
 
 echo "Done"
-` $algoName $glyphDefinition.name $vaultConf.url $vaultPath $keygenCmd $keyComment $domainArg $algoName $domainField }}
+` $algoName $glyphDefinition.name $vaultConf.url $vaultPath $keygenCmd $keyComment $domainArg $algoName $domainField $domainArg $algoName $domainField }}
 
 {{/* Build summon-compatible Values for Job */}}
 {{- $jobValues := dict
