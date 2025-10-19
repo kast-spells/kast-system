@@ -73,7 +73,8 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 ) $glyphDefinition)) }}
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
-{{ include "vault.secret" (list $root (merge (dict
+{{- /* Override serviceAccount for provider namespace - use provider's SA instead of app's SA */}}
+{{ include "vault.secret" (list $root (dict
   "name" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
@@ -91,8 +92,10 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
     "kast.io/identity-name" $identityName
   )
   "selector" $glyphDefinition.selector
-  "refreshPeriod" $glyphDefinition.refreshPeriod
-) $glyphDefinition)) }}
+  "serviceAccount" $s3Provider.serviceAccount
+  "refreshPeriod" (default "3m" $glyphDefinition.refreshPeriod)
+  "passPolicyName" $glyphDefinition.passPolicyName
+)) }}
 
 {{- end }}
 {{- end }}
