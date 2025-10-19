@@ -58,6 +58,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 ) }}
 {{ include "vault.secret" (list $root (dict
   "name" $secretName
+  "nameOverwrite" $name
   "format" "env"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
   "staticData" (dict
@@ -79,6 +80,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- /* Path: directory only (ending in /), name gets key suffix added by vault.secret */}}
 {{ include "vault.secret" (list $root (dict
   "name" $secretName
+  "nameOverwrite" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
   "random" false
