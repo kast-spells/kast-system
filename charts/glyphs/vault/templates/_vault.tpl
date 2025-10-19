@@ -12,14 +12,18 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- if gt (len $context ) 3 }}
     {{- $serviceAccount = index $context 3 }}
   {{- end }}
+  {{- $customRole := "" -}}
+  {{- if gt (len $context ) 4 }}
+    {{- $customRole = index $context 4 }}
+  {{- end }}
   {{- $url := $vaultConf.url -}}
   {{- $skipVerify := $vaultConf.skipVerify -}}
-  {{- $role := "" -}}
+  {{- $role := $customRole -}}
   {{- if $forceVault -}}
     {{- $role = default "vault" $vaultConf.role -}}
     {{- $serviceAccount =  default "vault" $vaultConf.serviceAccount -}}
   {{- end -}}
-authentication: 
+authentication:
   path: {{ default $root.Values.spellbook.name $vaultConf.authPath }}
   role: {{ default (include "common.name" $root) $role }}
   serviceAccount:

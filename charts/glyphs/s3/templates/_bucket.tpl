@@ -73,7 +73,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 ) $glyphDefinition)) }}
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
-{{- /* Override serviceAccount for provider namespace - use provider's SA instead of app's SA */}}
+{{- /* Override serviceAccount and role for provider namespace - use provider's credentials instead of app's */}}
 {{ include "vault.secret" (list $root (dict
   "name" $identityName
   "namespace" $s3Provider.namespace
@@ -93,6 +93,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   )
   "selector" $glyphDefinition.selector
   "serviceAccount" $s3Provider.serviceAccount
+  "role" $s3Provider.role
   "refreshPeriod" (default "3m" $glyphDefinition.refreshPeriod)
   "passPolicyName" $glyphDefinition.passPolicyName
 )) }}

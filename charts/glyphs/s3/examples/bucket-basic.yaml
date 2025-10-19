@@ -22,6 +22,8 @@ lexicon:
   - type: s3-provider
     name: seaweedfs
     namespace: seaweedfs
+    serviceAccount: seaweedfs-s3-aggregator-pod
+    role: seaweedfs-s3-identities
     endpoint: https://s3-weed.the.yaml.life
     region: us-east-1
     vault:
