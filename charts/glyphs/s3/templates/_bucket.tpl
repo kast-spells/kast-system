@@ -73,12 +73,13 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
 {{- /* Clean dict with provider credentials only - no app glyphDefinition */}}
-{{- /* Reads from same vault path as app - aggregator identifies via k8s secret labels */}}
+{{- /* Reads from same vault path as app - DOES NOT generate secrets (app does that) */}}
 {{ include "vault.secret" (list $root (dict
   "name" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
-  "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
+  "random" false
+  "keys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
   "path" $vaultPath
   "staticData" (dict
     "IDENTITY_NAME" $identityName
