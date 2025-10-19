@@ -46,9 +46,10 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   {{- $bucketPatterns = list $bucketName }}
 {{- end }}
 
-{{- /* Vault path follows spellbook structure: /{book}/{chapter}/{spell}/s3-identities/{identity} (absolute path) */}}
-{{- $vaultPath := printf "/%s/%s/%s/s3-identities" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) }}
-{{- $fullVaultPath := printf "%s/%s" $vaultPath $identityName }}
+{{- /* Vault path: s3-identities-PROVIDER-NAME in publics directory
+     App has default access, aggregator uses extraPolicy wildcard */}}
+{{- $secretName := printf "s3-identities-%s-%s" $s3Provider.name $name }}
+{{- $vaultPath := printf "/%s/%s/%s/publics/%s" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) $secretName }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}
 {{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
@@ -60,7 +61,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   "name" $name
   "format" "env"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
-  "path" $fullVaultPath
+  "path" $vaultPath
   "staticData" (dict
     "AWS_ENDPOINT" $s3Provider.endpoint
     "AWS_REGION" (default "us-east-1" $s3Provider.region)
@@ -74,12 +75,13 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
 {{- /* Override serviceAccount and role for provider namespace - use provider's credentials instead of app's */}}
+{{- /* Reads from same vault path as app - aggregator identifies via k8s secret labels */}}
 {{ include "vault.secret" (list $root (dict
   "name" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
-  "path" $fullVaultPath
+  "path" $vaultPath
   "staticData" (dict
     "IDENTITY_NAME" $identityName
     "PERMISSIONS" (join "," $permissions)

@@ -247,7 +247,7 @@ subjects:
     name: {{ $name }}-s3-aggregator-pod
     namespace: {{ $root.Release.Namespace }}
 
-{{- /* 6. Vault Prolicy for s3-identities access - uses spellbook structure, needs wildcard for all chapters/spells */}}
+{{- /* 6. Vault Prolicy for s3-identities access - uses naming convention in /publics/ */}}
 {{- $vaultServers := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict (dict)) "vault" $root.Values.chapter.name) | fromJson) "results" }}
 {{- $vault := index $vaultServers 0 }}
 {{ include "vault.prolicy" (list $root (dict
@@ -255,20 +255,20 @@ subjects:
   "serviceAccount" (printf "%s-s3-aggregator-pod" $name)
   "extraPolicy" (list
     (dict
-      "path" (printf "%s/data/%s/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
-      "capabilities" (list "create" "read" "update" "delete" "list")
+      "path" (printf "%s/data/%s/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/metadata/%s/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
-      "capabilities" (list "list" "read" "delete")
+      "path" (printf "%s/metadata/%s/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/data/%s/*/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
-      "capabilities" (list "create" "read" "update" "delete" "list")
+      "path" (printf "%s/data/%s/*/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/metadata/%s/*/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
-      "capabilities" (list "list" "read" "delete")
+      "path" (printf "%s/metadata/%s/*/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "capabilities" (list "read" "list")
     )
   )
 )) }}
