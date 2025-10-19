@@ -46,8 +46,8 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   {{- $bucketPatterns = list $bucketName }}
 {{- end }}
 
-{{- /* Vault path from s3-provider lexicon or default */}}
-{{- $vaultPath := default "/s3-identities" $s3Provider.vault.path }}
+{{- /* Vault path follows spellbook structure: {book}/{chapter}/{spell}/s3-identities/{identity} */}}
+{{- $vaultPath := printf "%s/%s/%s/s3-identities" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) }}
 {{- $fullVaultPath := printf "%s/%s" $vaultPath $identityName }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}

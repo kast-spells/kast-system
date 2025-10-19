@@ -247,17 +247,28 @@ subjects:
     name: {{ $name }}-s3-aggregator-pod
     namespace: {{ $root.Release.Namespace }}
 
-{{- /* 6. Vault Prolicy for /s3-identities/* access */}}
+{{- /* 6. Vault Prolicy for s3-identities access - uses spellbook structure, needs wildcard for all chapters/spells */}}
+{{- $vaultConf := index $eventBuses 0 }}
+{{- $vaultServers := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict (dict)) "vault" $root.Values.chapter.name) | fromJson) "results" }}
+{{- $vault := index $vaultServers 0 }}
 {{ include "vault.prolicy" (list $root (dict
   "nameOverride" (printf "%s-s3-identities" $name)
-  "serviceAccount" (printf "%s-s3-aggregator" $name)
+  "serviceAccount" (printf "%s-s3-aggregator-pod" $name)
   "extraPolicy" (list
     (dict
-      "path" "kv/data/s3-identities/*"
+      "path" (printf "%s/data/%s/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
       "capabilities" (list "create" "read" "update" "delete" "list")
     )
     (dict
-      "path" "kv/metadata/s3-identities/*"
+      "path" (printf "%s/metadata/%s/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
+      "capabilities" (list "list" "read" "delete")
+    )
+    (dict
+      "path" (printf "%s/data/%s/*/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
+      "capabilities" (list "create" "read" "update" "delete" "list")
+    )
+    (dict
+      "path" (printf "%s/metadata/%s/*/*/s3-identities/*" (default "kv" $vault.secretPath) $root.Values.spellbook.name)
       "capabilities" (list "list" "read" "delete")
     )
   )
