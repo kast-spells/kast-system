@@ -92,7 +92,7 @@ spec:
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: KubernetesAuthEngineRole #role
 metadata:
-  name: {{ include "common.name" $root }}
+  name: {{ default ( include "common.name" $root ) $glyph.nameOverride }}
   namespace: {{ default "vault" .namespace }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf  "True") |nindent 2 }}
