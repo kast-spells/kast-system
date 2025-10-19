@@ -248,7 +248,6 @@ subjects:
     namespace: {{ $root.Release.Namespace }}
 
 {{- /* 6. Vault Prolicy for s3-identities access - uses spellbook structure, needs wildcard for all chapters/spells */}}
-{{- $vaultConf := index $eventBuses 0 }}
 {{- $vaultServers := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict (dict)) "vault" $root.Values.chapter.name) | fromJson) "results" }}
 {{- $vault := index $vaultServers 0 }}
 {{ include "vault.prolicy" (list $root (dict
