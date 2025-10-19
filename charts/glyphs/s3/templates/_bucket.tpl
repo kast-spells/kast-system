@@ -50,13 +50,13 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- $secretName := printf "s3-identities-%s-%s" $s3Provider.name $name }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}
-{{- /* Merge: glyphDefinition base, override only S3-specific values */}}
+{{- /* Build dict explicitly to ensure secretName is used */}}
 {{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
   "kast.io/s3-identity" "true"
   "kast.io/s3-provider" $s3Provider.name
   "kast.io/identity-name" $identityName
 ) }}
-{{ include "vault.secret" (list $root (merge $glyphDefinition (dict
+{{ include "vault.secret" (list $root (dict
   "name" $secretName
   "format" "env"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
@@ -66,19 +66,24 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
     "S3_BUCKET" $bucketName
   )
   "labels" $s3Labels
-))) }}
+  "selector" $glyphDefinition.selector
+  "passPolicyName" $glyphDefinition.passPolicyName
+  "refreshPeriod" $glyphDefinition.refreshPeriod
+  "serviceAccount" $glyphDefinition.serviceAccount
+  "role" $glyphDefinition.role
+)) }}
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
 {{- /* Clean dict with provider credentials only - no app glyphDefinition */}}
-{{- /* Reads from same vault path as app - DOES NOT generate secrets (app does that) */}}
-{{- /* Path must be absolute pointing to app namespace where RandomSecrets write */}}
+{{- /* Reads from same vault paths where RandomSecrets write (separate secrets per key) */}}
+{{- /* Path: directory only (ending in /), name gets key suffix added by vault.secret */}}
 {{ include "vault.secret" (list $root (dict
-  "name" $identityName
+  "name" $secretName
   "namespace" $s3Provider.namespace
   "format" "plain"
   "random" false
-  "keys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
-  "path" (printf "/%s/%s/%s/publics/%s" $root.Values.spellbook.name $root.Values.chapter.name $root.Release.Namespace $secretName)
+  "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
+  "path" (printf "/%s/%s/%s/publics/" $root.Values.spellbook.name $root.Values.chapter.name $root.Release.Namespace)
   "staticData" (dict
     "IDENTITY_NAME" $identityName
     "PERMISSIONS" (join "," $permissions)

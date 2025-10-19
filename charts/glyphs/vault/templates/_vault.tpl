@@ -60,9 +60,16 @@ connection:
                 $internalPath 
                 $name  }}
   {{- else if hasPrefix "/" $path }}
-    {{- printf "%s/data%s" 
-                $vaultConf.secretPath
-                $path }}
+    {{- if hasSuffix "/" $path }}
+      {{- printf "%s/data%s%s"
+                  $vaultConf.secretPath
+                  $path
+                  $name }}
+    {{- else }}
+      {{- printf "%s/data%s"
+                  $vaultConf.secretPath
+                  $path }}
+    {{- end }}
   {{- else }}
     {{- printf "%s/data/%s/%s/%s/%s/%s" 
           $vaultConf.secretPath
