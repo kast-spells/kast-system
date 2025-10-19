@@ -147,7 +147,7 @@ data:
               "namespace" $root.Release.Namespace
             )
             "spec" (dict
-              "serviceAccountName" (printf "%s-s3-aggregator" $name)
+              "serviceAccountName" (printf "%s-s3-aggregator-pod" $name)
               "restartPolicy" "Never"
               "containers" (list
                 (dict
@@ -180,17 +180,49 @@ data:
   )
 )) }}
 
-{{- /* 4. ServiceAccount + RBAC for aggregator */}}
+{{- /* 4. ServiceAccount + RBAC for Sensor (in EventBus namespace) */}}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ $name }}-s3-aggregator
+  namespace: {{ $eventBus.namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ $name }}-s3-aggregator
+  name: {{ $name }}-s3-sensor
+  namespace: {{ $root.Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}-s3-sensor
+  namespace: {{ $root.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}-s3-sensor
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}-s3-aggregator
+    namespace: {{ $eventBus.namespace }}
+
+{{- /* 5. ServiceAccount + RBAC for aggregator pod (in app namespace) */}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}-s3-aggregator-pod
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}-s3-aggregator-pod
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -205,17 +237,17 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ $name }}-s3-aggregator
+  name: {{ $name }}-s3-aggregator-pod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ $name }}-s3-aggregator
+  name: {{ $name }}-s3-aggregator-pod
 subjects:
   - kind: ServiceAccount
-    name: {{ $name }}-s3-aggregator
+    name: {{ $name }}-s3-aggregator-pod
     namespace: {{ $root.Release.Namespace }}
 
-{{- /* 5. Vault Prolicy for /s3-identities/* access */}}
+{{- /* 6. Vault Prolicy for /s3-identities/* access */}}
 {{ include "vault.prolicy" (list $root (dict
   "nameOverride" (printf "%s-s3-identities" $name)
   "serviceAccount" (printf "%s-s3-aggregator" $name)

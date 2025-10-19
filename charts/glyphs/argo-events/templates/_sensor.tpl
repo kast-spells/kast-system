@@ -56,6 +56,9 @@ apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
   name: {{ $resourceName }}
+  {{- if $eventBus.namespace }}
+  namespace: {{ $eventBus.namespace }}
+  {{- end }}
   labels:
     {{- include "common.labels" $root | nindent 4 }}
   {{- with $glyphDefinition.annotations }}
