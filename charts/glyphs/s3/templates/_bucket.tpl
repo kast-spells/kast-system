@@ -46,23 +46,20 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   {{- $bucketPatterns = list $bucketName }}
 {{- end }}
 
-{{- /* Vault path: s3-identities-PROVIDER-NAME in publics directory
-     App has default access, aggregator uses extraPolicy wildcard */}}
+{{- /* Generate unique identity name for vault secret */}}
 {{- $secretName := printf "s3-identities-%s-%s" $s3Provider.name $name }}
-{{- $vaultPath := printf "/%s/%s/%s/publics/%s" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) $secretName }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}
-{{- /* Use glyphDefinition as base, override only S3-specific settings */}}
+{{- /* Merge: glyphDefinition base, override only S3-specific values */}}
 {{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
   "kast.io/s3-identity" "true"
   "kast.io/s3-provider" $s3Provider.name
   "kast.io/identity-name" $identityName
 ) }}
 {{ include "vault.secret" (list $root (merge $glyphDefinition (dict
-  "name" $name
+  "name" $secretName
   "format" "env"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
-  "path" $vaultPath
   "staticData" (dict
     "AWS_ENDPOINT" $s3Provider.endpoint
     "AWS_REGION" (default "us-east-1" $s3Provider.region)
@@ -74,13 +71,14 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
 {{- /* Clean dict with provider credentials only - no app glyphDefinition */}}
 {{- /* Reads from same vault path as app - DOES NOT generate secrets (app does that) */}}
+{{- /* Path must be absolute pointing to app namespace where RandomSecrets write */}}
 {{ include "vault.secret" (list $root (dict
   "name" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
   "random" false
   "keys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
-  "path" $vaultPath
+  "path" (printf "/%s/%s/%s/publics/%s" $root.Values.spellbook.name $root.Values.chapter.name $root.Release.Namespace $secretName)
   "staticData" (dict
     "IDENTITY_NAME" $identityName
     "PERMISSIONS" (join "," $permissions)
