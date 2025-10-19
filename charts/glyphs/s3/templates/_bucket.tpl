@@ -46,40 +46,39 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   {{- $bucketPatterns = list $bucketName }}
 {{- end }}
 
-{{- /* Vault path follows spellbook structure: {book}/{chapter}/{spell}/s3-identities/{identity} */}}
-{{- $vaultPath := printf "%s/%s/%s/s3-identities" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) }}
+{{- /* Vault path follows spellbook structure: /{book}/{chapter}/{spell}/s3-identities/{identity} (absolute path) */}}
+{{- $vaultPath := printf "/%s/%s/%s/s3-identities" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) }}
 {{- $fullVaultPath := printf "%s/%s" $vaultPath $identityName }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}
-{{ include "vault.secret" (list $root (dict
+{{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
+  "kast.io/s3-identity" "true"
+  "kast.io/s3-provider" $s3Provider.name
+  "kast.io/identity-name" $identityName
+) }}
+{{ include "vault.secret" (list $root (merge (dict
   "name" $name
   "format" "env"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
   "path" $fullVaultPath
-  "passPolicyName" (default "short-policy" $glyphDefinition.passPolicyName)
   "staticData" (dict
     "AWS_ENDPOINT" $s3Provider.endpoint
     "AWS_REGION" (default "us-east-1" $s3Provider.region)
     "S3_BUCKET" $bucketName
   )
-  "labels" (merge (default dict $glyphDefinition.labels) (dict
-    "kast.io/s3-identity" "true"
-    "kast.io/s3-provider" $s3Provider.name
-    "kast.io/identity-name" $identityName
-  ))
+  "labels" $s3Labels
   "selector" $glyphDefinition.selector
   "serviceAccount" $glyphDefinition.serviceAccount
   "refreshPeriod" $glyphDefinition.refreshPeriod
-)) }}
+) $glyphDefinition)) }}
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
-{{ include "vault.secret" (list $root (dict
+{{ include "vault.secret" (list $root (merge (dict
   "name" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
   "path" $fullVaultPath
-  "passPolicyName" (default "short-policy" $glyphDefinition.passPolicyName)
   "staticData" (dict
     "IDENTITY_NAME" $identityName
     "PERMISSIONS" (join "," $permissions)
@@ -93,7 +92,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   )
   "selector" $glyphDefinition.selector
   "refreshPeriod" $glyphDefinition.refreshPeriod
-)) }}
+) $glyphDefinition)) }}
 
 {{- end }}
 {{- end }}
