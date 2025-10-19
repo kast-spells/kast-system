@@ -52,12 +52,13 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- $vaultPath := printf "/%s/%s/%s/publics/%s" $root.Values.spellbook.name $root.Values.chapter.name (include "common.name" $root) $secretName }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}
+{{- /* Use glyphDefinition as base, override only S3-specific settings */}}
 {{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
   "kast.io/s3-identity" "true"
   "kast.io/s3-provider" $s3Provider.name
   "kast.io/identity-name" $identityName
 ) }}
-{{ include "vault.secret" (list $root (merge (dict
+{{ include "vault.secret" (list $root (merge $glyphDefinition (dict
   "name" $name
   "format" "env"
   "randomKeys" (list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY")
@@ -68,13 +69,10 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
     "S3_BUCKET" $bucketName
   )
   "labels" $s3Labels
-  "selector" $glyphDefinition.selector
-  "serviceAccount" $glyphDefinition.serviceAccount
-  "refreshPeriod" $glyphDefinition.refreshPeriod
-) $glyphDefinition)) }}
+))) }}
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
-{{- /* Override serviceAccount and role for provider namespace - use provider's credentials instead of app's */}}
+{{- /* Clean dict with provider credentials only - no app glyphDefinition */}}
 {{- /* Reads from same vault path as app - aggregator identifies via k8s secret labels */}}
 {{ include "vault.secret" (list $root (dict
   "name" $identityName
@@ -93,11 +91,8 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
     "kast.io/source-namespace" $root.Release.Namespace
     "kast.io/identity-name" $identityName
   )
-  "selector" $glyphDefinition.selector
   "serviceAccount" $s3Provider.serviceAccount
   "role" $s3Provider.role
-  "refreshPeriod" (default "3m" $glyphDefinition.refreshPeriod)
-  "passPolicyName" $glyphDefinition.passPolicyName
 )) }}
 
 {{- end }}

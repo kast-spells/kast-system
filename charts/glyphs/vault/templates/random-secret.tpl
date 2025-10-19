@@ -13,7 +13,7 @@ kind: RandomSecret
 metadata:
   name: {{ $glyphDefinition.name }}
 spec:
-  {{- include "vault.connect" (list $root $vaultConf "" ( default "" $glyphDefinition.serviceAccount )) | nindent 2 }}
+  {{- include "vault.connect" (list $root $vaultConf "" ( default "" $glyphDefinition.serviceAccount ) ( default "" $glyphDefinition.role )) | nindent 2 }}
   isKVSecretsEngineV2: true
   path: {{ include "generateSecretPath" ( list $root $glyphDefinition $vaultConf "true" ) }}
   secretKey: {{ default "password" $glyphDefinition.randomKey }}
