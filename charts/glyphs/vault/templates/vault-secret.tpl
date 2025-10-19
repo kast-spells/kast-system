@@ -91,7 +91,7 @@ spec:
       {{- end }}
       {{- if $glyphDefinition.randomKeys }}
         {{- range $keyName := $glyphDefinition.randomKeys }}
-        {{ upper $keyName | replace "-" "_" }}: '{{ printf `{{ index .%s "%s" }}` ($keyName | lower | replace "_" "-") $keyName }}'
+        {{ upper $keyName | replace "-" "_" }}: '{{ printf `{{ index . "%s" "%s" }}` ($keyName | lower | replace "_" "-") $keyName }}'
         {{- end }}
       {{- else if $glyphDefinition.randomKey }}
         {{ upper $glyphDefinition.randomKey | replace "-" "_" }}: '{{ printf `{{ .secret.%s }}` $glyphDefinition.randomKey  }}'
@@ -115,7 +115,7 @@ spec:
       {{- end }}
       {{- if $glyphDefinition.randomKeys }}
         {{- range $keyName := $glyphDefinition.randomKeys }}
-        {{ $keyName }}: '{{ printf `{{ index .%s "%s" }}` ($keyName | lower | replace "_" "-") $keyName }}'
+        {{ $keyName }}: '{{ printf `{{ index . "%s" "%s" }}` ($keyName | lower | replace "_" "-") $keyName }}'
         {{- end }}
       {{- else if $glyphDefinition.randomKey }}
         {{ $glyphDefinition.randomKey  }}: '{{ printf `{{ index .secret "%s" }}` $glyphDefinition.randomKey  }}'
