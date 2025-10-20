@@ -100,17 +100,17 @@ data:
     # Build final S3 config
     S3_CONFIG=$(jq -n --argjson identities "$IDENTITIES" '{identities: $identities}')
 
-    echo "📝 Generated S3 config:"
-    echo "$S3_CONFIG" | jq .
+    echo "📝 Generated S3 config with ${SECRET_COUNT} identities"
 
-    # Create/update ConfigMap
-    kubectl create configmap seaweedfs-s3-config \
+    # Create/update Secret (NOT ConfigMap for security)
+    # Key name is s3.json to match the file path expected by SeaweedFS
+    kubectl create secret generic seaweedfs-s3-config \
       -n ${NAMESPACE} \
       --from-literal=s3.json="$S3_CONFIG" \
       --dry-run=client -o yaml | \
       kubectl apply -f -
 
-    echo "✅ ConfigMap updated successfully"
+    echo "✅ Secret updated successfully"
 
     # Restart seaweedfs-s3 deployment to reload config
     echo "🔄 Restarting seaweedfs-s3 deployment..."
@@ -255,9 +255,6 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["configmaps"]
     verbs: ["get", "list", "create", "update", "patch"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
