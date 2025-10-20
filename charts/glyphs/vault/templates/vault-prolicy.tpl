@@ -61,22 +61,22 @@ spec:
     }
     {{- if ($root.Values.spellbook.prolicy).extraPolicy }}
     {{- range $root.Values.spellbook.prolicy.extraPolicy }}
-    path "{{ $vaultConf.path }}" {
-      capabilities = {{ $vaultConf.capabilities | toJson }}
+    path "{{ .path }}" {
+      capabilities = {{ .capabilities | toJson }}
     }
     {{- end }}
     {{- end }}
     {{- if ($root.Values.chapter.prolicy).extraPolicy }}
     {{- range $root.Values.chapter.prolicy.extraPolicy }}
-    path "{{ $vaultConf.path }}" {
-      capabilities = {{ $vaultConf.capabilities | toJson }}
+    path "{{ .path }}" {
+      capabilities = {{ .capabilities | toJson }}
     }
     {{- end }}
     {{- end }}
     {{- if $vaultConf.extraPolicy }}
     {{- range $vaultConf.extraPolicy }}
-    path "{{ $vaultConf.path }}" {
-      capabilities = {{ $vaultConf.capabilities | toJson }}
+    path "{{ .path }}" {
+      capabilities = {{ .capabilities | toJson }}
     }
     {{- end }}
     {{- end }}
