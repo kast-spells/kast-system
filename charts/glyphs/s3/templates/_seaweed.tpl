@@ -248,7 +248,8 @@ subjects:
     namespace: {{ $root.Release.Namespace }}
 
 {{- /* 6. Vault Prolicy for s3-identities access - uses naming convention in /publics/ */}}
-{{- /* Vault doesn't support recursive globs, so we enumerate 2, 3, 4 level paths explicitly */}}
+{{- /* Vault + wildcard matches single directory between slashes, can chain for multiple levels */}}
+{{- /* See: https://developer.hashicorp.com/vault/docs/concepts/policies#policy-syntax */}}
 {{- $vaultServers := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict (dict)) "vault" $root.Values.chapter.name) | fromJson) "results" }}
 {{- $vault := index $vaultServers 0 }}
 {{ include "vault.prolicy" (list $root (dict
@@ -256,27 +257,27 @@ subjects:
   "serviceAccount" (printf "%s-s3-aggregator-pod" $name)
   "extraPolicy" (list
     (dict
-      "path" (printf "%s/data/%s/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "path" (printf "%s/data/%s/+/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
       "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/metadata/%s/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "path" (printf "%s/metadata/%s/+/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
       "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/data/%s/*/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "path" (printf "%s/data/%s/+/+/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
       "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/metadata/%s/*/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "path" (printf "%s/metadata/%s/+/+/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
       "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/data/%s/*/*/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "path" (printf "%s/data/%s/+/+/+/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
       "capabilities" (list "read" "list")
     )
     (dict
-      "path" (printf "%s/metadata/%s/*/*/*/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
+      "path" (printf "%s/metadata/%s/+/+/+/publics/s3-identities-%s-*" $vault.secretPath $root.Values.spellbook.name $name)
       "capabilities" (list "read" "list")
     )
   )
