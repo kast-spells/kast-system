@@ -78,8 +78,9 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- /* Clean dict with provider credentials only - no app glyphDefinition */}}
 {{- /* Reads from same vault paths where RandomSecrets write (separate secrets per key) */}}
 {{- /* Path: directory only (ending in /), name gets key suffix added by vault.secret */}}
+{{- /* Use -provider suffix to avoid name collision when app and provider are in same namespace */}}
 {{ include "vault.secret" (list $root (dict
-  "name" $secretName
+  "name" (printf "%s-provider" $secretName)
   "nameOverwrite" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
