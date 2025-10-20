@@ -76,6 +76,10 @@ metadata:
   {{- end }}
 spec:
   eventBusName: {{ default $eventBus.name $glyphDefinition.eventBusName }}
+  {{- if $glyphDefinition.template }}
+  template:
+    {{- $glyphDefinition.template | toYaml | nindent 4 }}
+  {{- end }}
   {{- if $glyphDefinition.service }}
   service:
     {{- $glyphDefinition.service | toYaml | nindent 4 }}

@@ -38,6 +38,9 @@ The aggregator script:
 {{ include "argo-events.eventSource" (list $root (dict
   "name" (printf "%s-s3-secrets" $name)
   "eventBusName" $eventBus.name
+  "template" (dict
+    "serviceAccountName" (printf "%s-s3-aggregator" $name)
+  )
   "resource" (dict
     "s3-identity-changes" (dict
       "namespace" $root.Release.Namespace
@@ -180,7 +183,7 @@ data:
   )
 )) }}
 
-{{- /* 4. ServiceAccount + RBAC for Sensor (in EventBus namespace) */}}
+{{- /* 4. ServiceAccount + RBAC for EventSource and Sensor (in EventBus namespace) */}}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -188,6 +191,32 @@ metadata:
   name: {{ $name }}-s3-aggregator
   namespace: {{ $eventBus.namespace }}
 ---
+{{- /* Role for EventSource to watch secrets in seaweedfs namespace */}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}-s3-eventsource
+  namespace: {{ $root.Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}-s3-eventsource
+  namespace: {{ $root.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}-s3-eventsource
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}-s3-aggregator
+    namespace: {{ $eventBus.namespace }}
+---
+{{- /* Role for Sensor to create pods in seaweedfs namespace */}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
