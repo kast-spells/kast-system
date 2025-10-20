@@ -358,7 +358,7 @@ spec:
             operation: {{ . }}
             {{- end }}
             {{- with .value }}
-            value: {{ . }}
+            value: {{ . | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
@@ -370,7 +370,7 @@ spec:
             operation: {{ . }}
             {{- end }}
             {{- with .value }}
-            value: {{ . }}
+            value: {{ . | quote }}
             {{- end }}
           {{- end }}
         {{- end }}
