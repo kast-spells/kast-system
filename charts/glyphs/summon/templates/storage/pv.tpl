@@ -87,11 +87,15 @@ spec:
   nodeAffinity:
     {{- toYaml .nodeAffinity | nindent 4 }}
   {{- end }}
-  {{- else if .driver }}
-  {{/* CSI PersistentVolume backend */}}
+  {{- else if or .driver .volumeHandle $csiConfig.driver }}
+  {{/* CSI PersistentVolume backend - triggered by .driver OR .volumeHandle OR lexicon csi-config */}}
   csi:
-    {{/* Use driver from lexicon if available, otherwise use provided */}}
-    driver: {{ $csiConfig.driver | default .driver }}
+    {{/* Use driver from lexicon if available, otherwise use provided, otherwise fail */}}
+    {{- $driver := $csiConfig.driver | default .driver }}
+    {{- if not $driver }}
+      {{- fail (printf "CSI driver not found. Specify pv.driver OR add storageClass '%s' to lexicon with type 'csi-config'" $volume.storageClass) }}
+    {{- end }}
+    driver: {{ $driver }}
     {{- if .volumeHandle }}
     volumeHandle: {{ .volumeHandle }}
     {{- else }}

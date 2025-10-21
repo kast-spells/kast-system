@@ -601,6 +601,45 @@ test-tarot-complex: ## Test complex Tarot workflows
 	done
 
 # =============================================================================
+# COVENANT BOOK TESTING
+# =============================================================================
+
+.PHONY: test-covenant test-covenant-tyl test-covenant-test-full list-covenant-books
+
+test-covenant: test-covenant-tyl test-covenant-test-full ## Test all covenant books
+
+test-covenant-tyl: ## Test covenant-tyl book
+	@echo "$(BLUE)📖 Testing covenant-tyl book...$(RESET)"
+	@tests/scripts/test-covenant-book.sh covenant-tyl
+
+test-covenant-test-full: ## Test covenant-test-full book
+	@echo "$(BLUE)📖 Testing covenant-test-full book...$(RESET)"
+	@tests/scripts/test-covenant-book.sh covenant-test-full
+
+test-covenant-book: ## Test specific covenant book (use BOOK=<name>)
+	@if [ -z "$(BOOK)" ]; then \
+		echo "$(RED)Error: BOOK variable not set$(RESET)"; \
+		echo "$(YELLOW)Usage: make test-covenant-book BOOK=covenant-tyl$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant book: $(BOOK)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK)
+
+test-covenant-debug: ## Debug covenant book rendering (use BOOK=<name>)
+	@if [ -z "$(BOOK)" ]; then \
+		echo "$(RED)Error: BOOK variable not set$(RESET)"; \
+		echo "$(YELLOW)Usage: make test-covenant-debug BOOK=covenant-tyl$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)🔍 Debug rendering covenant book: $(BOOK)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK) --debug
+
+list-covenant-books: ## List all available covenant books (from proto-the-yaml-life)
+	@echo "$(BLUE)📚 Available Covenant Books (proto-the-yaml-life):$(RESET)"
+	@find /home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack -maxdepth 2 -name "index.yaml" -exec grep -l "realm:" {} \; 2>/dev/null | \
+		xargs -I {} dirname {} | xargs -I {} basename {} | sort | sed 's/^/  - /' || echo "  $(YELLOW)No covenant books found$(RESET)"
+
+# =============================================================================
 # CLEANUP
 # =============================================================================
 
