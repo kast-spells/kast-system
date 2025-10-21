@@ -625,6 +625,24 @@ test-covenant-book: ## Test specific covenant book (use BOOK=<name>)
 	@echo "$(BLUE)📖 Testing covenant book: $(BOOK)...$(RESET)"
 	@tests/scripts/test-covenant-book.sh $(BOOK)
 
+test-covenant-chapter: ## Test specific chapter of covenant book (use BOOK=<name> CHAPTER=<chapter>)
+	@if [ -z "$(BOOK)" ] || [ -z "$(CHAPTER)" ]; then \
+		echo "$(RED)Error: BOOK and CHAPTER variables required$(RESET)"; \
+		echo "$(YELLOW)Usage: make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant book chapter: $(BOOK) / $(CHAPTER)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK) --chapter-filter $(CHAPTER)
+
+test-covenant-all-chapters: ## Test covenant book with all chapters (use BOOK=<name>)
+	@if [ -z "$(BOOK)" ]; then \
+		echo "$(RED)Error: BOOK variable not set$(RESET)"; \
+		echo "$(YELLOW)Usage: make test-covenant-all-chapters BOOK=covenant-tyl$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant book with all chapters: $(BOOK)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK) --all-chapters
+
 test-covenant-debug: ## Debug covenant book rendering (use BOOK=<name>)
 	@if [ -z "$(BOOK)" ]; then \
 		echo "$(RED)Error: BOOK variable not set$(RESET)"; \

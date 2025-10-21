@@ -225,10 +225,19 @@ TEMP_OUTPUT=$(mktemp)
 trap "rm -f $TEMP_OUTPUT" EXIT
 
 # Build helm command with optional chapterFilter
+# When using chapterFilter, name must include chapter suffix (e.g., covenant-tyl-tyl)
+# The covenant template will strip the suffix to get the book path
+RELEASE_NAME="$COVENANT_BOOK"
+COVENANT_NAME="$COVENANT_BOOK"
+if [ -n "$CHAPTER_FILTER" ]; then
+    RELEASE_NAME="$COVENANT_BOOK-$CHAPTER_FILTER"
+    COVENANT_NAME="$COVENANT_BOOK-$CHAPTER_FILTER"
+fi
+
 HELM_ARGS=(
-    "$COVENANT_BOOK"
+    "$RELEASE_NAME"
     "$COVENANT_CHART_PATH"
-    --set name="$COVENANT_BOOK"
+    --set name="$COVENANT_NAME"
     --set spellbook.name="$COVENANT_BOOK"
     --set spellbook.argocdNamespace="argocd"
     --set chapter.name="$CHAPTER"
@@ -293,10 +302,10 @@ case $MODE in
 
         # Show specific Keycloak resources
         echo -e "${BLUE}Keycloak Resources:${RESET}"
-        KEYCLOAK_REALM=$(grep -c "kind: KeycloakRealm" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
-        KEYCLOAK_CLIENTS=$(grep -c "kind: KeycloakClient" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
-        KEYCLOAK_GROUPS=$(grep -c "kind: KeycloakGroup" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
-        KEYCLOAK_USERS=$(grep -c "kind: KeycloakUser" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        KEYCLOAK_REALM=$(grep -c "kind: KeycloakRealm$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        KEYCLOAK_CLIENTS=$(grep -c "kind: KeycloakClient$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        KEYCLOAK_GROUPS=$(grep -c "kind: KeycloakRealmGroup$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        KEYCLOAK_USERS=$(grep -c "kind: KeycloakRealmUser$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
 
         echo -e "  Realm: ${YELLOW}${KEYCLOAK_REALM}${RESET}"
         echo -e "  Clients: ${YELLOW}${KEYCLOAK_CLIENTS}${RESET}"
@@ -306,21 +315,26 @@ case $MODE in
         # Validate based on mode
         if [ -n "$CHAPTER_FILTER" ]; then
             # Chapter mode: Should have Users and Groups, NO Realm or ApplicationSet
-            if [ "${KEYCLOAK_USERS}" -eq 0 ]; then
+            USERS_NUM=$(echo "$KEYCLOAK_USERS" | tr -d '\n')
+            GROUPS_NUM=$(echo "$KEYCLOAK_GROUPS" | tr -d '\n')
+            if [ "${USERS_NUM:-0}" -eq 0 ]; then
                 echo -e "  ${RED}⚠ Warning: No KeycloakUsers generated in chapter mode${RESET}"
             fi
-            if [ "${KEYCLOAK_GROUPS}" -eq 0 ]; then
+            if [ "${GROUPS_NUM:-0}" -eq 0 ]; then
                 echo -e "  ${RED}⚠ Warning: No KeycloakGroups generated in chapter mode${RESET}"
             fi
         else
             # Main mode: Should have Realm, NO Users or Groups
-            if [ "${KEYCLOAK_REALM}" -eq 0 ]; then
+            REALM_NUM=$(echo "$KEYCLOAK_REALM" | tr -d '\n')
+            USERS_NUM=$(echo "$KEYCLOAK_USERS" | tr -d '\n')
+            GROUPS_NUM=$(echo "$KEYCLOAK_GROUPS" | tr -d '\n')
+            if [ "${REALM_NUM:-0}" -eq 0 ]; then
                 echo -e "  ${RED}⚠ Warning: No KeycloakRealm generated in main mode${RESET}"
             fi
-            if [ "${KEYCLOAK_USERS}" -gt 0 ]; then
+            if [ "${USERS_NUM:-0}" -gt 0 ]; then
                 echo -e "  ${RED}⚠ Warning: KeycloakUsers should not be in main covenant${RESET}"
             fi
-            if [ "${KEYCLOAK_GROUPS}" -gt 0 ]; then
+            if [ "${GROUPS_NUM:-0}" -gt 0 ]; then
                 echo -e "  ${RED}⚠ Warning: KeycloakGroups should not be in main covenant${RESET}"
             fi
         fi
@@ -329,8 +343,8 @@ case $MODE in
 
         # Show Vault resources
         echo -e "${BLUE}Vault Resources:${RESET}"
-        VAULT_SECRETS=$(grep -c "kind: VaultSecret" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
-        RANDOM_SECRETS=$(grep -c "kind: RandomSecret" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        VAULT_SECRETS=$(grep -c "kind: VaultSecret$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        RANDOM_SECRETS=$(grep -c "kind: RandomSecret$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
 
         echo -e "  VaultSecrets: ${YELLOW}${VAULT_SECRETS}${RESET}"
         echo -e "  RandomSecrets: ${YELLOW}${RANDOM_SECRETS}${RESET}"
@@ -338,32 +352,35 @@ case $MODE in
         echo ""
 
         # Show ApplicationSet (main mode only)
-        APPLICATIONSETS=$(grep -c "kind: ApplicationSet" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        APPLICATIONSETS=$(grep -c "kind: ApplicationSet$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        APPSETS_NUM=$(echo "$APPLICATIONSETS" | tr -d '\n')
         if [ -n "$CHAPTER_FILTER" ]; then
             # Chapter mode: Should NOT have ApplicationSet
-            if [ "${APPLICATIONSETS}" -gt 0 ]; then
+            if [ "${APPSETS_NUM:-0}" -gt 0 ]; then
                 echo -e "${RED}⚠ ERROR: ApplicationSet should not be in chapter mode${RESET}"
             fi
         else
             # Main mode: Should have ApplicationSet
             echo -e "${BLUE}ArgoCD Resources:${RESET}"
             echo -e "  ApplicationSets: ${YELLOW}${APPLICATIONSETS}${RESET}"
-            if [ "${APPLICATIONSETS}" -eq 0 ]; then
+            if [ "${APPSETS_NUM:-0}" -eq 0 ]; then
                 echo -e "  ${RED}⚠ Warning: No ApplicationSet generated in main mode${RESET}"
             fi
             echo ""
         fi
 
         # Show Jobs (post-provisioning) - only in chapter mode
-        JOBS=$(grep -c "kind: Job" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
-        if [ "${JOBS}" -gt 0 ]; then
+        JOBS=$(grep -c "kind: Job$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        JOBS_NUM=$(echo "$JOBS" | tr -d '\n')
+        if [ "${JOBS_NUM:-0}" -gt 0 ]; then
             echo -e "${BLUE}Post-Provisioning Jobs:${RESET}"
             echo -e "  Jobs: ${YELLOW}${JOBS}${RESET}"
             echo ""
         fi
 
         # List KeycloakClient names
-        if [ "$KEYCLOAK_CLIENTS" -gt 0 ]; then
+        CLIENTS_NUM=$(echo "$KEYCLOAK_CLIENTS" | tr -d '\n')
+        if [ "${CLIENTS_NUM:-0}" -gt 0 ]; then
             echo -e "${BLUE}KeycloakClients:${RESET}"
             grep -A2 "kind: KeycloakClient" "$TEMP_OUTPUT" | grep "name:" | awk '{print "  - " $2}' | head -10
             if [ "$KEYCLOAK_CLIENTS" -gt 10 ]; then
@@ -373,7 +390,8 @@ case $MODE in
         fi
 
         # List VaultSecret names
-        if [ "$VAULT_SECRETS" -gt 0 ]; then
+        VSECRETS_NUM=$(echo "$VAULT_SECRETS" | tr -d '\n')
+        if [ "${VSECRETS_NUM:-0}" -gt 0 ]; then
             echo -e "${BLUE}VaultSecrets:${RESET}"
             grep -A2 "kind: VaultSecret" "$TEMP_OUTPUT" | grep "name:" | awk '{print "  - " $2}' | head -10
             if [ "$VAULT_SECRETS" -gt 10 ]; then

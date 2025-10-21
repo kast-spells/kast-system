@@ -39,11 +39,26 @@ Usage: {{- include "summon.pv" (list $root $name $volume) }}
 {{- $baseName := default (include "common.name" $root) (index . 3) }}
 {{/* Use Runic Indexer to find CSI configuration from lexicon */}}
 {{- $csiConfig := dict }}
-{{- if and $root.Values.lexicon $volume.storageClass }}
-  {{- $selectors := dict "storageClass" $volume.storageClass }}
-  {{- $runicResult := include "runicIndexer.runicIndexer" (list $root.Values.lexicon $selectors "csi-config" ($root.Values.chapter | default "")) | fromJson }}
-  {{- if $runicResult.results }}
-    {{- $csiConfig = first $runicResult.results }}
+{{- if $root.Values.lexicon }}
+  {{- if $volume.storageClass }}
+    {{/* Try to find by storageClass label first */}}
+    {{- $selectors := dict "storageClass" $volume.storageClass }}
+    {{- $runicResult := include "runicIndexer.runicIndexer" (list $root.Values.lexicon $selectors "csi-config" ($root.Values.chapter.name | default "")) | fromJson }}
+    {{- if $runicResult.results }}
+      {{- $csiConfig = first $runicResult.results }}
+    {{- else }}
+      {{/* If no match by storageClass, try default (empty selector to get default: book) */}}
+      {{- $runicResult = include "runicIndexer.runicIndexer" (list $root.Values.lexicon (dict) "csi-config" ($root.Values.chapter.name | default "")) | fromJson }}
+      {{- if $runicResult.results }}
+        {{- $csiConfig = first $runicResult.results }}
+      {{- end }}
+    {{- end }}
+  {{- else }}
+    {{/* No storageClass specified, use default csi-config */}}
+    {{- $runicResult := include "runicIndexer.runicIndexer" (list $root.Values.lexicon (dict) "csi-config" ($root.Values.chapter.name | default "")) | fromJson }}
+    {{- if $runicResult.results }}
+      {{- $csiConfig = first $runicResult.results }}
+    {{- end }}
   {{- end }}
 {{- end }}
 ---
@@ -93,7 +108,11 @@ spec:
     {{/* Use driver from lexicon if available, otherwise use provided, otherwise fail */}}
     {{- $driver := $csiConfig.driver | default .driver }}
     {{- if not $driver }}
-      {{- fail (printf "CSI driver not found. Specify pv.driver OR add storageClass '%s' to lexicon with type 'csi-config'" $volume.storageClass) }}
+      {{- if $volume.storageClass }}
+        {{- fail (printf "CSI driver not found for storageClass '%s'. Options: 1) Add pv.driver field, 2) Add lexicon entry with type 'csi-config' and labels.storageClass='%s', 3) Add default lexicon entry with type 'csi-config' and labels.default='book'" $volume.storageClass $volume.storageClass) }}
+      {{- else }}
+        {{- fail "CSI driver not found. Options: 1) Add pv.driver field, 2) Specify storageClass, 3) Add default lexicon entry with type 'csi-config' and labels.default='book'" }}
+      {{- end }}
     {{- end }}
     driver: {{ $driver }}
     {{- if .volumeHandle }}

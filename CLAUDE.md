@@ -338,16 +338,22 @@ make clean-output-tests
 # 1. List available covenant books (in proto-the-yaml-life)
 make list-covenant-books
 
-# 2. Test specific covenant book (tests production covenant chart)
+# 2. Test main covenant (generates ApplicationSet)
 make test-covenant-book BOOK=covenant-tyl
 
-# 3. Debug covenant book rendering (full output)
+# 3. Test specific chapter (as ApplicationSet would render it)
+make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl
+
+# 4. Test all chapters (main + all chapter apps) - RECOMMENDED
+make test-covenant-all-chapters BOOK=covenant-tyl
+
+# 5. Debug covenant book rendering (full output)
 make test-covenant-debug BOOK=covenant-tyl
 
-# 4. Test all covenant books
+# 6. Test all covenant books
 make test-covenant
 
-# 5. Add new integration to covenant book
+# 7. Add new integration to covenant book
 # Edit: /home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack/covenant-tyl/conventions/integrations/my-app.yaml
 enabled: true
 clientId: my-app
@@ -357,8 +363,8 @@ redirectUris:
 secret: keycloak-client-my-app  # VaultSecret name
 passPolicyName: simple-password-policy
 
-# 6. Test to verify KeycloakClient and VaultSecret are generated
-make test-covenant-book BOOK=covenant-tyl
+# 8. Test to verify KeycloakClient and VaultSecret are generated
+make test-covenant-all-chapters BOOK=covenant-tyl
 ```
 
 **Covenant generates (Main - no chapterFilter):**
