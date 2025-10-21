@@ -50,6 +50,8 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- $secretName := printf "s3-identities-%s-%s" $s3Provider.name $name }}
 
 {{- /* 1. VaultSecret in APP NAMESPACE (for app consumption) */}}
+{{- /* Only create if app namespace != provider namespace (avoid duplicate when same namespace) */}}
+{{- if ne $root.Release.Namespace $s3Provider.namespace }}
 {{- /* Build dict explicitly to ensure secretName is used */}}
 {{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
   "kast.io/s3-identity" "true"
@@ -73,14 +75,14 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   "serviceAccount" $glyphDefinition.serviceAccount
   "role" $glyphDefinition.role
 )) }}
+{{- end }}
 
 {{- /* 2. VaultSecret in PROVIDER NAMESPACE (for aggregation) */}}
 {{- /* Clean dict with provider credentials only - no app glyphDefinition */}}
 {{- /* Reads from same vault paths where RandomSecrets write (separate secrets per key) */}}
 {{- /* Path: directory only (ending in /), name gets key suffix added by vault.secret */}}
-{{- /* Use -provider suffix to avoid name collision when app and provider are in same namespace */}}
 {{ include "vault.secret" (list $root (dict
-  "name" (printf "%s-provider" $secretName)
+  "name" $secretName
   "nameOverwrite" $identityName
   "namespace" $s3Provider.namespace
   "format" "plain"
