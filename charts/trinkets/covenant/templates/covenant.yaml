@@ -267,12 +267,14 @@ Capabilities:
   "secret" $clientDef.secret
 ) }}
 
-{{/* STEP 8.1: Generate Vault RandomSecret for OIDC client_secret if configured */}}
+{{/* STEP 8.1: Generate Vault Secret for OIDC (client_id static + client_secret random) */}}
 {{- if $clientDef.secret }}
 {{- $secretKey := printf "secret-%s" $clientName }}
 {{- $_ := set $vaultGlyphs $secretKey (dict
-  "type" "randomSecret"
+  "type" "secret"
   "name" $clientDef.secret
+  "format" "env"
+  "staticData" (dict "client_id" (default $clientName $clientDef.clientId))
   "randomKey" "client_secret"
   "passPolicyName" (default "simple-password-policy" $clientDef.passPolicyName)
   "selector" (default dict $clientDef.vaultSelector)
@@ -407,6 +409,8 @@ spec:
   {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
   {{- if eq $glyph.type "randomSecret" }}
     {{- include "vault.randomSecret" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "secret" }}
+    {{- include "vault.secret" (list $root $glyphWithName) }}
   {{- end }}
 {{- end }}
 
