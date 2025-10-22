@@ -22,6 +22,8 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- if $forceVault -}}
     {{- $role = default "vault" $vaultConf.role -}}
     {{- $serviceAccount =  default "vault" $vaultConf.serviceAccount -}}
+  {{- else if and (not $customRole) $serviceAccount -}}
+    {{- $role = $serviceAccount -}}
   {{- end -}}
 authentication:
   path: {{ default $root.Values.spellbook.name $vaultConf.authPath }}
