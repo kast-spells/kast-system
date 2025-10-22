@@ -17,8 +17,8 @@ spec:
   description: {{ default (print "Postgre cluster for" (default (include "common.name" $root ) $glyphDefinition.name)) $glyphDefinition.description }} # NOTE check
 
   # Image XXX
-  {{- with $glyphDefinition.image }} 
-  imageName: {{ include "summon.getImage" (list $root $glyphDefinition) }}  
+  {{- with $glyphDefinition.image }}
+  imageName: {{ include "summon.getImage" (list $root $glyphDefinition) }}
   {{- end}}
 
   # instances XXX
@@ -28,7 +28,7 @@ spec:
   # startDelay XXX
   startDelay: {{ . }} # default 3600
   {{- end}}
-  
+
   # stopDelay  XXX
   {{- with $glyphDefinition.stopDelay }}
   stopDelay: {{ . }} # default 1800
@@ -36,14 +36,14 @@ spec:
 
   # primaryUpdateStrategy XXX
   {{- with $glyphDefinition.primaryUpdateStrategy }}
-  primaryUpdateStrategy: {{ . }} 
+  primaryUpdateStrategy: {{ . }}
   {{- end}}
-  
+
   # Roles XXX
   {{- with $glyphDefinition.roles}}
   managed:
      roles:
-       {{- toYaml . | nindent 6 }} 
+       {{- toYaml . | nindent 6 }}
   {{- end}}
 
   # superuser XXX
@@ -51,8 +51,7 @@ spec:
   {{- if $glyphDefinition.superuserSecret }}
   superuserSecret:
     name: {{ $glyphDefinition.superuserSecret }}
-  {{- end }} 
-
+  {{- end }}
 
   # Bootstrap XXX
 {{/*# example*/}}
@@ -111,12 +110,12 @@ spec:
     {{- end }}
 
   # resourses XXX
-  {{- with $glyphDefinition.resources }} 
-  {{- toYaml . | nindent 2 }} 
+  {{- with $glyphDefinition.resources }}
+  {{- toYaml . | nindent 2 }}
   {{- end }}
 
   # affinity XXX
-  {{- with $glyphDefinition.affinity }} 
+  {{- with $glyphDefinition.affinity }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
 
