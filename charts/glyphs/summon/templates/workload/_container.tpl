@@ -86,9 +86,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- end }}
   {{- if $container.args }}
   args:
-    {{- range $container.args }}
-    - {{ . }}
-    {{- end }}
+    {{- toYaml $container.args | nindent 4 }}
   {{- end }}
   {{- include "summon.common.workload.probes" ( default dict $container.probes ) | nindent 2 }}
     {{- with $container.resources }}
