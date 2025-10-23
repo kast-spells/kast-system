@@ -309,4 +309,25 @@ subjects:
   )
 )) }}
 
+{{- /* 7. Additional KubernetesAuthEngineRole using serviceAccount name for transparent auth */}}
+{{- /* This allows VaultSecrets to use role: {name}-s3-aggregator-pod (same as serviceAccount) */}}
+{{- /* The vault.connect logic defaults role=serviceAccount when no customRole is provided */}}
+{{- /* So this makes the auth "just work" without explicit role configuration */}}
+---
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: KubernetesAuthEngineRole
+metadata:
+  name: {{ $name }}-s3-aggregator-pod
+  namespace: {{ $vault.namespace }}
+spec:
+  {{- include "vault.connect" (list $root $vault "True") | nindent 2 }}
+  path: {{ default $root.Values.spellbook.name $vault.path }}
+  policies:
+    - {{ $name }}-s3-identities
+  targetServiceAccounts:
+    - {{ $name }}-s3-aggregator-pod
+  targetNamespaces:
+    targetNamespaces:
+      - {{ $root.Release.Namespace }}
+
 {{- end }}
