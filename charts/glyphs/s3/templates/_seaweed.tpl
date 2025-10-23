@@ -112,6 +112,50 @@ data:
 
     echo "✅ Secret updated successfully"
 
+    # Create buckets for each identity
+    echo "🪣 Creating buckets..."
+
+    # Get admin credentials for bucket creation
+    ADMIN_ACCESS_KEY=$(kubectl get secret seaweedfs-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
+    ADMIN_SECRET_KEY=$(kubectl get secret seaweedfs-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
+
+    if [ -z "$ADMIN_ACCESS_KEY" ] || [ -z "$ADMIN_SECRET_KEY" ]; then
+      echo "⚠️  Admin credentials not found, skipping bucket creation"
+    else
+      # S3 endpoint (internal service)
+      S3_ENDPOINT="http://seaweedfs-s3.${NAMESPACE}.svc:8333"
+
+      # Extract unique bucket names from identities
+      BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].buckets[]' | grep -v '\*' | sort -u)
+
+      if [ -z "$BUCKET_LIST" ]; then
+        echo "📭 No buckets to create (empty or wildcard only)"
+      else
+        BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
+        echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
+
+        # Create each bucket
+        echo "$BUCKET_LIST" | while IFS= read -r bucket; do
+          if [ -n "$bucket" ]; then
+            echo "  🪣 Creating bucket: $bucket"
+
+            # Use curl with AWS Signature v4 (simplified - SeaweedFS accepts without signature for internal use)
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X PUT \
+              -H "Authorization: AWS ${ADMIN_ACCESS_KEY}:${ADMIN_SECRET_KEY}" \
+              "${S3_ENDPOINT}/${bucket}")
+
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "409" ]; then
+              # 200 = created, 409 = already exists
+              echo "    ✅ Bucket ready: $bucket"
+            else
+              echo "    ⚠️  Unexpected response code: $HTTP_CODE for bucket: $bucket"
+            fi
+          fi
+        done
+      fi
+    fi
+
     # Restart seaweedfs-s3 deployment to reload config
     echo "🔄 Restarting seaweedfs-s3 deployment..."
     kubectl rollout restart deployment/seaweedfs-s3 -n ${NAMESPACE} || true
