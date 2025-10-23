@@ -70,7 +70,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
   )
   "labels" $s3Labels
   "selector" $glyphDefinition.selector
-  "passPolicyName" $glyphDefinition.passPolicyName
+  "passPolicyName" (default "short-policy" $glyphDefinition.passPolicyName)
   "refreshPeriod" $glyphDefinition.refreshPeriod
   "serviceAccount" $glyphDefinition.serviceAccount
   "role" $glyphDefinition.role
