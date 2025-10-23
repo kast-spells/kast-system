@@ -15,40 +15,56 @@ Usage:
  */}}
 {{- define "summon.serviceAccount" }}
 {{- $root := . }}
-{{- if $root.Values.serviceAccount.enabled }}
+{{- $glyphDefinition := dict }}
+{{- $saConfig := dict }}
+
+{{/* Detect if called with glyph pattern (list) or direct (root context) */}}
+{{- if kindIs "slice" . }}
+  {{- $root = index . 0 }}
+  {{- $glyphDefinition = index . 1 }}
+  {{/* Glyph mode: use glyphDefinition directly */}}
+  {{- $saConfig = $glyphDefinition }}
+{{- else }}
+  {{/* Direct mode: use Values.serviceAccount */}}
+  {{- $saConfig = $root.Values.serviceAccount }}
+{{- end }}
+
+{{- if $saConfig.enabled }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ default (include "common.name" $root) $root.Values.serviceAccount.name }}
+  name: {{ default (include "common.name" $root) $saConfig.name }}
+  {{- if $saConfig.namespace }}
+  namespace: {{ $saConfig.namespace }}
+  {{- end }}
   labels:
     {{- include "common.labels" $root | nindent 4 }}
-  {{- with $root.Values.serviceAccount.labels }}
+  {{- with $saConfig.labels }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}    
+  {{- end }}
   annotations:
     {{- include "common.annotations" $root | nindent 4 }}
-  {{- with $root.Values.serviceAccount.annotations }}
+  {{- with $saConfig.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- if $root.Values.serviceAccount.secret }}
+{{- if $saConfig.secret }}
 secrets:
-  - name: {{ $root.Values.serviceAccount.secret }}
-  {{- end }}
-  {{- if $root.Values.serviceAccount.automountServiceAccountToken }}
-automountServiceAccountToken:
-  - name: true
-  {{- end }}
-  {{- if $root.Values.serviceAccount.imagePullSecrets }}
-    {{- if eq (kindOf $root.Values.serviceAccount.imagePullSecrets) "string" }}
-secrets: ##TODO WTF
- - name: {{ $root.Values.serviceAccount.imagePullSecrets }}
-    {{- else }}
-  secrets:
-      {{ range $root.Values.serviceAccount.imagePullSecrets }}
- - name: {{ . }}
-      {{- end }} 
+  - name: {{ $saConfig.secret }}
+{{- end }}
+{{- if $saConfig.automountServiceAccountToken }}
+automountServiceAccountToken: true
+{{- end }}
+{{- if $saConfig.imagePullSecrets }}
+  {{- if eq (kindOf $saConfig.imagePullSecrets) "string" }}
+imagePullSecrets:
+  - name: {{ $saConfig.imagePullSecrets }}
+  {{- else }}
+imagePullSecrets:
+    {{- range $saConfig.imagePullSecrets }}
+  - name: {{ . }}
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
