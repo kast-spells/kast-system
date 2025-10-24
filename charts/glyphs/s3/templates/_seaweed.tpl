@@ -127,7 +127,7 @@ data:
 
       # Extract unique bucket names from identities
       BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].buckets[]' | grep -v '\*' | sort -u)
-
+      BUCKET_LIST=[]
       if [ -z "$BUCKET_LIST" ]; then
         echo "📭 No buckets to create (empty or wildcard only)"
       else
