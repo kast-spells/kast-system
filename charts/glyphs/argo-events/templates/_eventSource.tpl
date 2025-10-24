@@ -52,7 +52,7 @@ Example glyphDefinition (resource):
             operation: "="
             value: myapp
         expression: |
-          has(body.metadata.annotations['kast.io/action'])
+          has(body.metadata.annotations['kast.ing/action'])
  */}}
 {{- define "argo-events.eventSource" }}
 {{- $root := index . 0 }}

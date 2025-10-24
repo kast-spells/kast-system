@@ -122,7 +122,7 @@ metadata:
   namespace: {{ $root.Release.Namespace | quote }}
   labels:
     {{- include "tarot.labels" $root | nindent 4 }}
-    kast.io/template: {{ $templateDef.name | quote }}
+    kast.ing/template: {{ $templateDef.name | quote }}
     {{- if $root.Values.workflow.labels }}
     {{- $root.Values.workflow.labels | toYaml | nindent 4 }}
     {{- end }}
@@ -207,7 +207,7 @@ metadata:
   namespace: {{ $root.Release.Namespace | quote }}
   labels:
     {{- include "tarot.labels" $root | nindent 4 }}
-    kast.io/template-type: workflow
+    kast.ing/template-type: workflow
     {{- if $templateDef.labels }}
     {{- $templateDef.labels | toYaml | nindent 4 }}
     {{- end }}
@@ -235,7 +235,7 @@ metadata:
   name: {{ $templateName | quote }}
   labels:
     {{- include "tarot.labels" $root | nindent 4 }}
-    kast.io/template-type: cluster-workflow
+    kast.ing/template-type: cluster-workflow
     {{- if $templateDef.labels }}
     {{- $templateDef.labels | toYaml | nindent 4 }}
     {{- end }}

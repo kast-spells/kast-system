@@ -11,8 +11,8 @@ Common labels with kast-specific additions
 */}}
 {{- define "tarot.labels" -}}
 {{ include "common.labels" . }}
-kast.io/component: tarot
-kast.io/type: trinket
+kast.ing/component: tarot
+kast.ing/type: trinket
 {{- end }}
 
 {{/*

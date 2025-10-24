@@ -87,8 +87,8 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "tarot.labels" . | nindent 4 }}
-    kast.io/workflow-type: custom
-    kast.io/execution-mode: {{ .Values.tarot.executionMode | default "dag" | quote }}
+    kast.ing/workflow-type: custom
+    kast.ing/execution-mode: {{ .Values.tarot.executionMode | default "dag" | quote }}
     {{- if .Values.tarot.labels }}
     {{- .Values.tarot.labels | toYaml | nindent 4 }}
     {{- end }}
