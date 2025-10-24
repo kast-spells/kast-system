@@ -138,18 +138,17 @@ data:
         echo "$BUCKET_LIST" | while IFS= read -r bucket; do
           if [ -n "$bucket" ]; then
             echo "  🪣 Creating bucket: $bucket"
+            s3cmd --access_key=${ADMIN_ACCESS_KEY} \
+                  --secret_key=${ADMIN_SECRET_KEY} \
+                  --host=${S3_ENDPOINT} \
+                  --no-ssl \
+                  --signature-v2 \
+                  mb s3://${bucket}
 
-            # Use curl with AWS Signature v4 (simplified - SeaweedFS accepts without signature for internal use)
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-              -X PUT \
-              -H "Authorization: AWS ${ADMIN_ACCESS_KEY}:${ADMIN_SECRET_KEY}" \
-              "${S3_ENDPOINT}/${bucket}")
-
-            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "409" ]; then
-              # 200 = created, 409 = already exists
-              echo "    ✅ Bucket ready: $bucket"
+            if s3cmd --signature-v2 mb "s3://${bucket}" >/dev/null 2>&1; then
+              echo "✅ Bucket ${bucket} creado correctamente"
             else
-              echo "    ⚠️  Unexpected response code: $HTTP_CODE for bucket: $bucket"
+              echo "❌ Error al crear el bucket ${bucket}"
             fi
           fi
         done
