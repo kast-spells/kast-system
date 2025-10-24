@@ -79,23 +79,6 @@ data:
     SECRET_COUNT=$(echo "$SECRETS_JSON" | jq '.items | length')
     echo "📊 Found $SECRET_COUNT S3 identity secret(s)"
 
-    # if [ "$SECRET_COUNT" -eq 0 ]; then
-    #   echo "⚠️  No S3 identities found, creating empty config"
-    #   IDENTITIES="[]"
-    # else
-    #   # Build identities array from secrets
-    #   IDENTITIES=$(echo "$SECRETS_JSON" | jq -r '
-    #     .items | map({
-    #       name: (.metadata.labels."kast.ing/identity-name" // .metadata.name),
-    #       credentials: [{
-    #         accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
-    #         secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)
-    #       }],
-    #       actions: ((.data.PERMISSIONS // "UmVhZCxXcml0ZQ==") | @base64d | split(",")),
-    #       buckets: ((.data.BUCKETS // "") | @base64d | split(",") | map(select(length > 0)))
-    #     })
-    #   ')
-    # fi
     if [ "$SECRET_COUNT" -eq 0 ]; then
       echo "⚠️  No S3 identities found, creating empty config"
       IDENTITIES="[]"
@@ -153,37 +136,61 @@ data:
     else
       # S3 endpoint (internal service)
       S3_ENDPOINT="http://seaweedfs-s3.${NAMESPACE}.svc:8333"
-
-      # Extract unique bucket names from identities
+      # Extraer nombres únicos de buckets, ignorando wildcards
       BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].buckets[]' | grep -v '\*' | sort -u)
-      BUCKET_LIST=[]
-      if [ -z "$BUCKET_LIST" ]; then
-        echo "📭 No buckets to create (empty or wildcard only)"
-      else
-        BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
-        echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
-        echo ${ADMIN_ACCESS_KEY}
-        # Create each bucket
-        echo "$BUCKET_LIST" | while IFS= read -r bucket; do
-          if [ -n "$bucket" ]; then
-            echo "  🪣 Creating bucket: $bucket"
-            s3cmd --access_key=${ADMIN_ACCESS_KEY} \
-                  --secret_key=${ADMIN_SECRET_KEY} \
-                  --host=${S3_ENDPOINT} \
-                  --host-bucket=${S3_ENDPOINT} \
-                  --no-ssl \
-                  --signature-v2 \
-                  mb s3://${bucket}
 
-            if s3cmd --signature-v2 mb "s3://${bucket}" >/dev/null 2>&1; then
-              echo "✅ Bucket ${bucket} creado correctamente"
-            else
-              echo "❌ Error al crear el bucket ${bucket}"
-            fi
-          fi
-        done
+      if [ -z "$BUCKET_LIST" ]; then
+          echo "📭 No buckets to create (empty or wildcard only)"
+      else
+          BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
+          echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
+
+          for bucket in $BUCKET_LIST; do
+              echo "  🪣 Creating bucket: $bucket"
+              if s3cmd --access_key="${ADMIN_ACCESS_KEY}" \
+                      --secret_key="${ADMIN_SECRET_KEY}" \
+                      --host="${S3_ENDPOINT}" \
+                      --host-bucket="${S3_ENDPOINT}" \
+                      --no-ssl \
+                      --signature-v2 \
+                      mb "s3://${bucket}"; then
+                  echo "✅ Bucket ${bucket} creado correctamente"
+              else
+                  echo "❌ Error al crear el bucket ${bucket}"
+              fi
+          done
       fi
     fi
+    #   # Extract unique bucket names from identities
+    #   BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].buckets[]' | grep -v '\*' | sort -u)
+    #   BUCKET_LIST=[]
+    #   if [ -z "$BUCKET_LIST" ]; then
+    #     echo "📭 No buckets to create (empty or wildcard only)"
+    #   else
+    #     BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
+    #     echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
+    #     echo ${ADMIN_ACCESS_KEY}
+    #     # Create each bucket
+    #     echo "$BUCKET_LIST" | while IFS= read -r bucket; do
+    #       if [ -n "$bucket" ]; then
+    #         echo "  🪣 Creating bucket: $bucket"
+    #         s3cmd --access_key=${ADMIN_ACCESS_KEY} \
+    #               --secret_key=${ADMIN_SECRET_KEY} \
+    #               --host=${S3_ENDPOINT} \
+    #               --host-bucket=${S3_ENDPOINT} \
+    #               --no-ssl \
+    #               --signature-v2 \
+    #               mb s3://${bucket}
+
+    #         if s3cmd --signature-v2 mb "s3://${bucket}" >/dev/null 2>&1; then
+    #           echo "✅ Bucket ${bucket} creado correctamente"
+    #         else
+    #           echo "❌ Error al crear el bucket ${bucket}"
+    #         fi
+    #       fi
+    #     done
+    #   fi
+    # fi
 
     # Restart seaweedfs-s3 deployment to reload config
     echo "🔄 Restarting seaweedfs-s3 deployment..."
