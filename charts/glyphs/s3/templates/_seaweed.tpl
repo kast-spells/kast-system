@@ -67,7 +67,7 @@ data:
   aggregator.sh: |
     #!/bin/bash
     set -euo pipefail
-
+    apk add --no-cache jq s3cmd
     echo "🔍 Starting S3 identity aggregation..."
 
     # Find all S3 identity secrets in current namespace
