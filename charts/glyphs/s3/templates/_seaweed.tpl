@@ -116,8 +116,8 @@ data:
     echo "🪣 Creating buckets..."
 
     # Get admin credentials for bucket creation
-    ADMIN_ACCESS_KEY=$(kubectl get secret seaweedfs-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
-    ADMIN_SECRET_KEY=$(kubectl get secret seaweedfs-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
+    ADMIN_ACCESS_KEY=$(kubectl get secret seaweedfs-s3-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
+    ADMIN_SECRET_KEY=$(kubectl get secret seaweedfs-s3-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
 
     if [ -z "$ADMIN_ACCESS_KEY" ] || [ -z "$ADMIN_SECRET_KEY" ]; then
       echo "⚠️  Admin credentials not found, skipping bucket creation"
