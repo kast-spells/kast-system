@@ -79,6 +79,23 @@ data:
     SECRET_COUNT=$(echo "$SECRETS_JSON" | jq '.items | length')
     echo "📊 Found $SECRET_COUNT S3 identity secret(s)"
 
+    # if [ "$SECRET_COUNT" -eq 0 ]; then
+    #   echo "⚠️  No S3 identities found, creating empty config"
+    #   IDENTITIES="[]"
+    # else
+    #   # Build identities array from secrets
+    #   IDENTITIES=$(echo "$SECRETS_JSON" | jq -r '
+    #     .items | map({
+    #       name: (.metadata.labels."kast.ing/identity-name" // .metadata.name),
+    #       credentials: [{
+    #         accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
+    #         secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)
+    #       }],
+    #       actions: ((.data.PERMISSIONS // "UmVhZCxXcml0ZQ==") | @base64d | split(",")),
+    #       buckets: ((.data.BUCKETS // "") | @base64d | split(",") | map(select(length > 0)))
+    #     })
+    #   ')
+    # fi
     if [ "$SECRET_COUNT" -eq 0 ]; then
       echo "⚠️  No S3 identities found, creating empty config"
       IDENTITIES="[]"
@@ -91,8 +108,20 @@ data:
             accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
             secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)
           }],
-          actions: ((.data.PERMISSIONS // "UmVhZCxXcml0ZQ==") | @base64d | split(",")),
-          buckets: ((.data.BUCKETS // "") | @base64d | split(",") | map(select(length > 0)))
+          actions: (
+            if ((.data.ADMIN // "ZmFsc2U=") | @base64d == "true") then
+              ["Read", "Write", "List", "Admin"]
+            else
+              ((.data.PERMISSIONS // "UmVhZCxXcml0ZQ==") | @base64d | split(","))
+            end
+          ),
+          buckets: (
+            if ((.data.ADMIN // "ZmFsc2U=") | @base64d == "true") then
+              ["*"]
+            else
+              ((.data.BUCKETS // "") | @base64d | split(",") | map(select(length > 0)))
+            end
+          )
         })
       ')
     fi
