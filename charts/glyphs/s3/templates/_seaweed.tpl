@@ -198,7 +198,7 @@ data:
               "containers" (list
                 (dict
                   "name" "aggregator"
-                  "image" "bitnami/kubectl:latest"
+                  "image" "alpine/kubectl:latest"
                   "command" (list "/bin/bash" "-c" "source /scripts/aggregator.sh")
                   "env" (list
                     (dict "name" "NAMESPACE" "value" $root.Release.Namespace)
