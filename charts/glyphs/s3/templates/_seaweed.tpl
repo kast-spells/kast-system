@@ -65,9 +65,9 @@ metadata:
   name: {{ $name }}-s3-aggregator-script
 data:
   aggregator.sh: |
-    #!/bin/bash
+    #!/bin/sh
     set -euo pipefail
-    apk add --no-cache jq s3cmd kuectl
+    apk add --no-cache jq s3cmd
     echo "🔍 Starting S3 identity aggregation..."
 
     # Find all S3 identity secrets in current namespace
@@ -198,8 +198,8 @@ data:
               "containers" (list
                 (dict
                   "name" "aggregator"
-                  "image" "alpine/bash:latest"
-                  "command" (list "/bin/bash" "-c" "source /scripts/aggregator.sh")
+                  "image" "alpine/kubectl:latest"
+                  "command" (list "/bin/sh" "-c" "source /scripts/aggregator.sh")
                   "env" (list
                     (dict "name" "NAMESPACE" "value" $root.Release.Namespace)
                   )
