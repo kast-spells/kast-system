@@ -133,7 +133,7 @@ data:
       else
         BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
         echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
-
+        echo ${ADMIN_ACCESS_KEY}
         # Create each bucket
         echo "$BUCKET_LIST" | while IFS= read -r bucket; do
           if [ -n "$bucket" ]; then
@@ -141,6 +141,7 @@ data:
             s3cmd --access_key=${ADMIN_ACCESS_KEY} \
                   --secret_key=${ADMIN_SECRET_KEY} \
                   --host=${S3_ENDPOINT} \
+                  --host-bucket=${S3_ENDPOINT} \
                   --no-ssl \
                   --signature-v2 \
                   mb s3://${bucket}
