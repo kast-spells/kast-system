@@ -12,7 +12,7 @@ Creates:
 5. Prolicy (vault access for /s3-identities/*)
 
 The aggregator script:
-- Lists all secrets with label kast.io/s3-identity=true
+- Lists all secrets with label kast.ing/s3-identity=true
 - Reads credentials and metadata
 - Builds S3 config JSON
 - Creates/updates ConfigMap
@@ -50,7 +50,7 @@ The aggregator script:
       "eventTypes" (list "ADD" "UPDATE" "DELETE")
       "filter" (dict
         "labels" (list
-          (dict "key" "kast.io/s3-identity" "operation" "=" "value" "true")
+          (dict "key" "kast.ing/s3-identity" "operation" "=" "value" "true")
         )
       )
     )
@@ -72,7 +72,7 @@ data:
 
     # Find all S3 identity secrets in current namespace
     SECRETS_JSON=$(kubectl get secrets -n ${NAMESPACE} \
-      -l kast.io/s3-identity=true \
+      -l kast.ing/s3-identity=true \
       -o json)
 
     # Count secrets
@@ -86,7 +86,7 @@ data:
       # Build identities array from secrets
       IDENTITIES=$(echo "$SECRETS_JSON" | jq -r '
         .items | map({
-          name: (.metadata.labels."kast.io/identity-name" // .metadata.name),
+          name: (.metadata.labels."kast.ing/identity-name" // .metadata.name),
           credentials: [{
             accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
             secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)
