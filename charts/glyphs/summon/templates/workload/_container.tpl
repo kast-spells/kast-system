@@ -88,6 +88,31 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   args:
     {{- toYaml $container.args | nindent 4 }}
   {{- end }}
+  {{- if $container.lifecycle }}
+  lifecycle:
+    {{- if $container.lifecycle.postStart }}
+    postStart:
+      {{- if $container.lifecycle.postStart.exec }}
+      exec:
+        command:
+          {{- toYaml $container.lifecycle.postStart.exec.command | nindent 10 }}
+      {{- else if $container.lifecycle.postStart.httpGet }}
+      httpGet:
+        {{- toYaml $container.lifecycle.postStart.httpGet | nindent 8 }}
+      {{- end }}
+    {{- end }}
+    {{- if $container.lifecycle.preStop }}
+    preStop:
+      {{- if $container.lifecycle.preStop.exec }}
+      exec:
+        command:
+          {{- toYaml $container.lifecycle.preStop.exec.command | nindent 10 }}
+      {{- else if $container.lifecycle.preStop.httpGet }}
+      httpGet:
+        {{- toYaml $container.lifecycle.preStop.httpGet | nindent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
   {{- include "summon.common.workload.probes" ( default dict $container.probes ) | nindent 2 }}
     {{- with $container.resources }}
   resources:
