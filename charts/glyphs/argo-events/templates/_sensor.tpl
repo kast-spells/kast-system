@@ -345,6 +345,15 @@ spec:
       retryStrategy:
         {{- .retryStrategy | toYaml | nindent 8 }}
       {{- end }}
+      {{- if .rateLimit }}
+      rateLimit:
+        {{- with .rateLimit.unit }}
+        unit: {{ . }}
+        {{- end }}
+        {{- with .rateLimit.requestsPerUnit }}
+        requestsPerUnit: {{ . }}
+        {{- end }}
+      {{- end }}
       {{- if .parameters }}
       parameters:
         {{- range .parameters }}

@@ -218,6 +218,10 @@ data:
     (dict
       "name" "run-aggregator"
       "type" "k8s"
+      "rateLimit" (dict
+        "unit" "Minute"
+        "requestsPerUnit" 1
+      )
       "k8s" (dict
         "group" ""
         "version" "v1"
