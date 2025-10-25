@@ -156,9 +156,22 @@ data:
       exit 0
     }
 
-    # Give SeaweedFS a few seconds to fully load config after becoming ready
-    echo "💤 Waiting 5s for S3 config to load..."
+    # Give SeaweedFS a few seconds to fully start
+    echo "💤 Waiting 5s for SeaweedFS to fully start..."
     sleep 5
+
+    # Send SIGHUP to S3 pod to reload config (SeaweedFS only loads config on SIGHUP, not at startup)
+    echo "📡 Sending SIGHUP to S3 pod to load config..."
+    S3_POD=$(kubectl get pod -n ${NAMESPACE} -l app.kubernetes.io/name=seaweedfs-s3 -o jsonpath='{.items[0].metadata.name}')
+    if [ -n "$S3_POD" ]; then
+        kubectl exec -n ${NAMESPACE} $S3_POD -- kill -HUP 1 || {
+            echo "⚠️  Failed to send SIGHUP, auth may not work"
+        }
+        echo "⏳ Waiting 3s for config to load..."
+        sleep 3
+    else
+        echo "⚠️  Could not find S3 pod, skipping SIGHUP"
+    fi
 
     # Create buckets for each identity
     echo "🪣 Creating buckets..."
@@ -342,6 +355,12 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "patch"]
