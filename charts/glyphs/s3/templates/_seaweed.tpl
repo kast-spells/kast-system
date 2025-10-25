@@ -167,8 +167,8 @@ data:
         kubectl exec -n ${NAMESPACE} $S3_POD -- kill -HUP 1 || {
             echo "⚠️  Failed to send SIGHUP, auth may not work"
         }
-        echo "⏳ Waiting 3s for config to load..."
-        sleep 3
+        echo "⏳ Waiting 10s for config to load and IAM to update..."
+        sleep 10
     else
         echo "⚠️  Could not find S3 pod, skipping SIGHUP"
     fi
