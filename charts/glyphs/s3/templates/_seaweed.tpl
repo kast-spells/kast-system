@@ -163,6 +163,7 @@ data:
     kubectl rollout restart deployment/seaweedfs-s3 -n ${NAMESPACE} || true
 
     # Wait for deployment to be ready (max 60s)
+    # Pod will automatically send SIGHUP to itself via lifecycle.postStart hook
     echo "⏳ Waiting for seaweedfs-s3 to be ready..."
     kubectl wait --for=condition=available --timeout=60s deployment/seaweedfs-s3 -n ${NAMESPACE} || {
       echo "⚠️  Deployment did not become ready in time, skipping bucket creation"
@@ -170,22 +171,9 @@ data:
       exit 0
     }
 
-    # Give SeaweedFS a few seconds to fully start
-    echo "💤 Waiting 5s for SeaweedFS to fully start..."
-    sleep 5
-
-    # Send SIGHUP to S3 pod to reload config (SeaweedFS only loads config on SIGHUP, not at startup)
-    echo "📡 Sending SIGHUP to S3 pod to load config..."
-    S3_POD=$(kubectl get pod -n ${NAMESPACE} -l app.kubernetes.io/name=seaweedfs-s3 -o jsonpath='{.items[0].metadata.name}')
-    if [ -n "$S3_POD" ]; then
-        kubectl exec -n ${NAMESPACE} $S3_POD -- kill -HUP 1 || {
-            echo "⚠️  Failed to send SIGHUP, auth may not work"
-        }
-        echo "⏳ Waiting 10s for config to load and IAM to update..."
-        sleep 10
-    else
-        echo "⚠️  Could not find S3 pod, skipping SIGHUP"
-    fi
+    # Give SeaweedFS extra time for lifecycle hook (postStart: sleep 3 + SIGHUP + config load)
+    echo "💤 Waiting 10s for lifecycle hook to complete and config to load..."
+    sleep 10
 
     # Create buckets for each identity
     echo "🪣 Creating buckets..."
@@ -369,12 +357,6 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "create", "update", "patch"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["pods/exec"]
-    verbs: ["create"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "patch"]
