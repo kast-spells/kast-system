@@ -14,9 +14,16 @@ Creates:
 The aggregator script:
 - Lists all secrets with label kast.ing/s3-identity=true
 - Reads credentials and metadata
-- Builds S3 config JSON
-- Creates/updates ConfigMap
+- Builds S3 config JSON (SeaweedFS format with actions: ["Action:Bucket"])
+- Creates/updates Secret with s3.json
+- Creates buckets using s3cmd
 - Restarts seaweedfs-s3 deployment
+
+Identity permissions logic:
+- Admin users: actions: ["Admin"] (full access)
+- Users with buckets: actions: ["Read:bucket", "Write:bucket", "List:bucket"]
+- Users without buckets or with "*": actions: ["Read", "Write", "List"] (global)
+- Default permissions: Read, Write, List
 */}}
 
 {{- define "s3.seaweed.impl" -}}
@@ -49,6 +56,7 @@ The aggregator script:
       "resource" "secrets"
       "eventTypes" (list "ADD" "UPDATE" "DELETE")
       "filter" (dict
+        "afterStart" true
         "labels" (list
           (dict "key" "kast.ing/s3-identity" "operation" "=" "value" "true")
         )
@@ -85,27 +93,32 @@ data:
     else
       # Build identities array from secrets
       IDENTITIES=$(echo "$SECRETS_JSON" | jq -r '
-        .items | map({
-          name: (.metadata.labels."kast.ing/identity-name" // .metadata.name),
-          credentials: [{
-            accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
-            secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)
-          }],
-          actions: (
-            if ((.data.ADMIN // "ZmFsc2U=") | @base64d == "true") then
-              ["Read", "Write", "List", "Admin"]
-            else
-              ((.data.PERMISSIONS // "UmVhZCxXcml0ZQ==") | @base64d | split(","))
-            end
-          ),
-          buckets: (
-            if ((.data.ADMIN // "ZmFsc2U=") | @base64d == "true") then
-              ["*"]
-            else
-              ((.data.BUCKETS // "") | @base64d | split(",") | map(select(length > 0)))
-            end
-          )
-        })
+        .items | map(
+          # Extract permissions and buckets first
+          ((.data.PERMISSIONS // "UmVhZCxXcml0ZSxMaXN0") | @base64d | split(",")) as $permissions |
+          ((.data.BUCKETS // "") | @base64d | split(",") | map(select(length > 0))) as $buckets |
+          ((.data.ADMIN // "ZmFsc2U=") | @base64d) as $isAdmin |
+
+          {
+            name: (.metadata.labels."kast.ing/identity-name" // .metadata.name),
+            credentials: [{
+              accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
+              secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)
+            }],
+            actions: (
+              # Si es ADMIN, solo ["Admin"] que da acceso total
+              if ($isAdmin == "true") then
+                ["Admin"]
+              # Si no hay buckets o contiene wildcard "*", usar permisos sin scope
+              elif ($buckets | length == 0) or ($buckets | contains(["*"])) then
+                $permissions
+              # Combinar cada permiso con cada bucket: "Action:Bucket"
+              else
+                [$buckets[] as $bucket | $permissions[] | . + ":" + $bucket]
+              end
+            )
+          }
+        )
       ')
     fi
 
@@ -136,8 +149,8 @@ data:
     else
       # S3 endpoint (internal service)
       S3_ENDPOINT="http://seaweedfs-s3.${NAMESPACE}.svc:8333"
-      # Extraer nombres únicos de buckets, ignorando wildcards
-      BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].buckets[]' | grep -v '\*' | sort -u)
+      # Extraer nombres únicos de buckets desde actions (formato "Action:Bucket"), ignorando wildcards
+      BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].actions[]' | grep ':' | sed 's/.*://' | grep -v '\*' | sort -u)
 
       if [ -z "$BUCKET_LIST" ]; then
           echo "📭 No buckets to create (empty or wildcard only)"
@@ -161,36 +174,6 @@ data:
           done
       fi
     fi
-    #   # Extract unique bucket names from identities
-    #   BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].buckets[]' | grep -v '\*' | sort -u)
-    #   BUCKET_LIST=[]
-    #   if [ -z "$BUCKET_LIST" ]; then
-    #     echo "📭 No buckets to create (empty or wildcard only)"
-    #   else
-    #     BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
-    #     echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
-    #     echo ${ADMIN_ACCESS_KEY}
-    #     # Create each bucket
-    #     echo "$BUCKET_LIST" | while IFS= read -r bucket; do
-    #       if [ -n "$bucket" ]; then
-    #         echo "  🪣 Creating bucket: $bucket"
-    #         s3cmd --access_key=${ADMIN_ACCESS_KEY} \
-    #               --secret_key=${ADMIN_SECRET_KEY} \
-    #               --host=${S3_ENDPOINT} \
-    #               --host-bucket=${S3_ENDPOINT} \
-    #               --no-ssl \
-    #               --signature-v2 \
-    #               mb s3://${bucket}
-
-    #         if s3cmd --signature-v2 mb "s3://${bucket}" >/dev/null 2>&1; then
-    #           echo "✅ Bucket ${bucket} creado correctamente"
-    #         else
-    #           echo "❌ Error al crear el bucket ${bucket}"
-    #         fi
-    #       fi
-    #     done
-    #   fi
-    # fi
 
     # Restart seaweedfs-s3 deployment to reload config
     echo "🔄 Restarting seaweedfs-s3 deployment..."

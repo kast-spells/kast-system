@@ -39,7 +39,7 @@ glyphs:
       type: bucket
       # Optional overrides:
       # bucket: custom-bucket-name  # default: {book}-{chapter}-{name}
-      # permissions: ["Read", "Write", "List"]  # default: ["Read", "Write"]
+      # permissions: ["Read", "Write", "List"]  # default: ["Read", "Write", "List"]
       # pattern: true  # adds -* suffix for wildcard access
       # pattern: ["prefix-*", "*-suffix"]  # custom bucket patterns
       # passPolicyName: short-policy  # default
