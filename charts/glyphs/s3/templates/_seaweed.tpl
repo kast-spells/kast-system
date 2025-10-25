@@ -16,14 +16,21 @@ The aggregator script:
 - Reads credentials and metadata
 - Builds S3 config JSON (SeaweedFS format with actions: ["Action:Bucket"])
 - Creates/updates Secret with s3.json
-- Creates buckets using s3cmd
 - Restarts seaweedfs-s3 deployment
+- Waits for deployment to be ready
+- Creates buckets using s3cmd with admin credentials
 
 Identity permissions logic:
 - Admin users: actions: ["Admin"] (full access)
 - Users with buckets: actions: ["Read:bucket", "Write:bucket", "List:bucket"]
 - Users without buckets or with "*": actions: ["Read", "Write", "List"] (global)
 - Default permissions: Read, Write, List
+
+Bucket creation:
+- Waits for SeaweedFS to reload config after restart
+- Uses seaweedfs-s3-admin credentials (must have ADMIN: true label)
+- Creates all buckets found in identity actions (ignores wildcards)
+- Idempotent: fails gracefully if bucket exists
 */}}
 
 {{- define "s3.seaweed.impl" -}}
@@ -137,6 +144,22 @@ data:
 
     echo "✅ Secret updated successfully"
 
+    # Restart seaweedfs-s3 deployment to reload config
+    echo "🔄 Restarting seaweedfs-s3 deployment..."
+    kubectl rollout restart deployment/seaweedfs-s3 -n ${NAMESPACE} || true
+
+    # Wait for deployment to be ready (max 60s)
+    echo "⏳ Waiting for seaweedfs-s3 to be ready..."
+    kubectl wait --for=condition=available --timeout=60s deployment/seaweedfs-s3 -n ${NAMESPACE} || {
+      echo "⚠️  Deployment did not become ready in time, skipping bucket creation"
+      echo "🎉 S3 aggregation complete (buckets creation skipped)"
+      exit 0
+    }
+
+    # Give SeaweedFS a few seconds to fully load config after becoming ready
+    echo "💤 Waiting 5s for S3 config to load..."
+    sleep 5
+
     # Create buckets for each identity
     echo "🪣 Creating buckets..."
 
@@ -166,18 +189,14 @@ data:
                       --host-bucket="${S3_ENDPOINT}" \
                       --no-ssl \
                       --signature-v2 \
-                      mb "s3://${bucket}"; then
+                      mb "s3://${bucket}" 2>&1; then
                   echo "✅ Bucket ${bucket} creado correctamente"
               else
-                  echo "❌ Error al crear el bucket ${bucket}"
+                  echo "⚠️  Bucket ${bucket} creation failed (may already exist)"
               fi
           done
       fi
     fi
-
-    # Restart seaweedfs-s3 deployment to reload config
-    echo "🔄 Restarting seaweedfs-s3 deployment..."
-    kubectl rollout restart deployment/seaweedfs-s3 -n ${NAMESPACE} || true
 
     echo "🎉 S3 aggregation complete!"
 
