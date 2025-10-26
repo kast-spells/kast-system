@@ -48,7 +48,8 @@ Bucket creation:
 
 {{- $eventBus := index $eventBuses 0 }}
 
-{{- /* 1. EventSource - Watching secrets in seaweedfs namespace */}}
+{{- /* 1. EventSource - Watching secrets in provider namespace */}}
+{{- /* EventSource lives in EventBus namespace but watches secrets in provider namespace */}}
 {{ include "argo-events.eventSource" (list $root (dict
   "name" (printf "%s-s3-secrets" $name)
   "eventBusName" $eventBus.name
