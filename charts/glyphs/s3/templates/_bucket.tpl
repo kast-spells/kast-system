@@ -29,7 +29,7 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- /* Generate identity name and defaults */}}
 {{- $identityName := printf "%s-%s-%s" $root.Values.spellbook.name $root.Values.chapter.name $name }}
 {{- $bucketName := default (printf "%s-%s-%s" $root.Values.spellbook.name $root.Values.chapter.name $name) $glyphDefinition.bucket }}
-{{- $permissions := default (list "Read" "Write") $glyphDefinition.permissions }}
+{{- $permissions := default (list "Admin") $glyphDefinition.permissions }}
 
 {{- /* Bucket patterns: exact bucket by default, pattern:true adds -*, pattern:[list] uses custom patterns */}}
 {{- $bucketPatterns := list }}
