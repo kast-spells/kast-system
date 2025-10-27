@@ -68,13 +68,21 @@ spec:
     - name: {{ $keyName | lower | replace "_" "-" }}
       requestType: GET
       path: {{ include "generateSecretPath" (list $root (dict "name" (printf "%s-%s" $glyphDefinition.name ($keyName | lower | replace "_" "-")) "path" $glyphDefinition.path) $vaultConf "") }}
+      {{- if $glyphDefinition.customRole }}
+      {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount) $glyphDefinition.customRole) | nindent 6 }}
+      {{- else }}
       {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount)) | nindent 6 }}
+      {{- end }}
     {{- end }}
   {{- else }}
     - name: secret
       requestType: GET
       path: {{ include "generateSecretPath" ( list $root $glyphDefinition $vaultConf "" ) }}
-      {{- include "vault.connect" (list $root $vaultConf  "" ( default "" $glyphDefinition.serviceAccount )) | nindent 6 }}
+      {{- if $glyphDefinition.customRole }}
+      {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount) $glyphDefinition.customRole) | nindent 6 }}
+      {{- else }}
+      {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount)) | nindent 6 }}
+      {{- end }}
   {{- end }}
   output:
     name: {{ default $glyphDefinition.name $glyphDefinition.nameOverwrite }}
