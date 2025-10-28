@@ -70,9 +70,9 @@ spec:
 
       {{- with $glyphDefinition.postInitApp }} #leer la funcion de cofnigmap en summon
 
-      {{- if .type eq "cm"}}
+      {{- if eq .type "cm" }}
 
-      {{- if .create eq true }}
+      {{- if eq .create true }}
 
       # XXX configmap creation
       {{- $defaultValues := dict "name" (default (print "posgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
