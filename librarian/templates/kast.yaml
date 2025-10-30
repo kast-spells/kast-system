@@ -49,8 +49,15 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- $chapter := dict "name" $chapterName }}
   {{- $chapterLocalAppendix := dict }}
 
-  {{/* Build trinketsByKey for this chapter: book.trinkets < chapter.trinkets */}}
+  {{/* Build trinketsByKey AND defaultTrinket for this chapter: book < chapter */}}
   {{- $chapterTrinketsByKey := dict }}
+  {{- $chapterDefaultTrinket := dict }}
+
+  {{/* Initialize defaultTrinket with book-level defaults */}}
+  {{- if $spellbook.defaultTrinket }}
+    {{- $chapterDefaultTrinket = deepCopy $spellbook.defaultTrinket }}
+  {{- end }}
+
   {{- if $spellbook.trinkets }}
     {{- range $name, $trinket := $spellbook.trinkets }}
       {{- if $trinket.key }}
@@ -69,6 +76,10 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     {{/* Store chapter localAppendix for override */}}
     {{- if $chapterDef.localAppendix }}
       {{- $chapterLocalAppendix = deepCopy $chapterDef.localAppendix }}
+    {{- end }}
+    {{/* Merge chapter.defaultTrinket (book < chapter) */}}
+    {{- if $chapterDef.defaultTrinket }}
+      {{- $_ := mergeOverwrite $chapterDefaultTrinket (deepCopy $chapterDef.defaultTrinket) }}
     {{- end }}
     {{/* Merge chapter.trinkets to chapterTrinketsByKey */}}
     {{- if $chapterDef.trinkets }}
@@ -178,8 +189,8 @@ spec:
           {{- end }}
     {{- end }}
   {{- else }}
-    {{/* defaultTrinket (summon) */}}
-    {{- $defaultTrinket := default $spellbook.defaultTrinket $chapter.defaultTrinket }}
+    {{/* defaultTrinket (summon) - uses merged chapterDefaultTrinket */}}
+    {{- $defaultTrinket := $chapterDefaultTrinket }}
     - repoURL: {{ $defaultTrinket.repository }}
       {{- if $defaultTrinket.chart }}
       chart: {{ $defaultTrinket.chart }}
@@ -267,8 +278,8 @@ spec:
           {{- end }}
     {{- end }}
     {{- else }}
-      {{/* defaultTrinket (summon) - rune fallback */}}
-      {{- $defaultTrinket := default $spellbook.defaultTrinket $chapter.defaultTrinket }}
+      {{/* defaultTrinket (summon) - rune fallback, uses merged chapterDefaultTrinket */}}
+      {{- $defaultTrinket := $chapterDefaultTrinket }}
     - repoURL: {{ $defaultTrinket.repository }}
       {{- if $defaultTrinket.chart }}
       chart: {{ $defaultTrinket.chart }}
