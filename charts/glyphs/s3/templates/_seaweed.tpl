@@ -18,7 +18,7 @@ The aggregator script:
 - Creates/updates Secret with s3.json
 - Restarts seaweedfs-s3 deployment
 - Waits for deployment to be ready
-- Creates buckets using s3cmd with admin credentials
+- Creates buckets using aws-cli with admin credentials
 
 Identity permissions logic:
 - Admin users: actions: ["Admin"] (full access)
@@ -83,7 +83,7 @@ data:
   aggregator.sh: |
     #!/bin/sh
     set -euo pipefail
-    apk add --no-cache jq s3cmd
+    apk add --no-cache jq aws-cli
     echo "🔍 Starting S3 identity aggregation..."
 
     # Find all S3 identity secrets in current namespace
@@ -188,6 +188,12 @@ data:
     else
       # S3 endpoint (internal service)
       S3_ENDPOINT="http://seaweedfs-s3.${NAMESPACE}.svc:8333"
+
+      # Configure aws-cli credentials (signature v2 compatible with SeaweedFS)
+      export AWS_ACCESS_KEY_ID="${ADMIN_ACCESS_KEY}"
+      export AWS_SECRET_ACCESS_KEY="${ADMIN_SECRET_KEY}"
+      export AWS_DEFAULT_REGION="us-east-1"
+
       # Extraer nombres únicos de buckets desde actions (formato "Action:Bucket"), ignorando wildcards
       BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].actions[]' | grep ':' | sed 's/.*://' | grep -v '\*' | sort -u)
 
@@ -199,14 +205,9 @@ data:
 
           for bucket in $BUCKET_LIST; do
               echo "  🪣 Creating bucket: $bucket"
-              if s3cmd --access_key="${ADMIN_ACCESS_KEY}" \
-                      --secret_key="${ADMIN_SECRET_KEY}" \
-                      --host="${S3_ENDPOINT}" \
-                      --host-bucket="${S3_ENDPOINT}" \
-                      --no-ssl \
-                      --signature-v2 \
-                      mb "s3://${bucket}" 2>&1; then
-                  echo "✅ Bucket ${bucket} creado correctamente"
+              if aws s3 mb "s3://${bucket}" \
+                      --endpoint-url="${S3_ENDPOINT}" 2>&1; then
+                  echo "✅ Bucket ${bucket} created successfully"
               else
                   echo "⚠️  Bucket ${bucket} creation failed (may already exist)"
               fi
