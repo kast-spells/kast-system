@@ -90,11 +90,10 @@ spec:
   "enabled" true
   "selector" $glyphDefinition.service.selector
   "subdomain" $glyphDefinition.service.subdomain
-  "prefix" (default (printf "/%s" $resourceName) $glyphDefinition.service.prefix)
-  "rewrite" "/"
-  "host" (printf "%s.%s.svc.cluster.local" $resourceName $root.Release.Namespace)
   "httpRules" (list (dict
-    "prefix" (default (printf "/%s" $resourceName) $glyphDefinition.service.prefix)
+    "prefix" $glyphDefinition.service.prefix
+    "rewrite" "/"
+    "host" (printf "%s.%s.svc.cluster.local" $resourceName $root.Release.Namespace)
     "port" 12000
   ))
 }}
