@@ -59,6 +59,48 @@ Example glyphDefinition (resource):
 {{- $glyphDefinition := index . 1 }}
 {{- $resourceName := default (include "common.name" $root) $glyphDefinition.name }}
 {{- $eventBuses := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "eventbus" $root.Values.chapter.name ) | fromJson) "results" }}
+
+{{/* Generate K8s Service if service.enabled = true */}}
+{{- if and $glyphDefinition.service $glyphDefinition.service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $resourceName }}
+  labels:
+    {{- include "common.labels" $root | nindent 4 }}
+  {{- with $glyphDefinition.service.annotations }}
+  annotations:
+    {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ default "ClusterIP" $glyphDefinition.service.type }}
+  ports:
+    - name: webhook
+      port: 12000
+      targetPort: 12000
+      protocol: TCP
+  selector:
+    eventsource-name: {{ $resourceName }}
+{{- end }}
+
+{{/* Generate VirtualService if service has subdomain or prefix */}}
+{{- if and $glyphDefinition.service $glyphDefinition.service.enabled (or $glyphDefinition.service.subdomain $glyphDefinition.service.prefix) }}
+{{- $vsConfig := dict
+  "enabled" true
+  "selector" $glyphDefinition.service.selector
+  "subdomain" $glyphDefinition.service.subdomain
+  "prefix" (default (printf "/%s" $resourceName) $glyphDefinition.service.prefix)
+  "rewrite" "/"
+  "host" (printf "%s.%s.svc.cluster.local" $resourceName $root.Release.Namespace)
+  "httpRules" (list (dict
+    "prefix" (default (printf "/%s" $resourceName) $glyphDefinition.service.prefix)
+    "port" 12000
+  ))
+}}
+{{- include "istio.virtualService" (list $root $vsConfig) }}
+{{- end }}
+
 {{- range $eventBus := $eventBuses }}
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -79,10 +121,6 @@ spec:
   {{- if $glyphDefinition.template }}
   template:
     {{- $glyphDefinition.template | toYaml | nindent 4 }}
-  {{- end }}
-  {{- if $glyphDefinition.service }}
-  service:
-    {{- $glyphDefinition.service | toYaml | nindent 4 }}
   {{- end }}
   {{- if $glyphDefinition.github }}
   github:
