@@ -21,6 +21,7 @@ Default Permissions:
 - Full access to: {book}/{chapter}/{namespace}/*
 - Read/List: {book}/publics/*, {book}/{chapter}/publics/*, {book}/pipelines/*
 - Write enabled with flags: bookPublicsWrite, chapterPublicsWrite
+- Database credentials: Auto-generated read access to database-{book}-{chapter}/creds/* when postgres/mongodb in lexicon
 
 Usage:
   vault:
@@ -92,6 +93,21 @@ spec:
     path "sys/policies/password/*" {
       capabilities = ["read", "list"]
     }
+
+    {{/* Database credentials - Auto-generated for database engines */}}
+    {{- $hasDatabase := false }}
+    {{- range $lexiconEntry := $root.Values.lexicon }}
+      {{- if or (eq $lexiconEntry.type "postgres") (eq $lexiconEntry.type "mongodb") }}
+        {{- $hasDatabase = true }}
+      {{- end }}
+    {{- end }}
+    {{- if $hasDatabase }}
+    {{- $databaseMount := printf "database-%s-%s" $root.Values.spellbook.name $root.Values.chapter.name }}
+    {{/* Database credentials mount path */}}
+    path "{{ $databaseMount }}/creds/*" {
+      capabilities = ["read"]
+    }
+    {{- end }}
 
     {{/* Extra policies from spellbook */}}
     {{- if ($root.Values.spellbook.prolicy).extraPolicy }}

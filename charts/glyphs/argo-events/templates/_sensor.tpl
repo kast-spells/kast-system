@@ -172,7 +172,7 @@ spec:
     {{- range $eventSource := $eventSources }}
     - name: {{ $eventSource.name }}
       eventSourceName: {{ $eventSource.name }}
-      eventName: {{ $eventSource.name }}
+      eventName: {{ default $eventSource.name $eventSource.eventName }}
       {{- if $glyphDefinition.dependencyFilters }}
       filters:
         {{- $glyphDefinition.dependencyFilters | toYaml | nindent 8 }}

@@ -1,13 +1,16 @@
 {{/*kast - Kubernetes arcane spelling technology
-Copyright (C) 2023 namenmalkv@gmail.com
+Copyright (C) 2023 namenmalkav@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
+
+NEW: ApplicationSet-based librarian
+Generates 1 ApplicationSet per chapter instead of individual Applications
+ApplicationSets auto-discover spells via git files generator
 */}}
 
-{{- $spellbook :=  dict "appParams" $.Values.appParams  }}
+{{- $spellbook := dict "appParams" $.Values.appParams }}
 {{- $_ := set $spellbook "name" (default $.Release.Name $.Values.name) }}
 
-#se puede agregar un if aca para q si no este definido el libro haga un "ls" y ver q libros hay y haga de multibook on one sweep
-
+{{/* Load book index */}}
 {{- $path := printf "bookrack/%s/index.yaml" (default .Release.Name .Values.name) }}
 {{- if .Files.Glob $path }}
   {{- $default := .Files.Get $path | fromYaml }}
@@ -15,28 +18,26 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- end }}
 
 {{/*
-  Two-pass appendix consolidation system:
-  Pass 1: Collect all appendix (book, chapters, files) into $globalAppendix
-  Pass 2: Generate Applications with multi-source trinket detection per-chapter
+  PASS 1: Consolidate appendix globally (book → chapter → spells)
+  This is the SAME as before, but now we pre-render it into ApplicationSet templates
 */}}
 {{- $globalAppendix := deepCopy (default dict $spellbook.appendix) }}
 
-{{/* PASS 1: Collect all appendix from chapters and files */}}
+{{/* Collect appendix from chapters and all spell files */}}
 {{- range $chapterName := $spellbook.chapters }}
   {{- $pathChapter := print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml" }}
   {{- if $.Files.Glob $pathChapter }}
     {{- $chapterDef := $.Files.Get $pathChapter | fromYaml }}
-    {{/* Merge chapter.appendix to global */}}
     {{- if $chapterDef.appendix }}
       {{- $_ := mergeOverwrite $globalAppendix (deepCopy $chapterDef.appendix) }}
     {{- end }}
   {{- end }}
+
   {{/* Collect appendix from all files in chapter */}}
-  {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml"}}
+  {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml" }}
   {{- range $spellPath, $_ := $.Files.Glob $path }}
     {{- if not (eq $spellPath (print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml")) }}
       {{- $spellDefinition := ($.Files.Get $spellPath | fromYaml) }}
-      {{/* Merge file.appendix to global */}}
       {{- if $spellDefinition.appendix }}
         {{- $_ := mergeOverwrite $globalAppendix (deepCopy $spellDefinition.appendix) }}
       {{- end }}
@@ -44,7 +45,10 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- end }}
 {{- end }}
 
-{{/* PASS 2: Generate Applications with complete $globalAppendix */}}
+{{/*
+  PASS 2: Generate ApplicationSets (one per chapter)
+  Each ApplicationSet will auto-discover spells via git files generator
+*/}}
 {{ range $chapterName := $spellbook.chapters }}
   {{- $chapter := dict "name" $chapterName }}
   {{- $chapterLocalAppendix := dict }}
@@ -52,10 +56,16 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{/* Build trinketsByKey AND defaultTrinket for this chapter: book < chapter */}}
   {{- $chapterTrinketsByKey := dict }}
   {{- $chapterDefaultTrinket := dict }}
+  {{- $chapterAppParams := dict }}
 
-  {{/* Initialize defaultTrinket with book-level defaults */}}
+  {{/* Initialize with book-level defaults */}}
   {{- if $spellbook.defaultTrinket }}
     {{- $chapterDefaultTrinket = deepCopy $spellbook.defaultTrinket }}
+  {{- end }}
+
+  {{/* Initialize appParams with book-level defaults */}}
+  {{- if $spellbook.appParams }}
+    {{- $chapterAppParams = deepCopy $spellbook.appParams }}
   {{- end }}
 
   {{- if $spellbook.trinkets }}
@@ -66,6 +76,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     {{- end }}
   {{- end }}
 
+  {{/* Load chapter definition */}}
   {{- $pathChapter := print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml" }}
   {{- if $.Files.Glob $pathChapter }}
     {{- $chapterDef := $.Files.Get $pathChapter | fromYaml }}
@@ -73,14 +84,22 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     {{- if not $chapter.name }}
       {{- $_ := set $chapter "name" $chapterName }}
     {{- end }}
+
     {{/* Store chapter localAppendix for override */}}
     {{- if $chapterDef.localAppendix }}
       {{- $chapterLocalAppendix = deepCopy $chapterDef.localAppendix }}
     {{- end }}
+
     {{/* Merge chapter.defaultTrinket (book < chapter) */}}
     {{- if $chapterDef.defaultTrinket }}
       {{- $_ := mergeOverwrite $chapterDefaultTrinket (deepCopy $chapterDef.defaultTrinket) }}
     {{- end }}
+
+    {{/* Merge chapter.appParams (book < chapter) */}}
+    {{- if $chapterDef.appParams }}
+      {{- $_ := mergeOverwrite $chapterAppParams (deepCopy $chapterDef.appParams) }}
+    {{- end }}
+
     {{/* Merge chapter.trinkets to chapterTrinketsByKey */}}
     {{- if $chapterDef.trinkets }}
       {{- range $name, $trinket := $chapterDef.trinkets }}
@@ -94,242 +113,301 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
       {{- end }}
     {{- end }}
   {{- end }}
-  {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml"}}
-  {{- range $spellPath, $_ := $.Files.Glob $path }}
-  {{- if not (eq $spellPath (print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml")) }}
-    {{- $appParams := deepCopy $spellbook.appParams }}
-    {{- $spellDefinition := ($.Files.Get $spellPath | fromYaml) }}
-    {{- $_ := mergeOverwrite $appParams (deepCopy (default dict $chapter.appParams) ) }}
-    {{- $_ := mergeOverwrite $appParams (deepCopy (default dict $spellDefinition.appParams )) }}
-    {{- $spell := (dict "name" $spellDefinition.name ) }}
 
-    {{/* Create final appendix: global < chapterLocal < fileLocal */}}
-    {{- $finalAppendix := deepCopy $globalAppendix }}
-    {{- if $chapterLocalAppendix }}
-      {{- $_ := mergeOverwrite $finalAppendix (deepCopy $chapterLocalAppendix) }}
-    {{- end }}
-    {{- if $spellDefinition.localAppendix }}
-      {{- $_ := mergeOverwrite $finalAppendix (deepCopy $spellDefinition.localAppendix) }}
-    {{- end }}
+  {{/* Create final appendix for this chapter: global < chapterLocal */}}
+  {{- $finalAppendix := deepCopy $globalAppendix }}
+  {{- if $chapterLocalAppendix }}
+    {{- $_ := mergeOverwrite $finalAppendix (deepCopy $chapterLocalAppendix) }}
+  {{- end }}
 
-    {{/* Pass appendix as dictionaries with .name field ensured */}}
-    {{- $lexicon := dict }}
-    {{- if $finalAppendix.lexicon }}
-      {{- range $name, $lexiconDef := $finalAppendix.lexicon }}
-        {{/* Ensure .name exists (use dict key if missing) */}}
-        {{- if not (hasKey $lexiconDef "name") }}
-          {{- $_ := set $lexiconDef "name" $name }}
-        {{- end }}
-        {{- $lexicon = set $lexicon $name $lexiconDef }}
+  {{/* Build lexicon and cards with .name ensured */}}
+  {{- $lexicon := dict }}
+  {{- if $finalAppendix.lexicon }}
+    {{- range $name, $lexiconDef := $finalAppendix.lexicon }}
+      {{- if not (hasKey $lexiconDef "name") }}
+        {{- $_ := set $lexiconDef "name" $name }}
       {{- end }}
+      {{- $lexicon = set $lexicon $name $lexiconDef }}
     {{- end }}
+  {{- end }}
 
-    {{- $cards := dict }}
-    {{- if $finalAppendix.cards }}
-      {{- range $cardKey, $cardDef := $finalAppendix.cards }}
-        {{/* Ensure .name exists (use dict key if missing) */}}
-        {{- if not (hasKey $cardDef "name") }}
-          {{- $_ := set $cardDef "name" $cardKey }}
-        {{- end }}
-        {{- $cards = set $cards $cardKey $cardDef }}
+  {{- $cards := dict }}
+  {{- if $finalAppendix.cards }}
+    {{- range $cardKey, $cardDef := $finalAppendix.cards }}
+      {{- if not (hasKey $cardDef "name") }}
+        {{- $_ := set $cardDef "name" $cardKey }}
       {{- end }}
+      {{- $cards = set $cards $cardKey $cardDef }}
     {{- end }}
+  {{- end }}
+
+  {{/* Clean spellbook (remove AppParams, etc.) */}}
+  {{- $cleanSpellbook := merge (dict "spellbook" (deepCopy $spellbook)) }}
+  {{- $_ := unset $cleanSpellbook.spellbook "appParams" }}
+  {{- $_ := unset $cleanSpellbook.spellbook "summon" }}
+  {{- $_ := unset $cleanSpellbook.spellbook "kaster" }}
+  {{- $_ := unset $cleanSpellbook.spellbook "appendix" }}
+  {{- $_ := unset $cleanSpellbook.spellbook "localAppendix" }}
+
+  {{/* Repository config */}}
+  {{- $repoURL := default "git@github.com:the-yaml-life/proto-the-yaml-life.git" $spellbook.repository }}
+  {{- $revision := default "main" $spellbook.revision }}
+
+  {{/* Serialize trinketsByKey for templatePatch */}}
+  {{- $trinketKeysJson := keys $chapterTrinketsByKey | join "," }}
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: {{ $spellDefinition.name }}
+  name: {{ $spellbook.name }}-{{ $chapterName }}-apps
   namespace: {{ default "argocd" $spellbook.argocdNamespace }}
-  {{- with ($spellDefinition.appParams).customFinalizers }}
-  finalizers:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with ($spellDefinition.appParams).annotations }}
+  labels:
+    app.kubernetes.io/name: {{ $spellbook.name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    kast.io/book: {{ $spellbook.name }}
+    kast.io/chapter: {{ $chapterName }}
   annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
+    argocd.argoproj.io/sync-wave: "10"
 spec:
-  project: {{ default (default (default $spellbook.projectName $chapter.projectName ) $spellbook.name ) ($spellDefinition.values).projectName }}
-  {{- $cleanSpellbook := merge (dict "spellbook" (deepCopy $spellbook)) }}
-  {{- $_ =  unset $cleanSpellbook.spellbook "appParams" }}
-  {{- $_ =  unset $cleanSpellbook.spellbook "summon" }}
-  {{- $_ =  unset $cleanSpellbook.spellbook "kaster" }}
-  {{- $_ =  unset $cleanSpellbook.spellbook "appendix" }}
-  {{- $_ =  unset $cleanSpellbook.spellbook "localAppendix" }}
-  sources:
-  {{- /* Source 1: Primary source (custom chart OR defaultTrinket) - ALWAYS */}}
-  {{- if or $spellDefinition.chart $spellDefinition.path }}
-    {{/* Custom chart/path */}}
-    - repoURL: {{ $spellDefinition.repository }}
-      {{- if $spellDefinition.chart }}
-      chart: {{ $spellDefinition.chart }}
-      {{- else }}
-      path: {{ $spellDefinition.path }}
-      {{- end }}
-      targetRevision: {{ $spellDefinition.revision }}
-    {{- if not ($spellDefinition.appParams).noHelm }}
-      helm:
-      {{- if ($spellDefinition.appParams).skipCrds }}
-        skipCrds: true
-      {{- end }}
-        values: |
-          {{- if $spellDefinition.values }}
-          {{- toYaml $spellDefinition.values | nindent 10 }}
-          {{- end }}
-          {{- if ($spellDefinition.appParams).bookData }}
-          {{/* Pass complete book context (spellbook, chapter, lexicon) like defaultTrinket does */}}
-          {{- toYaml $cleanSpellbook | nindent 10 }}
-          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
-          lexicon:
-          {{- toYaml $lexicon | nindent 12 }}
-          {{- if $cards }}
-          cards:
-          {{- toYaml $cards | nindent 12 }}
-          {{- end }}
-          {{- end }}
-    {{- end }}
-  {{- else }}
-    {{/* defaultTrinket (summon) - uses merged chapterDefaultTrinket */}}
-    {{- $defaultTrinket := $chapterDefaultTrinket }}
-    - repoURL: {{ $defaultTrinket.repository }}
-      {{- if $defaultTrinket.chart }}
-      chart: {{ $defaultTrinket.chart }}
-      {{- else }}
-      path: {{ $defaultTrinket.path }}
-      {{- end }}
-      targetRevision: {{ $defaultTrinket.revision }}
-      helm:
-        {{- $values := mergeOverwrite (default dict (deepCopy (default dict $defaultTrinket.values)) ) $spellDefinition }}
-        {{- $_ :=  unset $values "runes" }}
-        {{- $_ :=  unset $values "appParams" }}
-        {{- $_ :=  unset $values "appendix" }}
-        {{- $_ :=  unset $values "localAppendix" }}
-        {{/* Unset all trinket keys */}}
-        {{- range $key, $_ := $chapterTrinketsByKey }}
-          {{- $_ :=  unset $values $key }}
-        {{- end }}
-        values: |
-          {{- toYaml $values | nindent 10 }}
-          {{- toYaml $cleanSpellbook | nindent 10 }}
-          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
-          lexicon:
-          {{- toYaml $lexicon | nindent 12 }}
-          {{- if $cards }}
-          cards:
-          {{- toYaml $cards | nindent 12 }}
-          {{- end }}
-  {{- end }}
-  {{- /* Sources 2..N: Additional trinket sources (dynamic detection) */}}
-  {{- range $trinketKey, $trinket := $chapterTrinketsByKey }}
-    {{- if hasKey $spellDefinition $trinketKey }}
-      {{/* File has this trinket key (e.g., tarot, glyphs, X, etc.) */}}
-    - repoURL: {{ $trinket.repository }}
-      {{- if $trinket.chart }}
-      chart: {{ $trinket.chart }}
-      {{- else }}
-      path: {{ $trinket.path }}
-      {{- end }}
-      targetRevision: {{ $trinket.revision }}
-      helm:
-        values: |
-          {{- if eq $trinketKey "glyphs" }}
-          {{/* kaster - only pass glyphs */}}
-          glyphs:
-          {{- toYaml (index $spellDefinition $trinketKey) | nindent 12 }}
+  goTemplate: true
+  goTemplateOptions: ["missingkey=zero"]
+
+  generators:
+    - git:
+        repoURL: {{ $repoURL }}
+        revision: {{ $revision }}
+        files:
+          - path: "bookrack/{{ $spellbook.name }}/{{ $chapterName }}/*.yaml"
+          - path: "bookrack/{{ $spellbook.name }}/{{ $chapterName }}/index.yaml"
+            exclude: true
+        pathParamPrefix: file
+
+  template:
+    metadata:
+      name: '{{`{{ .name }}`}}'
+      namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+    spec:
+      project: {{ default (default (default $spellbook.projectName $chapter.projectName) $spellbook.name) ($chapter.projectName) }}
+      destination:
+        server: {{ default "https://kubernetes.default.svc" "" }}
+        namespace: '{{`{{ default .name .namespace }}`}}'
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+
+  templatePatch: |
+    metadata:
+      {{`{{- if .appParams }}`}}
+      {{`{{- with .appParams.customFinalizers }}`}}
+      finalizers:
+        '{{`{{- toYaml . | nindent 8 }}`}}'
+      {{`{{- end }}`}}
+      {{`{{- with .appParams.annotations }}`}}
+      annotations:
+        '{{`{{- toYaml . | nindent 8 }}`}}'
+      {{`{{- end }}`}}
+      {{`{{- end }}`}}
+    spec:
+      sources:
+        # Source 1: Primary source (custom chart OR defaultTrinket - summon)
+        {{`{{- if or .chart .path }}`}}
+        # Custom chart
+        - repoURL: '{{`{{ .repository }}`}}'
+          {{`{{- if .chart }}`}}
+          chart: '{{`{{ .chart }}`}}'
+          {{`{{- else }}`}}
+          path: '{{`{{ .path }}`}}'
+          {{`{{- end }}`}}
+          targetRevision: '{{`{{ .revision }}`}}'
+          {{`{{- if not (and .appParams .appParams.noHelm) }}`}}
+          helm:
+            {{`{{- if and .appParams .appParams.skipCrds }}`}}
+            skipCrds: true
+            {{`{{- end }}`}}
+            values: |
+              {{`{{- if .values }}`}}
+              '{{`{{- toYaml .values | nindent 14 }}`}}'
+              {{`{{- end }}`}}
+              {{`{{- if and .appParams .appParams.bookData }}`}}
+              {{- toYaml $cleanSpellbook | nindent 14 }}
+              chapter:
+              {{- toYaml $chapter | nindent 16 }}
+              lexicon:
+              {{- toYaml $lexicon | nindent 16 }}
+              {{- if $cards }}
+              cards:
+              {{- toYaml $cards | nindent 16 }}
+              {{- end }}
+              {{`{{- end }}`}}
+          {{`{{- end }}`}}
+        {{`{{- else }}`}}
+        # defaultTrinket (summon)
+        - repoURL: {{ $chapterDefaultTrinket.repository }}
+          {{- if $chapterDefaultTrinket.chart }}
+          chart: {{ $chapterDefaultTrinket.chart }}
           {{- else }}
-          {{/* tarot and others - pass the key with its data */}}
-          {{ $trinketKey }}:
-          {{- toYaml (index $spellDefinition $trinketKey) | nindent 12 }}
+          path: {{ $chapterDefaultTrinket.path }}
           {{- end }}
-          {{- toYaml $cleanSpellbook | nindent 10 }}
-          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
-          lexicon:
-          {{- toYaml $lexicon | nindent 12 }}
-          {{- if and (eq $trinketKey "tarot") $cards }}
-          cards:
-          {{- toYaml $cards | nindent 12 }}
+          targetRevision: {{ $chapterDefaultTrinket.revision }}
+          helm:
+            values: |
+              {{`{{- $values := . }}`}}
+              {{`{{- $_ := unset $values "runes" }}`}}
+              {{`{{- $_ := unset $values "appParams" }}`}}
+              {{`{{- $_ := unset $values "appendix" }}`}}
+              {{`{{- $_ := unset $values "localAppendix" }}`}}
+              {{- range $key, $_ := $chapterTrinketsByKey }}
+              '{{`{{- $_ := unset $values "`}}{{ $key }}{{`" }}`}}'
+              {{- end }}
+              '{{`{{- toYaml $values | nindent 14 }}`}}'
+              {{- toYaml $cleanSpellbook | nindent 14 }}
+              chapter:
+              {{- toYaml $chapter | nindent 16 }}
+              lexicon:
+              {{- toYaml $lexicon | nindent 16 }}
+              {{- if $cards }}
+              cards:
+              {{- toYaml $cards | nindent 16 }}
+              {{- end }}
+        {{`{{- end }}`}}
+        # Sources 2..N: Dynamic trinket detection
+        {{- range $trinketKey, $trinket := $chapterTrinketsByKey }}
+        {{`{{- if .`}}{{ $trinketKey }}{{` }}`}}
+        - repoURL: {{ $trinket.repository }}
+          {{- if $trinket.chart }}
+          chart: {{ $trinket.chart }}
+          {{- else }}
+          path: {{ $trinket.path }}
           {{- end }}
-    {{- end }}
-  {{- end }}
-  {{- /* runes */}}
-  {{- $ignoreDiff := (default list $appParams.ignoreDifferences) }}
-  {{- range $rune := $spellDefinition.runes }}
-    {{- $ignoreDiff = concat $ignoreDiff (default list ($rune.appParams).ignoreDifferences) }}
-    {{- if not ($rune.appParams).noOverite }}
-      {{- $_ := mergeOverwrite $appParams (default dict $rune.appParams ) }}
-    {{- end }}
-    {{- if or $rune.chart $rune.path }}
-      {{/* Custom chart/path - explicit rune definition */}}
-    - repoURL: {{ $rune.repository }}
-      {{- if $rune.chart }}
-      chart: {{ $rune.chart }}
-      {{- else }}
-      path: {{ $rune.path }}
-      {{- end }}
-      targetRevision: {{ $rune.revision }}
-    {{- if not ($rune.appParams).noHelm }}
-      helm:
-        {{- if ($rune.appParams).skipCrds }}
-        skipCrds: true
+          targetRevision: {{ $trinket.revision }}
+          helm:
+            values: |
+              {{- if eq $trinketKey "glyphs" }}
+              glyphs:
+                '{{`{{- toYaml .glyphs | nindent 16 }}`}}'
+              {{- else }}
+              {{ $trinketKey }}:
+                '{{`{{- toYaml .`}}{{ $trinketKey }}{{` | nindent 16 }}`}}'
+              {{- end }}
+              {{- toYaml $cleanSpellbook | nindent 14 }}
+              chapter:
+              {{- toYaml $chapter | nindent 16 }}
+              lexicon:
+              {{- toYaml $lexicon | nindent 16 }}
+              {{- if and (eq $trinketKey "tarot") $cards }}
+              cards:
+              {{- toYaml $cards | nindent 16 }}
+              {{- end }}
+        {{`{{- end }}`}}
         {{- end }}
-        values: |
-          {{- if $rune.values }}
-          {{- toYaml $rune.values | nindent 10 }}
+        # Runes support (additional sources)
+        {{`{{- range .runes }}`}}
+        {{`{{- if or .chart .path }}`}}
+        - repoURL: '{{`{{ .repository }}`}}'
+          {{`{{- if .chart }}`}}
+          chart: '{{`{{ .chart }}`}}'
+          {{`{{- else }}`}}
+          path: '{{`{{ .path }}`}}'
+          {{`{{- end }}`}}
+          targetRevision: '{{`{{ .revision }}`}}'
+          {{`{{- if not (and .appParams .appParams.noHelm) }}`}}
+          helm:
+            {{`{{- if and .appParams .appParams.skipCrds }}`}}
+            skipCrds: true
+            {{`{{- end }}`}}
+            values: |
+              {{`{{- if .values }}`}}
+              '{{`{{- toYaml .values | nindent 14 }}`}}'
+              {{`{{- end }}`}}
+          {{`{{- end }}`}}
+        {{`{{- else }}`}}
+        - repoURL: {{ $chapterDefaultTrinket.repository }}
+          {{- if $chapterDefaultTrinket.chart }}
+          chart: {{ $chapterDefaultTrinket.chart }}
+          {{- else }}
+          path: {{ $chapterDefaultTrinket.path }}
           {{- end }}
-    {{- end }}
-    {{- else }}
-      {{/* defaultTrinket (summon) - rune fallback, uses merged chapterDefaultTrinket */}}
-      {{- $defaultTrinket := $chapterDefaultTrinket }}
-    - repoURL: {{ $defaultTrinket.repository }}
-      {{- if $defaultTrinket.chart }}
-      chart: {{ $defaultTrinket.chart }}
-      {{- else }}
-      path: {{ $defaultTrinket.path }}
-      {{- end }}
-      targetRevision: {{ $defaultTrinket.revision }}
-      helm:
-        values: |
-          {{- if $rune.values }}
-          {{- toYaml $rune.values | nindent 10 }}
-          {{- end }}
-    {{- end }}
-  {{- end }}
-  destination:
-    {{- $cluster := "" }}
-    {{- $clusterSelector := default (default $spellbook.clusterSelector $chapter.clusterSelector ) $spellDefinition.clusterSelector }}
-    {{- if $clusterSelector }}
-      {{- $clusters := get (include "runicIndexer.runicIndexer" (list $lexicon $clusterSelector "k8s-cluster" $chapter.name ) | fromJson) "results" }}
-      {{- range $clusters }}
-        {{- $cluster = .clusterURL}}
-      {{- end }}
-    {{- end }}
-    server: {{ default "https://kubernetes.default.svc" $cluster }}
-    namespace: {{ default $spellDefinition.name $spellDefinition.namespace }}
-  syncPolicy:
-    {{- if $appParams.managedNamespaceMetadata }}
-      {{- with $appParams.managedNamespaceMetadata }}
-    managedNamespaceMetadata:
-    {{- toYaml . | nindent 6 }}
-      {{- end }}
-    {{- end }}
-    {{- if not $appParams.disableAutoSync }}
-    {{- with $appParams.syncPolicy.automated }}
-    automated:
-    {{- toYaml . | nindent 6 }}
-    {{- end }}
-    {{- end }}
-    {{- with $appParams.syncPolicy.syncOptions }}
-    syncOptions:
-    {{- toYaml . | nindent 6 }}
-    {{- end }}
-    {{- with $appParams.syncPolicy.retry }}
-    retry:
-    {{- toYaml . | nindent 6 }}
-    {{- end }}  
-  {{- if $ignoreDiff }} ##TODO add ignore differences segun runas
-  ignoreDifferences:
-    {{- toYaml $ignoreDiff | nindent 4 }}
-  {{- end }}
-  {{- end }}
-  {{- end }}
+          targetRevision: {{ $chapterDefaultTrinket.revision }}
+          helm:
+            values: |
+              {{`{{- if .values }}`}}
+              '{{`{{- toYaml .values | nindent 14 }}`}}'
+              {{`{{- end }}`}}
+        {{`{{- end }}`}}
+        {{`{{- end }}`}}
+      syncPolicy:
+        {{/* managedNamespaceMetadata - spell override only (no default) */}}
+        {{`{{- if and .appParams .appParams.managedNamespaceMetadata }}`}}
+        managedNamespaceMetadata:
+          '{{`{{- toYaml .appParams.managedNamespaceMetadata | nindent 10 }}`}}'
+        {{`{{- end }}`}}
+        {{/* automated - render unless book/chapter/spell disables */}}
+        {{- if $chapterAppParams.disableAutoSync }}
+        {{/* Book or chapter has disableAutoSync - check if spell overrides */}}
+        {{`{{- if .appParams }}`}}
+        {{`{{- if hasKey .appParams "disableAutoSync" }}`}}
+        {{`{{- if not .appParams.disableAutoSync }}`}}
+        {{/* Spell explicitly enables auto-sync (overriding book/chapter) */}}
+        {{`{{- if .appParams.syncPolicy.automated }}`}}
+        automated:
+          '{{`{{- toYaml .appParams.syncPolicy.automated | nindent 10 }}`}}'
+        {{`{{- else }}`}}
+        automated:
+          prune: true
+          selfHeal: true
+        {{`{{- end }}`}}
+        {{`{{- end }}`}}
+        {{`{{- end }}`}}
+        {{`{{- end }}`}}
+        {{- else }}
+        {{/* Book/chapter has auto-sync enabled - check spell override */}}
+        {{`{{- if .appParams.disableAutoSync }}`}}
+        {{/* Spell explicitly disables auto-sync */}}
+        {{`{{- else }}`}}
+        {{/* Auto-sync enabled - use spell value or default */}}
+        {{`{{- if .appParams.syncPolicy.automated }}`}}
+        automated:
+          '{{`{{- toYaml .appParams.syncPolicy.automated | nindent 10 }}`}}'
+        {{`{{- else }}`}}
+        automated:
+{{- toYaml $chapterAppParams.syncPolicy.automated | nindent 10 }}
+        {{`{{- end }}`}}
+        {{`{{- end }}`}}
+        {{- end }}
+        {{/* syncOptions - use spell value or default */}}
+        {{`{{- if and .appParams .appParams.syncPolicy.syncOptions }}`}}
+        {{/* Spell has custom syncOptions */}}
+        syncOptions:
+          '{{`{{- toYaml .appParams.syncPolicy.syncOptions | nindent 10 }}`}}'
+        {{`{{- else }}`}}
+        {{/* Use default syncOptions (book + chapter merged) */}}
+        syncOptions:
+{{- toYaml $chapterAppParams.syncPolicy.syncOptions | nindent 10 }}
+        {{`{{- end }}`}}
+        {{/* retry - use spell value or default */}}
+        {{`{{- if and .appParams .appParams.syncPolicy.retry }}`}}
+        {{/* Spell has custom retry config */}}
+        retry:
+          '{{`{{- toYaml .appParams.syncPolicy.retry | nindent 10 }}`}}'
+        {{`{{- else }}`}}
+        {{/* Use default retry config (book + chapter merged) */}}
+        retry:
+{{- toYaml $chapterAppParams.syncPolicy.retry | nindent 10 }}
+        {{`{{- end }}`}}
+      {{`{{- $ignoreDiff := list }}`}}
+      {{`{{- if and .appParams .appParams.ignoreDifferences }}`}}
+      {{`{{- $ignoreDiff = .appParams.ignoreDifferences }}`}}
+      {{`{{- end }}`}}
+      {{`{{- range .runes }}`}}
+        {{`{{- if and .appParams .appParams.ignoreDifferences }}`}}
+        {{`{{- $ignoreDiff = concat $ignoreDiff .appParams.ignoreDifferences }}`}}
+        {{`{{- end }}`}}
+      {{`{{- end }}`}}
+      {{`{{- if $ignoreDiff }}`}}
+      ignoreDifferences:
+        '{{`{{- toYaml $ignoreDiff | nindent 8 }}`}}'
+      {{`{{- end }}`}}
 {{- end }}

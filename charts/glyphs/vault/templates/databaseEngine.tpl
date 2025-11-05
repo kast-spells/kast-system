@@ -16,6 +16,10 @@ Example glyph definition:
       postgresSelector:
         app: my-app
 
+Lexicon postgres entry can specify credentials in two ways:
+1. credentialsSecret: name (Kubernetes Secret in same namespace)
+2. vaultSecretPath: path (Vault KV secret path - uses generateSecretPath pattern)
+
 */}}
 
 {{- define "vault.postgresqlDBEngine" -}}
@@ -25,6 +29,7 @@ Example glyph definition:
 {{- $postgresServers := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.postgresSelector) "postgres" $root.Values.chapter.name ) | fromJson) "results" }}
 {{- range $vaultConf := $vaultServer }}
 {{- range $pgConf := $postgresServers }}
+{{- $databaseMount := default (printf "database-%s-%s" $root.Values.spellbook.name $root.Values.chapter.name) (default $glyphDefinition.databaseMount $pgConf.databaseMount) }}
 ---
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: DatabaseSecretEngineConfig
@@ -37,9 +42,17 @@ spec:
     - read-write
     - read-only
   connectionURL: postgresql://{{`{{username}}`}}:{{`{{password}}`}}@{{ $pgConf.host }}:{{ default "5432" $pgConf.port }}/{{ default "*" $pgConf.database }}
-  rootCredentialsFromSecret:
-    name: {{ $pgConf.credentialsSecret }}
-  path: {{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ $pgConf.name }}/
+  rootCredentials:
+    {{- if $pgConf.vaultSecretPath }}
+    vaultSecret:
+      path: {{ include "generateSecretPath" (list $root (dict "name" $pgConf.name "path" $pgConf.vaultSecretPath) $vaultConf "") }}
+    {{- else }}
+    secret:
+      name: {{ required "postgres credentialsSecret or vaultSecretPath is required" $pgConf.credentialsSecret }}
+    {{- end }}
+    passwordKey: password
+    usernameKey: username
+  path: {{ $databaseMount }}
   rootPasswordRotation:
     enable: true
 ---
@@ -49,7 +62,7 @@ metadata:
   name: {{ $pgConf.name }}-read-write
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
-  path: {{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ $pgConf.name }}/
+  path: {{ $databaseMount }}
   dBName: {{ default "*" $pgConf.database }}
   creationStatements:
     - CREATE ROLE "{{`{{name}}`}}" WITH LOGIN PASSWORD '{{`{{password}}`}}' VALID UNTIL '{{`{{expiration}}`}}'; GRANT ALL ON ALL TABLES IN SCHEMA public TO "{{`{{name}}`}}";
@@ -60,7 +73,7 @@ metadata:
   name: {{ $pgConf.name }}-read-only
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
-  path: {{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ $pgConf.name }}/
+  path: {{ $databaseMount }}
   dBName: {{ default "*" $pgConf.database }}
   creationStatements:
     - CREATE ROLE "{{`{{name}}`}}" WITH LOGIN PASSWORD '{{`{{password}}`}}' VALID UNTIL '{{`{{expiration}}`}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO "{{`{{name}}`}}";

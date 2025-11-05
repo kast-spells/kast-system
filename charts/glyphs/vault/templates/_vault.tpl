@@ -42,43 +42,56 @@ connection:
   {{- $glyph := index . 1 }}
   {{- $vaultConf := index . 2 }}
   {{- $create := index . 3 }}
+  {{- $engineType := "kv" }}
+  {{- if gt (len .) 4 }}
+    {{- $engineType = index . 4 }}
+  {{- end }}
   {{- $internalPath := default "publics" $glyph.private }}
   {{- $path := default "" $glyph.path }}
   {{- $name := $glyph.name}}
   {{- if $create }}
   {{- $name = "" }}
   {{- end }}
+  {{- $dataPrefix := "/data" }}
+  {{- if eq $engineType "database" }}
+    {{- $dataPrefix = "" }}
+  {{- end }}
   {{- if eq $path "book" }}
-    {{- printf "%s/data/%s/%s/%s" 
+    {{- printf "%s%s/%s/%s/%s"
               $vaultConf.secretPath
-              $root.Values.spellbook.name 
+              $dataPrefix
+              $root.Values.spellbook.name
               $internalPath
               $name }}
   {{- else if eq $path "chapter" }}
-    {{- printf "%s/data/%s/%s/%s/%s"
+    {{- printf "%s%s/%s/%s/%s/%s"
                 $vaultConf.secretPath
+                $dataPrefix
                 $root.Values.spellbook.name
                 $root.Values.chapter.name
-                $internalPath 
+                $internalPath
                 $name  }}
   {{- else if hasPrefix "/" $path }}
     {{- if hasSuffix "/" $path }}
-      {{- printf "%s/data%s%s"
+      {{- printf "%s%s%s%s"
                   $vaultConf.secretPath
+                  $dataPrefix
                   $path
                   $name }}
     {{- else }}
-      {{- printf "%s/data%s"
+      {{- printf "%s%s%s"
                   $vaultConf.secretPath
+                  $dataPrefix
                   $path }}
     {{- end }}
   {{- else }}
-    {{- printf "%s/data/%s/%s/%s/%s/%s" 
+    {{- printf "%s%s/%s/%s/%s/%s/%s"
           $vaultConf.secretPath
-          $root.Values.spellbook.name 
-          $root.Values.chapter.name 
+          $dataPrefix
+          $root.Values.spellbook.name
+          $root.Values.chapter.name
           $root.Release.Namespace
-          $internalPath 
+          $internalPath
           $name  }}
   {{- end }}
 {{- end }}

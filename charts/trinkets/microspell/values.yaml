@@ -46,6 +46,161 @@ infrastructure:
     enabled: false  # Enable Vault policy creation
     # serviceAccount: custom-sa  # Custom service account for Vault
 
+# ============================================
+# DataStore - PostgreSQL Integration
+# ============================================
+dataStore:
+  psql:
+    enabled: false
+
+    # ==========================================
+    # Cluster Selection / Creation
+    # ==========================================
+    # IF selector is empty → MANAGED (creates new CNPG cluster)
+    # IF selector has values → EXTERNAL (uses existing cluster via runicIndexer)
+    selector: {}
+    # environment: production
+    # tier: shared
+
+    # Cluster name (managed only)
+    # Default: {service-name}-pg
+    clusterName: ""
+
+    # ==========================================
+    # Database Configuration
+    # ==========================================
+    database: ""     # Database name (default: service name)
+    username: ""     # Database username (default: service name)
+
+    # ==========================================
+    # Cluster Configuration (managed only)
+    # Ignored when selector exists
+    # ==========================================
+    cluster:
+      instances: 1
+
+      image: {}
+      # repository: ""
+      # name: ""
+      # tag: ""
+
+      storage:
+        size: 10Gi
+        storageClass: ""
+
+      resources: {}
+      # limits:
+      #   cpu: 2000m
+      #   memory: 4Gi
+      # requests:
+      #   cpu: 500m
+      #   memory: 1Gi
+
+      # Advanced CNPG options
+      startDelay: ""       # Default: 3600
+      stopDelay: ""        # Default: 1800
+      primaryUpdateStrategy: ""
+
+      # Managed roles
+      roles: []
+      # - name: readonly
+      #   login: true
+
+      # PostgreSQL configuration
+      postgresql: {}
+      # parameters:
+      #   max_connections: "200"
+      #   shared_buffers: "2GB"
+
+      # Affinity rules
+      affinity: {}
+
+    # ==========================================
+    # Database Initialization
+    # ==========================================
+    # Behavior:
+    # - NO selector (managed): postInitApp (bootstrap SQL)
+    # - WITH selector (external): Job (schema migration)
+    initDb:
+      enabled: false
+
+      # SQL to execute
+      sql: ""
+      # sql: |
+      #   CREATE EXTENSION IF NOT EXISTS pg_trgm;
+      #   CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY);
+
+      # Or reference ConfigMap
+      configMap:
+        name: ""
+        key: init.sql
+
+      # Job configuration (external clusters only)
+      job:
+        image:
+          repository: postgres
+          tag: "16-alpine"
+        backoffLimit: 3
+        restartPolicy: OnFailure
+
+    # ==========================================
+    # Credentials Configuration
+    # ==========================================
+    # Behavior:
+    # - NO selector (managed): Static superuser + Dynamic app credentials
+    # - WITH selector (external): Dynamic credentials only
+    credentials:
+      # Dynamic credentials configuration
+      dynamic:
+        role: read-write  # read-write | read-only
+        ttl: ""           # "" = infinite (default 30m), "1h" = 1 hour, etc.
+
+      # Superuser configuration (managed only)
+      superuser:
+        enabled: true
+        name: ""  # Default: {service-name}-pg-superuser
+        secretType: kubernetes.io/basic-auth
+        vaultSelector: {}
+
+    # ==========================================
+    # Connection Configuration
+    # ==========================================
+    connection:
+      # Connection string format
+      format: dsn  # dsn | url | separate
+
+      # DSN format string (when format=dsn or url)
+      # Variables: {host}, {port}, {database}, {username}, {password}
+      dsnTemplate: "postgresql://{username}:{password}@{host}:{port}/{database}"
+
+      # Environment variable names
+      envNames:
+        # When format=dsn or url (single env var)
+        dsn: DATABASE_URL
+
+        # When format=separate (multiple env vars)
+        host: DB_HOST
+        port: DB_PORT
+        database: DB_NAME
+        username: DB_USER
+        password: DB_PASSWORD
+
+      # Host pattern (for managed clusters)
+      # Variables: {clusterName}
+      # Available: {clusterName}-rw, {clusterName}-ro, {clusterName}-r
+      host: "{clusterName}-rw"
+
+      # Port
+      port: 5432
+
+      # SSL mode
+      sslMode: disable  # disable | require | verify-ca | verify-full
+
+      # Additional connection parameters
+      params: {}
+      # connect_timeout: 10
+      # application_name: myapp
+
 # Vault secrets integration (simplified from summon)
 secrets: {}
 # # Mount secret as file

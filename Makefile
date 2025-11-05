@@ -693,3 +693,38 @@ test-runic-empty:
 		grep -E "(kind: VirtualService|name:|hosts:)" | \
 		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
 	@echo ""
+
+# =============================================================================
+# LIBRARIAN MIGRATION TESTING (ApplicationSets TDD)
+# =============================================================================
+
+.PHONY: snapshot-librarian test-librarian-appsets compare-librarian-migration tdd-librarian-red tdd-librarian-green tdd-librarian-refactor
+
+LIBRARIAN_SNAPSHOT_DIR := $(OUTPUT_TEST_DIR)/librarian-snapshot
+LIBRARIAN_APPSETS_DIR := $(OUTPUT_TEST_DIR)/librarian-appsets
+
+snapshot-librarian: ## Generate snapshot of current librarian Applications (TDD baseline)
+	@echo "$(BLUE)📸 TDD: Generating librarian Applications snapshot...$(RESET)"
+	@tests/scripts/snapshot-librarian-apps.sh the-yaml-life $(LIBRARIAN_SNAPSHOT_DIR)
+	@echo "$(GREEN)✅ Snapshot saved to $(LIBRARIAN_SNAPSHOT_DIR)$(RESET)"
+
+test-librarian-appsets: ## Test ApplicationSet expansion (simulates git files generator)
+	@echo "$(BLUE)🔮 TDD: Testing ApplicationSet expansion...$(RESET)"
+	@tests/scripts/test-applicationset-expansion.sh the-yaml-life /home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack $(LIBRARIAN_APPSETS_DIR)
+	@echo "$(GREEN)✅ ApplicationSet expansion saved to $(LIBRARIAN_APPSETS_DIR)$(RESET)"
+
+compare-librarian-migration: ## Compare current vs ApplicationSet generated Applications
+	@echo "$(BLUE)🔍 TDD: Comparing librarian migration...$(RESET)"
+	@tests/scripts/compare-librarian-migration.sh $(LIBRARIAN_SNAPSHOT_DIR) $(LIBRARIAN_APPSETS_DIR)
+
+tdd-librarian-red: snapshot-librarian ## TDD Red: Generate snapshot baseline (before ApplicationSets)
+	@echo "$(RED)🔴 TDD RED: Baseline snapshot created$(RESET)"
+	@echo "$(YELLOW)Next: Modify librarian to generate ApplicationSets, then run 'make tdd-librarian-green'$(RESET)"
+
+tdd-librarian-green: test-librarian-appsets compare-librarian-migration ## TDD Green: Test ApplicationSets match snapshot
+	@echo "$(GREEN)🟢 TDD GREEN: ApplicationSets validation$(RESET)"
+
+tdd-librarian-refactor: tdd-librarian-green ## TDD Refactor: Verify after refactoring
+	@echo "$(BLUE)🔵 TDD REFACTOR: Testing after refactoring$(RESET)"
+	@$(MAKE) test-librarian-appsets
+	@$(MAKE) compare-librarian-migration

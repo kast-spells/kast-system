@@ -9,32 +9,48 @@ Parameters:
 - $root: Chart root context (index . 0)
 - $glyphDefinition: Secret configuration object (index . 1)
 
-Path Resolution Examples:
+Generation Types:
+- generationType: "kv" (default) - KV v2 secrets, uses /data/ prefix
+- generationType: "database" - Database dynamic credentials, requires databaseEngine and databaseRole
 
-path: # puede ser absoluto o relativo si es relativo es desde el public del chapter
-path: $chapterName/publics/$secretName
-path: $secretName
-path: /$book/publics/$secretName
+Path Resolution Examples (KV secrets):
 
-spelbook:
-  name: sarasa
-chapter:
-  name: intro
-name: summonName
+path: "chapter" → /$spellbook/$chapter/publics/$secretName
+path: "book" → /$spellbook/publics/$secretName
+path: "/custom/path" → /custom/path/$secretName (absolute)
+path: "summon" → /$spellbook/$chapter/$summonName/publics/$secretName
 
-#cuando path es chapter el path es /$spellbook/$chapter/publics/$secretName
-#cuando path es book es /$spellbook/publics/$secretName
-#cuando path es absolute es /$path
-#cuando path es summon es /$spellbook/$chapter/$summonName/publics/$secretName
-path: chapter # or spellbook or absolute "/algo/aca" (always starts with /) or summon si path no esta definido usa el publics del micro 
+Database Credentials Example:
 
-name: secretName
-format: env # yaml json b64
-b64: false
-path: summon
-keys:
-  - SECRET
-  - OTRO
+glyphs:
+  vault:
+    - type: secret
+      name: myapp-db-creds
+      generationType: "database"
+      databaseEngine: "postgres"      # Name of postgres entry in lexicon
+      databaseRole: "read-write"      # or "read-only"
+      path: "chapter"                 # Optional, defaults to "chapter"
+      format: env
+      serviceAccount: myapp
+      refreshPeriod: 30m
+      keys:
+        - username
+        - password
+
+Generates path: {secretPath}/{book}/{chapter}/publics/{databaseEngine}/creds/{databaseEngine}-{databaseRole}
+Example: secret/mybook/prod/publics/postgres/creds/postgres-read-write
+
+KV Secret Example:
+
+glyphs:
+  vault:
+    - type: secret
+      name: api-credentials
+      format: env
+      path: "chapter"
+      keys:
+        - api-key
+        - api-secret
 
 */}}
 
@@ -77,7 +93,15 @@ spec:
   {{- else }}
     - name: secret
       requestType: GET
+      {{- $generationType := default "kv" $glyphDefinition.generationType }}
+      {{- if eq $generationType "database" }}
+      {{- $engineName := required "databaseEngine is required when generationType=database" $glyphDefinition.databaseEngine }}
+      {{- $roleName := required "databaseRole is required when generationType=database" $glyphDefinition.databaseRole }}
+      {{- $databaseMount := default (printf "database-%s-%s" $root.Values.spellbook.name $root.Values.chapter.name) $glyphDefinition.databaseMount }}
+      path: {{ $databaseMount }}/creds/{{ $engineName }}-{{ $roleName }}
+      {{- else }}
       path: {{ include "generateSecretPath" ( list $root $glyphDefinition $vaultConf "" ) }}
+      {{- end }}
       {{- if $glyphDefinition.customRole }}
       {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount) $glyphDefinition.customRole) | nindent 6 }}
       {{- else }}

@@ -16,6 +16,10 @@ Example glyph definition:
       mongoSelector:
         app: my-app
 
+Lexicon mongodb entry can specify credentials in two ways:
+1. credentialsSecret: name (Kubernetes Secret in same namespace)
+2. vaultSecretPath: path (Vault KV secret path - uses generateSecretPath pattern)
+
 */}}
 
 {{- define "vault.mongoDBEngine" -}}
@@ -25,6 +29,7 @@ Example glyph definition:
 {{- $mongoServers := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.mongoSelector) "mongodb" $root.Values.chapter.name ) | fromJson) "results" }}
 {{- range $vaultConf := $vaultServer }}
 {{- range $mongoConf := $mongoServers }}
+{{- $databaseMount := default (printf "database-%s-%s" $root.Values.spellbook.name $root.Values.chapter.name) (default $glyphDefinition.databaseMount $mongoConf.databaseMount) }}
 ---
 apiVersion: redhatcop.redhat.io/v1alpha1
 kind: DatabaseSecretEngineConfig
@@ -37,9 +42,17 @@ spec:
     - read-write
     - read-only
   connectionURL: mongodb://{{`{{username}}`}}:{{`{{password}}`}}@{{ $mongoConf.host }}:{{ default "27017" $mongoConf.port }}/{{ default "admin" $mongoConf.database }}
-  rootCredentialsFromSecret:
-    name: {{ $mongoConf.credentialsSecret }}
-  path: {{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ $mongoConf.name }}/
+  rootCredentials:
+    {{- if $mongoConf.vaultSecretPath }}
+    vaultSecret:
+      path: {{ include "generateSecretPath" (list $root (dict "name" $mongoConf.name "path" $mongoConf.vaultSecretPath) $vaultConf "") }}
+    {{- else }}
+    secret:
+      name: {{ required "mongodb credentialsSecret or vaultSecretPath is required" $mongoConf.credentialsSecret }}
+    {{- end }}
+    passwordKey: password
+    usernameKey: username
+  path: {{ $databaseMount }}
   rootPasswordRotation:
     enable: true
 ---
@@ -49,7 +62,7 @@ metadata:
   name: {{ $mongoConf.name }}-read-write
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
-  path: {{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ $mongoConf.name }}/
+  path: {{ $databaseMount }}
   dBName: {{ default "admin" $mongoConf.database }}
   creationStatements:
     - '{ "db": "admin", "roles": [{ "role": "readWrite" }, {"role": "read", "db": "{{ default "admin" $mongoConf.database }}"}] }'
@@ -60,7 +73,7 @@ metadata:
   name: {{ $mongoConf.name }}-read-only
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
-  path: {{ $root.Values.spellbook.name }}/{{ $root.Values.chapter.name }}/{{ $mongoConf.name }}/
+  path: {{ $databaseMount }}
   dBName: {{ default "admin" $mongoConf.database }}
   creationStatements:
     - '{ "db": "admin", "roles": [{"role": "read", "db": "{{ default "admin" $mongoConf.database }}"}] }'
