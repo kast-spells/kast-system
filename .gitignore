@@ -31,3 +31,5 @@ bookrak/the-yaml-life
 
 # TDD output test files (generated)
 output-test/
+.serena
+
