@@ -15,7 +15,7 @@ metadata:
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" ( default "" $glyphDefinition.serviceAccount )) | nindent 2 }}
   isKVSecretsEngineV2: true
-  path: {{ include "generateSecretPath" ( list $root $glyphDefinition $vaultConf "true" ) }}
+  path: {{ include "generateSecretPath" ( list $root (dict "name" (default $glyphDefinition.name $glyphDefinition.baseName) "path" $glyphDefinition.path) $vaultConf "" ) }}
   secretKey: {{ default "password" $glyphDefinition.randomKey }}
   secretFormat:
     passwordPolicyName: {{ default "simple-password-policy" $glyphDefinition.passPolicyName }}

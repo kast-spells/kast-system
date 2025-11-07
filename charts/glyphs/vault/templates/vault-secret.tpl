@@ -62,7 +62,7 @@ glyphs:
 {{- if ne false $glyphDefinition.random }}
   {{- if $glyphDefinition.randomKeys }}
     {{- range $keyName := $glyphDefinition.randomKeys }}
-{{ include "vault.randomSecret" (list $root (merge (dict "randomKey" $keyName "name" (printf "%s-%s" $glyphDefinition.name ($keyName | lower | replace "_" "-"))) $glyphDefinition) ) }}
+{{ include "vault.randomSecret" (list $root (merge (dict "randomKey" $keyName "name" (printf "%s-%s" $glyphDefinition.name ($keyName | lower | replace "_" "-")) "baseName" $glyphDefinition.name) $glyphDefinition) ) }}
     {{- end }}
   {{- else if or $glyphDefinition.randomKey $glyphDefinition.random }}
 {{ include "vault.randomSecret" (list $root $glyphDefinition ) }}
@@ -83,7 +83,7 @@ spec:
     {{- range $keyName := $glyphDefinition.randomKeys }}
     - name: {{ $keyName | lower | replace "_" "-" }}
       requestType: GET
-      path: {{ include "generateSecretPath" (list $root (dict "name" (printf "%s-%s" $glyphDefinition.name ($keyName | lower | replace "_" "-")) "path" $glyphDefinition.path) $vaultConf "") }}
+      path: {{ include "generateSecretPath" (list $root $glyphDefinition $vaultConf "") }}
       {{- if $glyphDefinition.customRole }}
       {{- include "vault.connect" (list $root $vaultConf "" (default "" $glyphDefinition.serviceAccount) $glyphDefinition.customRole) | nindent 6 }}
       {{- else }}
