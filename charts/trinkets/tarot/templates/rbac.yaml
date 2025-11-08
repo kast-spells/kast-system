@@ -112,4 +112,27 @@ roleRef:
   name: {{ include "common.name" . }}-cluster-template-reader
   apiGroup: rbac.authorization.k8s.io
 
+{{/* Additional RoleBindings for external triggers (e.g., Argo Events Sensors) */}}
+{{- if .Values.tarot.rbac.triggerServiceAccounts }}
+{{- range .Values.tarot.rbac.triggerServiceAccounts }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "common.name" $ }}-trigger-{{ .name }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" $ | nindent 4 }}
+    kast.ing/trigger-binding: "true"
+subjects:
+  - kind: ServiceAccount
+    name: {{ .serviceAccount }}
+    namespace: {{ .namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "common.name" $ }}-workflow-runner
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}
+
 {{- end }}
