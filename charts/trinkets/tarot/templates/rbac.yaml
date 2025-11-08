@@ -27,7 +27,7 @@ metadata:
 rules:
   # Workflow management
   - apiGroups: ["argoproj.io"]
-    resources: ["workflows", "workflowtemplates"]
+    resources: ["workflows", "workflowtemplates", "workflowtaskresults", "workflowtasksets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   
   # Pod management for workflow execution
