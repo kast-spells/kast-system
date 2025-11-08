@@ -230,11 +230,13 @@ Returns: Main template definition
   dag:
     tasks:
     {{- range $cardName, $cardDef := $allCards }}
+      {{- if ne $cardName "_syntax_test" }}
       {{- $dependencies := list }}
       {{- if $cardDef.depends }}
         {{- $dependencies = $cardDef.depends }}
       {{- end }}
       {{- include "tarot.generateDAGTask" (list $root $cardName $cardDef $dependencies) | nindent 4 }}
+      {{- end }}
     {{- end }}
 
   {{- else if eq $executionMode "steps" }}
@@ -320,9 +322,11 @@ Returns: All card template definitions
 {{- $resolvedCards := index . 2 -}}
 
 {{- range $cardName, $cardDef := $allCards }}
+{{- if ne $cardName "_syntax_test" }}
 {{- $resolvedCard := index $resolvedCards $cardName }}
 {{- $dependencies := include "tarot.getCardDependencies" (list $cardName $cardDef $allCards) | fromJson }}
 {{- include "tarot.generateCardTemplate" (list $root $cardName $cardDef $resolvedCard $dependencies) }}
 {{ "" }}
+{{- end }}
 {{- end }}
 {{- end -}}
