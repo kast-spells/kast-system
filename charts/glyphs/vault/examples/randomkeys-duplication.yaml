@@ -1,0 +1,43 @@
+# Test example for vault randomKeys to verify path generation
+# This validates that randomKeys doesn't cause path duplication
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Test single randomKey that matches the secret name (harbor case)
+    - type: secret
+      name: harbor-admin-password
+      format: plain
+      randomKeys:
+        - HARBOR_ADMIN_PASSWORD
+      passPolicyName: simple-password-policy
+
+    # Test multiple randomKeys (forgejo case)
+    - type: secret
+      name: forgejo-internal-secrets
+      format: plain
+      randomKeys:
+        - INTERNAL_TOKEN
+        - SECRET_KEY
+        - JWT_SECRET
+      passPolicyName: simple-password-policy
+
+    # Test multiple randomKeys with env format
+    - type: secret
+      name: app-secrets
+      format: env
+      randomKeys:
+        - API_KEY
+        - WEBHOOK_SECRET
+      passPolicyName: simple-password-policy
