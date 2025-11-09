@@ -115,12 +115,18 @@ spec:
   arguments:
     {{- .Values.tarot.arguments | toYaml | nindent 4 }}
   {{- end }}
-  
-  {{/* Volumes - use tarot.volumes (workflow-specific) */}}
-  {{- if .Values.tarot.volumes }}
-  {{- $volumeContext := dict "Values" (dict "volumes" .Values.tarot.volumes) -}}
+
+  {{/* Volumes - use tarot.volumes (workflow-specific) + secrets with contentType: file */}}
+  {{- if or .Values.tarot.volumes .Values.tarot.secrets }}
   volumes:
+    {{- if .Values.tarot.volumes }}
+    {{- $volumeContext := dict "Values" (dict "volumes" .Values.tarot.volumes) -}}
     {{- include "summon.common.volumes.volumes" $volumeContext | nindent 4 }}
+    {{- end }}
+    {{- if .Values.tarot.secrets }}
+    {{- $secretContext := dict "Values" (dict "secrets" .Values.tarot.secrets) -}}
+    {{- include "summon.common.volumes.secrets" .Values.tarot.secrets | nindent 4 }}
+    {{- end }}
   {{- end }}
   
   {{/* Node Selection */}}
