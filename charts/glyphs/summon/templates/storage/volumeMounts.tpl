@@ -33,10 +33,17 @@ volumeMounts:
     {{- if ne ( default "file" .contentType ) "env" }}
     {{- $fileName := ( default $name $content.name ) | replace "." "-" }}
 - name: {{ $fileName }}
+  {{- if $content.items }}
+  {{/* If items are defined, mountPath is the directory */}}
+  mountPath: {{ $content.mountPath }}
+  {{- else }}
+  {{/* If no items, mountPath includes filename (legacy behavior) */}}
   mountPath: {{ $content.mountPath }}/{{ ( default $name $content.name ) }}
+  {{- end }}
   {{- if $content.subPath }}
   subPath: {{ $content.subPath }}
-  {{- else }}
+  {{- else if not $content.items }}
+  {{/* Only use default subPath if items are NOT defined (single file mount) */}}
   subPath: {{ $fileName }}
   {{- end }}
     {{- end }}
@@ -50,7 +57,8 @@ volumeMounts:
   mountPath: {{ $content.mountPath }}
   {{- if $content.subPath }}
   subPath: {{ $content.subPath }}
-  {{- else }}
+  {{- else if not $content.items }}
+  {{/* Only use default subPath if items are NOT defined (single file mount) */}}
   subPath: {{ ( default $name $content.name ) | replace "." "-" }}
   {{- end }}
     {{- end }}
