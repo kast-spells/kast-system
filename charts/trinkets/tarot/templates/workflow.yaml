@@ -120,11 +120,10 @@ spec:
   {{- if or .Values.tarot.volumes .Values.tarot.secrets }}
   volumes:
     {{- if .Values.tarot.volumes }}
-    {{- $volumeContext := dict "Values" (dict "volumes" .Values.tarot.volumes) -}}
+    {{- $volumeContext := dict "Values" (dict "volumes" .Values.tarot.volumes) "Release" .Release "Chart" .Chart -}}
     {{- include "summon.common.volumes.volumes" $volumeContext | nindent 4 }}
     {{- end }}
     {{- if .Values.tarot.secrets }}
-    {{- $secretContext := dict "Values" (dict "secrets" .Values.tarot.secrets) -}}
     {{- include "summon.common.volumes.secrets" .Values.tarot.secrets | nindent 4 }}
     {{- end }}
   {{- end }}

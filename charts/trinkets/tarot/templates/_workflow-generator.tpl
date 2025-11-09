@@ -46,7 +46,7 @@ Returns: Argo Workflow template definition
     {{/* Volume mounts - use summon helper */}}
     {{- if $resolvedCard.volumes }}
       {{/* Create compatible context for summon helper - it expects workload.volumeClaimTemplates */}}
-      {{- $volumeContext := dict "Values" (dict "volumes" $resolvedCard.volumes "secrets" $resolvedCard.secrets "configMaps" $resolvedCard.configMaps "workload" dict) }}
+      {{- $volumeContext := dict "Values" (dict "volumes" $resolvedCard.volumes "secrets" $resolvedCard.secrets "configMaps" $resolvedCard.configMaps "workload" dict) "Release" $root.Release "Chart" $root.Chart }}
       {{- include "summon.common.volumeMounts" $volumeContext | nindent 4 }}
     {{- end }}
     {{- if $resolvedCard.container.resources }}
@@ -208,7 +208,7 @@ Returns: Main template definition
     {{/* Volume mounts - use summon helper */}}
     {{- if $resolvedCard.volumes }}
       {{/* Create compatible context for summon helper - it expects workload.volumeClaimTemplates */}}
-      {{- $volumeContext := dict "Values" (dict "volumes" $resolvedCard.volumes "secrets" $resolvedCard.secrets "configMaps" $resolvedCard.configMaps "workload" dict) }}
+      {{- $volumeContext := dict "Values" (dict "volumes" $resolvedCard.volumes "secrets" $resolvedCard.secrets "configMaps" $resolvedCard.configMaps "workload" dict) "Release" $root.Release "Chart" $root.Chart }}
       {{- include "summon.common.volumeMounts" $volumeContext | nindent 4 }}
     {{- end }}
     {{- if $resolvedCard.container.resources }}
