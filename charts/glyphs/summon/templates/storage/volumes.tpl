@@ -55,6 +55,19 @@ volumes:
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   configMap:
     name: {{ ( default $name $content.name ) | replace "." "-" }}
+    {{- if $content.defaultMode }}
+    defaultMode: {{ $content.defaultMode }}
+    {{- end }}
+    {{- if $content.items }}
+    items:
+      {{- range $content.items }}
+      - key: {{ .key }}
+        path: {{ .path }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
     {{- end }}
   {{- end }}
 {{- end -}}
@@ -65,6 +78,19 @@ volumes:
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   secret:
     secretName: {{ ( default $name $content.name ) | replace "." "-" }}
+    {{- if $content.defaultMode }}
+    defaultMode: {{ $content.defaultMode }}
+    {{- end }}
+    {{- if $content.items }}
+    items:
+      {{- range $content.items }}
+      - key: {{ .key }}
+        path: {{ .path }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
     {{- end }}
   {{- end }}
 {{- end -}}
