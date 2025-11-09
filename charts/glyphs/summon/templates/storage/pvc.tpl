@@ -28,7 +28,10 @@ Usage:
 {{- $root := index . 0 }}
 {{- $volumeName := index . 1 }}
 {{- $volume := index . 2 }}
-{{- $baseName := default (include "common.name" $root) (index . 3) }}
+{{- $baseName := include "common.name" $root }}
+{{- if gt (len .) 3 }}
+  {{- $baseName = default $baseName (index . 3) }}
+{{- end }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
