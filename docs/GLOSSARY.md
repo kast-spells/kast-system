@@ -19,11 +19,11 @@ Central concept in kast. YAML file defining application or infrastructure deploy
 **Rune**
 Independent chart serving as component within main spell. Used when application requires multiple charts or additional resources (CRDs, addons). Runes function independently but complement the main chart. Not recommended for standalone apps. Defined in spell's `runes` array.
 
-**Apendix**
-Shared configuration appended to all spells in a scope. Can be book-level or chapter-level.
+**Appendix**
+Shared configuration appended to all spells in a scope. Can be book-level (`_appendix/`) or chapter-level. Provides common values, environment variables, and glyph definitions automatically merged into all spells. Located in `bookrack/<book>/_appendix/` (book-level) or `bookrack/<book>/<chapter>/_appendix/` (chapter-level).
 
-**Local Apendix**
-Chapter-specific apendix that extends or overrides book-level apendix.
+**Local Appendix**
+Chapter-specific appendix that extends or overrides book-level appendix. See [BOOKRACK.md](BOOKRACK.md) for appendix system details.
 
 ## Charts and Templates
 
@@ -40,7 +40,7 @@ Orchestration chart serving as package manager for preconfigured resource defini
 Standardized deployment approach for microservices. Base chart for workload deployment. Generates Deployment, StatefulSet, Service, PVC, HPA, ServiceAccount resources. Inherits defaults from book/chapter `index.yaml`. Enables deploying any container following platform standards.
 
 **Trinket**
-Opinionated Helm chart wrapping glyphs for specific patterns. Examples: microspell, tarot, covenant.
+Opinionated Helm chart wrapping glyphs for specific patterns. Examples: microspell (microservices), tarot (CI/CD workflows), covenant (identity management). Located in `charts/trinkets/`. Trinkets provide higher-level abstractions with sensible defaults built on summon and glyphs.
 
 ## Deployment
 
@@ -138,6 +138,23 @@ Tarot workflow type:
 **Card Resolution**
 Process of determining card implementation. Methods: registered name lookup, selector-based discovery, inline definition.
 
+## Covenant (Identity Management)
+
+**Covenant**
+Trinket for identity and access management using Keycloak and Vault OIDC. Manages realms, clients, users, groups, and secrets. Located in `proto-the-yaml-life` repository. Uses two-stage deployment: main covenant generates ApplicationSet, per-chapter covenants render actual resources.
+
+**Integration**
+Configuration in covenant for OIDC client. Defines clientId, redirect URIs, web URL, and secret generation. One integration = one KeycloakClient + one VaultSecret.
+
+**Member**
+User definition in covenant. Generates KeycloakUser with email, groups, and optional password policy.
+
+**Chapel**
+Subgroup within covenant chapter. Creates KeycloakGroup resource.
+
+**Conventions Directory**
+Structured directory in covenant book containing integrations/, members/, and chapels/ subdirectories.
+
 ## RBAC and Security
 
 **ServiceAccount**
@@ -189,8 +206,17 @@ Istio resource defining routing rules for service mesh traffic.
 **Gateway**
 Istio resource defining ingress/egress configuration.
 
-**ExternalSecret**
-Kubernetes resource (via external-secrets operator) syncing secrets from Vault to K8s.
+**VaultSecret**
+Kubernetes CRD (via vault-config-operator) syncing secrets from Vault to K8s. Replaces external-secrets operator. Used by vault glyph for secret synchronization.
+
+**RandomSecret**
+Kubernetes CRD (via vault-config-operator) generating random passwords using Vault password policies and storing in Vault.
+
+**Policy** (Vault Config Operator CRD)
+Kubernetes CRD defining Vault HCL policies. Managed by vault-config-operator.
+
+**KubernetesAuthEngineRole**
+Kubernetes CRD binding ServiceAccounts to Vault policies via Kubernetes authentication. Part of vault glyph prolicy template.
 
 ## Conventions
 
@@ -208,14 +234,51 @@ Kubernetes namespace. Can be defined in spell or inherited from chapter name.
 
 ## Operators
 
-**External Secrets Operator**
-Kubernetes operator syncing secrets from external systems (Vault) to K8s secrets.
+**Vault Config Operator**
+Kubernetes operator for declarative Vault configuration. Provides VaultSecret, Policy, KubernetesAuthEngineRole, RandomSecret, and other CRDs. Used extensively by vault glyph. Repository: https://github.com/redhat-cop/vault-config-operator
 
-**RedHat Cop Operators**
-Collection of operators for Vault integration. Used by vault glyph for VaultSecret, VaultAuth, etc.
+**External Secrets Operator**
+Kubernetes operator syncing secrets from external systems. Legacy approach, replaced by vault-config-operator in kast.
 
 **Argo Workflows**
-Kubernetes-native workflow engine. Used by Tarot for dynamic workflow execution.
+Kubernetes-native workflow engine. Used by Tarot trinket for dynamic CI/CD workflow execution.
 
 **ArgoCD**
-GitOps continuous delivery tool. Librarian generates ArgoCD Applications via ApplicationSets.
+GitOps continuous delivery tool. Librarian generates ArgoCD Applications via ApplicationSets. Core deployment mechanism for kast.
+
+**Istio**
+Service mesh providing traffic management, security, and observability. Istio glyph generates VirtualServices, Gateways, and DestinationRules.
+
+**Cert-Manager**
+Certificate management operator. certManager glyph generates Certificate, Issuer, and DNSEndpoint resources.
+
+## TDD Phases
+
+**RED Phase**
+First phase of TDD. Write failing test before implementing feature. Command: `make tdd-red`. Failures are expected and acceptable (exit code 0).
+
+**GREEN Phase**
+Second phase of TDD. Implement minimum code to make test pass. Command: `make tdd-green`. Tests must pass (exit code non-zero on failure).
+
+**REFACTOR Phase**
+Third phase of TDD. Improve code while maintaining test coverage. Command: `make tdd-refactor`. Runs comprehensive test suite including snapshots and glyphs.
+
+## Additional Terms
+
+**Multi-Source**
+ArgoCD Application pattern using multiple Helm charts simultaneously. Kast uses this for combining summon (workload) + kaster (glyphs) + runes (additional charts). Enables composition of complex deployments from modular components.
+
+**ApplicationSet**
+ArgoCD resource generating multiple Applications from templates. Librarian uses ApplicationSets to deploy entire books. Covenant uses ApplicationSets to generate per-chapter applications.
+
+**Chapter Filter**
+Parameter in covenant deployment filtering which chapter's resources to render. Main covenant has no filter (generates ApplicationSet), chapter-specific covenants have filter (render actual resources).
+
+**Prolicy**
+Vault policy glyph type. Note: "prolicy" is correct spelling in kast (not "policy") to distinguish from Vault Policy CRD. Generates both Policy CRD and KubernetesAuthEngineRole.
+
+**Default Verbs**
+Glyph containing utility templates for common operations. Provides helper functions used by other glyphs.
+
+**Runic System**
+Infrastructure discovery and indexing system. Includes runic indexer template function and related glyphs for querying lexicon.

@@ -122,6 +122,9 @@ Returns: DAG task definition
     {{- end }}
   {{- end }}
   {{- end }}
+  {{- if $cardDef.when }}
+  when: {{ $cardDef.when | quote }}
+  {{- end }}
   {{- if $cardDef.with }}
   arguments:
     parameters:
@@ -144,6 +147,9 @@ Returns: Steps definition
 
 - - name: {{ $cardName }}
     template: {{ $cardName }}
+    {{- if $cardDef.when }}
+    when: {{ $cardDef.when | quote }}
+    {{- end }}
     {{- if $cardDef.with }}
     arguments:
       parameters:

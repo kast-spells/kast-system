@@ -6,6 +6,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 kast-system is a Test-Driven Development (TDD) Kubernetes deployment framework built around Helm charts, described as "Kubernetes arcane spelling technology". The project uses a modular architecture with reusable Helm template components called "glyphs" and follows strict TDD practices for reliability and correctness.
 
+## Quick Reference
+
+### Key Concepts (30-Second Overview)
+
+- **Glyphs**: Reusable Helm template libraries for specific K8s resources (vault, istio, certManager, etc.)
+- **Summon**: Primary chart for workloads (Deployment, StatefulSet, Job, CronJob, DaemonSet)
+- **Kaster**: Glyph orchestrator - renders glyphs into K8s resources
+- **Librarian**: Transforms bookrack/ into ArgoCD Applications (Apps of Apps pattern)
+- **Books**: Configuration hierarchy: Book → Chapters → Spells (YAML files)
+- **Spells**: Individual YAML files in bookrack/ that become ArgoCD Applications
+- **Lexicon**: Infrastructure registry for dynamic resource discovery (gateways, vaults, databases)
+- **Runic Indexer**: Query engine for lexicon with label matching
+- **Trinkets**: Specialized charts (microspell, tarot, covenant)
+
+### Common Commands
+
+```bash
+# TDD Workflow
+make tdd-red          # Write test, expect failure
+make tdd-green        # Implement, expect success
+make tdd-refactor     # Improve code, still passing
+
+# Testing
+make test             # Comprehensive TDD tests
+make test-all         # All tests (comprehensive + snapshots + glyphs)
+make test-status      # Show testing coverage
+make glyphs vault     # Test specific glyph
+make test-covenant    # Test covenant books
+
+# Development
+make create-example CHART=summon EXAMPLE=my-test
+make inspect-chart CHART=summon EXAMPLE=basic-deployment
+make generate-snapshots CHART=summon
+make lint             # Helm lint all charts
+```
+
+### File Locations
+
+```
+charts/glyphs/           # Glyph source of truth
+charts/summon/           # Workload chart
+charts/kaster/           # Glyph orchestrator
+charts/trinkets/         # Specialized charts
+librarian/               # ArgoCD Apps of Apps
+bookrack/                # Configuration books
+  <book>/index.yaml      # Book metadata
+  <book>/<chapter>/      # Chapter with spells
+  <book>/_lexicon/       # Infrastructure registry
+tests/scripts/           # Validation scripts
+output-test/             # Generated test outputs
+```
+
+### Decision Tree: Which Chart to Use?
+
+```
+Need to deploy workload (container)? → summon
+Need infrastructure (Vault, Istio, Certs)? → kaster + glyphs
+Need Argo Events workflows? → tarot
+Need identity management (Keycloak)? → covenant
+Need to orchestrate multiple charts? → librarian + bookrack
+```
+
 ## TDD Development Philosophy
 
 **kast-system is built TDD-first.** Every feature, template, and glyph follows the Red-Green-Refactor cycle:
@@ -59,16 +121,41 @@ make clean-output-tests    # Clean generated test outputs
 ## Project Structure
 
 - **charts/** - Core Helm charts (all TDD-tested)
-  - **glyphs/** - Reusable Helm template library (common, summon, vault, istio, certManager, crossplane, gcp, freeForm)
-  - **kaster/** - Main chart for the glyphs system  
-  - **summon/** - Chart for creating microservices/containers
-  - **trinkets/** - Additional utilities (microspell, etc.)
-- **librarian/** - ArgoCD Apps of Apps configuration
-- **bookrack/** - Configuration management using "books" pattern
+  - **glyphs/** - Reusable Helm template library (source of truth)
+    - Individual glyphs: common, summon, vault, istio, certManager, crossplane, gcp, freeForm, argo-events, keycloak, postgres-cloud, s3, runic-system, default-verbs
+    - Each glyph has: Chart.yaml, templates/, examples/ (for testing)
+    - Copied to other charts via rsync during GitHub Actions sync
+  - **kaster/** - Glyph orchestrator chart
+    - Used for testing glyphs (primary use case)
+    - Used for infrastructure deployments via glyphs
+    - Contains copies of all glyphs in charts/ subdirectory
+  - **summon/** - Primary workload chart for microservices/containers
+    - Supports 5 workload types: Deployment, StatefulSet, Job, CronJob, DaemonSet
+    - Contains copies of all glyphs in charts/ subdirectory
+    - 17+ comprehensive examples for TDD
+  - **trinkets/** - Specialized utility charts
+    - **microspell/** - Microservice deployment abstraction
+    - **tarot/** - Argo Events workflow definitions
+    - **covenant/** - Identity & access management (Keycloak + Vault)
+- **librarian/** - ArgoCD Apps of Apps orchestrator
+  - Reads bookrack/ structure
+  - Generates ArgoCD Applications from books/chapters/spells
+  - Two-pass appendix consolidation system
+  - Runic indexer for infrastructure discovery
+- **bookrack/** - GitOps configuration management
+  - Book → Chapters → Spells hierarchy
+  - Books define: trinkets, defaults, appendix, cluster targeting
+  - Spells are individual YAML files = ArgoCD Applications
+  - _lexicon/ subdirectories contain infrastructure registry
 - **tests/** - TDD testing infrastructure
-  - **scripts/** - Validation and testing scripts
-- **output-test/** - Generated glyph test outputs (created automatically)
-  - **<glyph-name>/** - Per-glyph test results
+  - **scripts/** - Validation and testing scripts (5 core scripts, 1,788 lines)
+    - `validate-resource-completeness.sh` - Resource validation engine
+    - `test-covenant-book.sh` - Covenant identity & access testing
+    - `test-librarian-migration.sh` - Librarian ApplicationSet TDD (consolidated 4 scripts)
+    - `test-tarot.sh` - Tarot workflow testing (extracted from Makefile)
+    - `test-book-render.sh` - Book/spell rendering with librarian context
+- **output-test/** - Generated test outputs (created automatically, gitignored)
+  - **<chart-name>/** - Per-chart/glyph test results
     - **<example>.yaml** - Actual rendered output
     - **<example>.expected.yaml** - Expected output for diff validation
 
@@ -431,29 +518,219 @@ charts/trinkets/microspell/examples/
 ## Architecture and Patterns
 
 ### Glyphs System
+
 The project uses a unique "glyphs" pattern where reusable Helm templates are organized as separate charts:
-- Each glyph provides specific functionality (e.g., vault integration, GCP resources)
-- Glyphs are imported as dependencies in other charts
-- Templates follow naming pattern: `<glyph>.<template>.tpl`
-- **All glyphs must have examples for testing**
+
+**What are Glyphs?**
+- **Reusable template libraries** for specific Kubernetes resource types
+- **Source of truth**: charts/glyphs/ directory contains all glyph definitions
+- **Distribution**: Copied into consuming charts (summon, kaster) via rsync during GitHub Actions
+- **Not Helm dependencies**: Glyphs are copied files, not Chart.yaml dependencies
+
+**Available Glyphs:**
+- **Core**: common (helpers), summon (workload helpers), runic-system (infrastructure discovery), default-verbs (RBAC)
+- **Security**: vault (Vault secrets), keycloak (SSO/OIDC)
+- **Storage**: s3 (object storage), postgres-cloud (managed databases)
+- **Networking**: istio (service mesh), certManager (TLS certificates)
+- **Events**: argo-events (event-driven workflows)
+- **Cloud**: gcp (Google Cloud resources), crossplane (cloud provisioning)
+- **Utility**: freeForm (raw YAML), trinkets (meta-glyph)
+
+**Glyph Invocation Pattern:**
+```yaml
+# In a spell or values file
+glyphs:
+  vault:
+    - type: secret
+      name: my-secret
+      path: secret/data/my-app
+  istio:
+    - type: virtualService
+      name: my-service
+      selector:
+        access: external
+```
+
+**Template Naming Convention:**
+- Named templates: `{{- define "glyph.type.tpl" -}}`
+- Invocation: `{{- include "vault.secret" (list $root $definition) }}`
+- Templates receive: (list $rootContext $glyphDefinition)
+
+**Testing Glyphs:**
+- **CRITICAL**: Glyphs MUST be tested through kaster, never directly
+- Direct testing fails due to missing glyph dependencies
+- Use: `make glyphs <name>` which renders via kaster + examples/
+- **All glyphs must have examples/ for TDD**
+
+### Runic System (Infrastructure Discovery)
+
+**Lexicon**: Infrastructure registry defined in bookrack/<book>/_lexicon/
+```yaml
+lexicon:
+  - name: external-gateway
+    type: istio-gw
+    labels:
+      access: external
+      environment: production
+      default: book
+    gateway: istio-system/external-gateway
+```
+
+**Runic Indexer**: Query engine for lexicon lookup
+- Glyphs query using label selectors
+- Resolution: Match labels → prefer default: book/chapter → fallback chain
+- Available in templates via runic-system glyph
+- Enables dynamic infrastructure discovery (gateways, vaults, databases, clusters)
+
+**Common Lexicon Types:**
+- istio-gw (Istio gateways)
+- cert-issuer (Certificate issuers)
+- database (Database connections)
+- vault (Vault instances)
+- eventbus (Argo Events buses)
+- k8s-cluster (Target clusters)
+- csi-config (Storage classes)
+
+### Book Pattern (Configuration Management)
+
+Configuration is organized as "books" in bookrack/:
+
+**Hierarchy**: Book → Chapters → Spells
+- **Book** (index.yaml): Deployment context, trinkets registry, global defaults, appendix
+- **Chapter**: Logical grouping (intro/staging/production), optional index.yaml for overrides
+- **Spell**: Individual YAML file = 1 ArgoCD Application
+
+**Book Structure:**
+```yaml
+# bookrack/my-book/index.yaml
+name: my-book
+chapters:
+  - infrastructure  # Deployed first
+  - applications    # Deployed second
+
+defaultTrinket:  # Default chart for spells
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: feature/coding-standards
+
+trinkets:  # Multi-source chart detection
+  kaster:
+    key: glyphs  # Spell with .glyphs uses kaster
+    repository: ...
+    path: ./charts/kaster
+  tarot:
+    key: tarot   # Spell with .tarot uses tarot
+    repository: ...
+    path: ./charts/trinkets/tarot
+
+appendix:  # Shared context (lexicon, etc.)
+  lexicon:
+    - name: prod-gateway
+      type: istio-gw
+```
+
+**Spell Deployment Strategies:**
+1. **Simple App** (uses defaultTrinket - usually summon)
+2. **Infrastructure** (has .glyphs → uses kaster)
+3. **Multi-source** (has .runes → multiple charts)
+4. **External Chart** (has .chart/.repository)
+5. **Covenant** (special: identity management)
+
+**Configuration Merging Order**: Book < Chapter < Spell (later overrides earlier)
+
+### Librarian (Apps of Apps Orchestrator)
+
+**Purpose**: Transform bookrack/ structure into ArgoCD Applications
+
+**Two-Pass Processing:**
+1. **Pass 1 - Appendix Consolidation**: Gather all appendix from book + chapters + spells → global context
+2. **Pass 2 - Application Generation**: For each spell, generate ArgoCD Application with merged context
+
+**Trinket Detection**: Automatically determines which charts a spell needs:
+- Check for .glyphs → add kaster chart
+- Check for .tarot → add tarot chart
+- Check for .runes → add additional charts
+- Base: defaultTrinket (usually summon)
+
+**Output**: ArgoCD Application resources with multi-source configuration
+
+### Summon Chart (Workload Orchestrator)
+
+**Purpose**: Primary chart for deploying containerized workloads with comprehensive Kubernetes features
+
+**Workload Types** (via workload.type):
+1. **Deployment** (default): Stateless applications with rolling updates
+2. **StatefulSet**: Stateful applications with persistent identity and storage
+3. **Job**: One-time batch jobs
+4. **CronJob**: Scheduled recurring jobs
+5. **DaemonSet**: One pod per node (e.g., monitoring agents, log collectors)
+
+**Key Features**:
+- **Container configuration**: image, command, args, ports, env
+- **Storage**: PVC, ConfigMap, Secret volumes with automatic naming
+- **Networking**: Service, Ingress with multiple hosts/paths
+- **Health**: liveness, readiness, startup probes
+- **Scaling**: replicas, HPA, PodDisruptionBudget
+- **Scheduling**: nodeSelector, tolerations, affinity/anti-affinity
+- **Security**: ServiceAccount, SecurityContext, PodSecurityContext
+- **ContentType system**: Unified ConfigMap/Secret handling (env, file, json, yaml)
+
+**Examples**: See charts/summon/examples/ for 17+ comprehensive examples covering all workload types and features
+
+### Kaster Chart (Glyph Orchestrator)
+
+**Purpose**: Orchestrate glyphs to generate infrastructure resources
+
+**Primary Use Case**: Testing glyphs via `make glyphs <name>`
+
+**Secondary Use Case**: Infrastructure deployments via bookrack spells with .glyphs
+
+**How It Works**:
+1. Receives glyph definitions in values.glyphs
+2. For each glyph type, includes the glyph template
+3. Passes (list $root $definition) to glyph
+4. Glyph renders appropriate K8s resources
+
+**Testing**: Always test glyphs through kaster, never directly
+
+### Trinket Charts
+
+**Microspell**:
+- Abstraction layer over summon for microservices
+- Simplified configuration with opinionated defaults
+- 8+ examples for common microservice patterns
+
+**Tarot**:
+- Argo Events workflow definitions
+- EventSource, Sensor, EventBus resources
+- Event-driven automation
+- 14+ examples for various event patterns
+
+**Covenant**:
+- Identity & access management (Keycloak + Vault)
+- Keycloak realm/client/user/group management
+- Vault OIDC secret generation
+- Two-stage deployment (main + per-chapter)
+- Special book structure (chapters = organizations)
 
 ### Template Conventions
+
 - All templates must include copyright header with GNU GPL v3 license
 - Use named templates for reusability: `{{- define "glyph.templateName" -}}`
 - Follow naming conventions in charts/glyphs/STYLE_GUIDE.md
 - Values should be namespaced under chart name
 - **Every template must be testable through examples**
 
-### Book Pattern
-Configuration is organized as "books" in bookrack/:
-- Each book has an index.yaml defining structure
-- Chapters contain values.yaml files for different environments/scenarios
-- Books reference specific chart versions
-
 ### GitOps Integration
-- Designed for ArgoCD deployment (see librarian/)
-- GitHub Actions automatically sync components to separate repositories
-- Changes trigger automated tagging and releases
+
+- **ArgoCD-first**: Designed for GitOps deployment via ArgoCD
+- **GitHub Actions**: Automatically sync components to separate repositories
+  - charts/summon → kast-spells/summon repository
+  - charts/kaster → kast-spells/kaster repository
+  - charts/glyphs/* → individual glyph repositories
+  - Uses rsync -avL to follow symlinks and copy actual content
+- **Tagging**: Changes trigger automated versioning and releases
+- **Multi-repo strategy**: Each chart can be versioned independently
 
 ## TDD Development Tips
 
@@ -579,16 +856,44 @@ Testing chart: summon
 
 ## Important Notes
 
-- This is a GitOps-focused project - avoid manual kubectl operations
-- All Kubernetes resources should be managed through Helm templates
-- The project uses GNU GPL v3 license - ensure all files have proper headers
-- Follow the comprehensive style guide at charts/glyphs/STYLE_GUIDE.md
-- **TDD is mandatory** - all features must have tests/examples
-- We don't use dependencies in Chart.yaml files - they are static symlinks
-- When templating and testing, use the-yaml-life book for examples
-- **Resource completeness validation is critical** - ensure all expected resources are generated
-- **CRITICAL: Glyphs must be tested through kaster**, not directly. Use `make glyphs <name>` which tests via kaster chart
-- **Never test glyphs directly** with `helm template charts/glyphs/<name>` - this will fail due to missing dependencies
+### Core Principles
+- **GitOps-first**: All Kubernetes resources managed through Helm templates + ArgoCD, avoid manual kubectl operations
+- **TDD is mandatory**: All features must have tests/examples before implementation (Red-Green-Refactor)
+- **GNU GPL v3 license**: Ensure all files have proper copyright headers
+- **Style guide**: Follow conventions in charts/glyphs/STYLE_GUIDE.md
+
+### Glyph System Architecture
+- **Source of truth**: charts/glyphs/ contains all glyph definitions
+- **Distribution mechanism**: Glyphs are copied (not symlinked) into consuming charts via rsync during GitHub Actions
+- **NOT Helm dependencies**: Glyphs are copied files in charts/ subdirectory, not Chart.yaml dependencies
+- **Testing**: CRITICAL - Glyphs MUST be tested through kaster, never directly
+  - Use: `make glyphs <name>` which renders via kaster + examples/
+  - Direct testing with `helm template charts/glyphs/<name>` will FAIL due to missing glyph dependencies
+
+### Book and Spell System
+- **Books are hierarchical**: Book → Chapters → Spells
+- **Spells are YAML files**: Each spell file in bookrack/<book>/<chapter>/*.yaml becomes an ArgoCD Application
+- **Trinket detection**: Librarian automatically detects which charts a spell needs based on keys (glyphs, tarot, runes)
+- **Configuration merging**: Book defaults < Chapter overrides < Spell overrides
+- **Testing books**: Use example-tdd-book or the-yaml-life book for realistic examples
+
+### Infrastructure Discovery
+- **Lexicon**: Infrastructure registry in bookrack/<book>/_lexicon/
+- **Runic indexer**: Query engine for dynamic infrastructure lookup via label selectors
+- **Resolution strategy**: Match labels → prefer default: book/chapter → fallback chain
+- **Common use cases**: Gateway selection, certificate issuer selection, database connection lookup, cluster targeting
+
+### Validation and Testing
+- **Resource completeness validation is critical**: Ensure all expected K8s resources are generated based on configuration
+- **Multi-layer testing**: Syntax → Comprehensive → Snapshots → Schema validation
+- **Configuration-driven expectations**: workload.enabled=true → must generate Deployment/StatefulSet
+- **Test discovery**: Testing system auto-discovers all charts/glyphs/trinkets with examples/
+
+### Multi-Repository Sync
+- **GitHub Actions**: Automatically sync charts to separate repositories
+- **Versioning**: Independent versioning per chart via git tags
+- **Rsync mechanism**: Uses `rsync -avL` to follow symlinks and copy content
+- **Target repos**: kast-spells organization (summon, kaster, individual glyphs)
 
 ## Getting Started with TDD Development
 
@@ -624,6 +929,227 @@ make tdd-refactor # Should still pass after cleanup
 ```
 
 Remember: **TDD isn't just testing - it's a design methodology that leads to better, more reliable code.**
+
+---
+
+## Complete Integration Flow
+
+Understanding how all components work together from configuration to deployment:
+
+### Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. CONFIGURATION (bookrack/)                                    │
+├─────────────────────────────────────────────────────────────────┤
+│ Book (index.yaml)                                               │
+│  ├─ Metadata: name, chapters, projectName                      │
+│  ├─ Trinkets: kaster (glyphs), tarot, summon (defaultTrinket)  │
+│  ├─ Defaults: appParams, syncPolicy                            │
+│  └─ Appendix: lexicon (infrastructure registry)                │
+│                                                                  │
+│ Chapter (intro/, staging/, production/)                         │
+│  ├─ Optional index.yaml (overrides book)                       │
+│  └─ Spells: *.yaml files (individual applications)             │
+│                                                                  │
+│ Lexicon (_lexicon/infrastructure.yaml)                          │
+│  └─ Infrastructure entries (gateways, vaults, databases)        │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. ORCHESTRATION (librarian)                                    │
+├─────────────────────────────────────────────────────────────────┤
+│ Pass 1: Appendix Consolidation                                  │
+│  └─ Merge: book.appendix + chapter.appendix + spell.appendix   │
+│                                                                  │
+│ Pass 2: Application Generation                                  │
+│  For each spell:                                                │
+│   ├─ Detect trinkets needed (glyphs → kaster, tarot → tarot)   │
+│   ├─ Build multi-source spec                                   │
+│   ├─ Merge configuration (book < chapter < spell)              │
+│   ├─ Add lexicon context                                       │
+│   └─ Generate ArgoCD Application resource                      │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. DEPLOYMENT (ArgoCD)                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ ArgoCD reads generated Application resources                    │
+│  ├─ Sync policy: automated or manual                           │
+│  ├─ Sources: primary + additional (multi-source)               │
+│  └─ Destination: target cluster + namespace                    │
+│                                                                  │
+│ For each source:                                                │
+│  ├─ Pull Helm chart from repository                            │
+│  ├─ Merge values from Application spec                         │
+│  └─ Render Helm templates                                      │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. RENDERING (Helm Charts)                                      │
+├─────────────────────────────────────────────────────────────────┤
+│ Source 1: Summon (defaultTrinket) - if no glyphs               │
+│  ├─ Workload: Deployment/StatefulSet/Job/CronJob/DaemonSet     │
+│  ├─ Service: ClusterIP/NodePort/LoadBalancer                   │
+│  ├─ Storage: PVC/PV with naming conventions                    │
+│  ├─ Config: ConfigMap/Secret with contentType system           │
+│  └─ Scaling: HorizontalPodAutoscaler                           │
+│                                                                  │
+│ Source 2: Kaster (if glyphs present)                            │
+│  └─ Orchestrates glyph invocations:                            │
+│      For each glyph definition:                                 │
+│       ├─ Include "glyph.type" template                         │
+│       ├─ Pass: (list $root $definition)                        │
+│       └─ Glyph renders specific K8s resources                  │
+│                                                                  │
+│ Glyphs (via Kaster):                                            │
+│  ├─ vault: VaultSecret, VaultRole, VaultPolicy                 │
+│  ├─ istio: VirtualService, DestinationRule, Gateway            │
+│  ├─ certManager: Certificate, Issuer                           │
+│  ├─ s3: Bucket, BucketPermission                               │
+│  ├─ postgres-cloud: PostgresCluster, PostgresDatabase          │
+│  ├─ keycloak: KeycloakRealm, KeycloakClient, KeycloakUser      │
+│  ├─ argo-events: EventSource, Sensor, EventBus                 │
+│  └─ runic-system: Infrastructure lookup via lexicon            │
+│                                                                  │
+│ Source 3: Tarot (if tarot present)                              │
+│  └─ Argo Events workflow definitions                           │
+│                                                                  │
+│ Source N: Runes (if runes present)                              │
+│  └─ Additional external charts (e.g., external-dns, monitoring)│
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. KUBERNETES CLUSTER                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ Final K8s resources applied:                                    │
+│  ├─ Workloads: Deployment, StatefulSet, Job, CronJob, DaemonSet│
+│  ├─ Networking: Service, Ingress, VirtualService, Gateway      │
+│  ├─ Storage: PVC, PV, StorageClass                             │
+│  ├─ Config: ConfigMap, Secret                                  │
+│  ├─ Security: ServiceAccount, Role, RoleBinding, NetworkPolicy │
+│  ├─ Scaling: HPA, PDB                                          │
+│  ├─ Certificates: Certificate, Issuer                          │
+│  └─ Custom Resources: VaultSecret, PostgresCluster, etc.       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Example: Complete Flow for a Microservice with Vault Secrets
+
+**Step 1: Configuration (bookrack/my-book/production/api-service.yaml)**
+```yaml
+name: api-service
+namespace: production
+
+# Summon configuration (primary source)
+image:
+  repository: myorg/api-service
+  tag: v1.2.3
+
+service:
+  enabled: true
+  ports:
+    - port: 8080
+      name: http
+
+# Glyphs configuration (kaster source)
+glyphs:
+  vault:
+    - type: secret
+      name: database-credentials
+      path: secret/data/production/db
+  istio:
+    - type: virtualService
+      name: api-service
+      selector:
+        access: external
+        environment: production
+```
+
+**Step 2: Librarian Processing**
+- Reads book/index.yaml → finds trinkets: kaster (for glyphs)
+- Detects spell has .glyphs → adds kaster as source 2
+- Consolidates appendix → includes lexicon with infrastructure
+- Generates ArgoCD Application:
+  ```yaml
+  apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    name: api-service
+  spec:
+    sources:
+      - repoURL: https://github.com/kast-spells/kast-system.git
+        path: charts/summon
+        helm:
+          values: |
+            name: api-service
+            image:
+              repository: myorg/api-service
+              tag: v1.2.3
+            service:
+              enabled: true
+      - repoURL: https://github.com/kast-spells/kast-system.git
+        path: charts/kaster
+        helm:
+          values: |
+            glyphs:
+              vault: [...]
+              istio: [...]
+  ```
+
+**Step 3: ArgoCD Syncs**
+- Pulls summon chart → renders Deployment + Service
+- Pulls kaster chart → invokes glyphs
+
+**Step 4: Helm Rendering**
+- Summon renders:
+  - Deployment: api-service
+  - Service: api-service
+  - ServiceAccount: api-service
+
+- Kaster invokes glyphs:
+  - vault glyph renders: VaultSecret for database-credentials
+  - istio glyph:
+    1. Queries lexicon for istio-gw with labels: access=external, environment=production
+    2. Finds: external-gateway
+    3. Renders: VirtualService pointing to external-gateway
+
+**Step 5: K8s Resources Applied**
+- Deployment/api-service
+- Service/api-service
+- ServiceAccount/api-service
+- VaultSecret/database-credentials (custom resource)
+- VirtualService/api-service (Istio custom resource)
+
+### Key Integration Points
+
+1. **Trinket Detection**: Librarian inspects spell for keys (glyphs, tarot, runes) to determine sources
+2. **Appendix Consolidation**: Lexicon from all levels merged and passed to charts
+3. **Multi-Source Rendering**: Each source rendered independently with shared context
+4. **Runic Indexer**: Glyphs query lexicon dynamically for infrastructure (gateways, vaults, etc.)
+5. **Resource Generation**: Multiple charts contribute resources to same application
+
+### Common Patterns
+
+**Pattern 1: Simple Microservice**
+- Spell: image + service (no glyphs)
+- Charts: summon only
+- Resources: Deployment, Service
+
+**Pattern 2: Microservice with Infrastructure**
+- Spell: image + service + glyphs (vault, istio)
+- Charts: summon + kaster
+- Resources: Deployment, Service, VaultSecret, VirtualService
+
+**Pattern 3: Complex Multi-Source**
+- Spell: image + service + glyphs + runes
+- Charts: summon + kaster + external charts
+- Resources: Deployment, Service, glyphs resources, external chart resources
+
+**Pattern 4: Pure Infrastructure**
+- Spell: glyphs only (no image)
+- Charts: kaster only
+- Resources: Certificates, Secrets, Gateways (no workload)
 
 ---
 
