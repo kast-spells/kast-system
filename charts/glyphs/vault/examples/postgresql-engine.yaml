@@ -1,0 +1,76 @@
+# Test example for Vault PostgreSQL Database Secret Engine
+# This validates dynamic PostgreSQL credential generation through Vault
+# The engine creates temporary database users with limited TTL
+
+name: postgresql-engine-test
+
+# Chapter and spellbook context (required by vault templates)
+chapter:
+  name: base-system
+
+spellbook:
+  name: test-book
+
+lexicon:
+  # Vault server configuration
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: the-yaml-life
+    secretPath: secret
+    labels:
+      default: book
+
+  # PostgreSQL server configuration - main production database
+  # Uses Kubernetes Secret for credentials (backward compatibility)
+  - chapter: base-system
+    type: postgres
+    name: main-postgres
+    host: postgres.database.svc.cluster.local
+    port: 5432
+    database: postgres  # Main database
+    credentialsSecret: postgres-admin-credentials  # K8s Secret in same namespace
+    labels:
+      app: postgres
+      environment: production
+
+  # PostgreSQL server - application specific database
+  # Uses Vault Secret for credentials (recommended pattern)
+  - chapter: base-system
+    type: postgres
+    name: app-postgres
+    host: app-postgres.apps.svc.cluster.local
+    port: 5432
+    database: myapp
+    vaultSecretPath: "chapter"  # Uses chapter path: secret/data/{book}/{chapter}/publics/app-postgres
+    labels:
+      app: myapp
+      environment: staging
+
+glyphs:
+  vault:
+    # Mount the database secrets engine
+    # All database engines share the same mount point
+    - type: secretEngineMount
+      mountType: database
+      description: "Database secrets engine for PostgreSQL dynamic credentials"
+
+    # Basic PostgreSQL engine - generates DatabaseSecretEngineConfig and roles
+    # Creates read-write and read-only roles for main-postgres
+    - type: postgresqlDBEngine
+      name: basic-postgres-engine
+      postgresSelector:
+        app: postgres
+      serviceAccount: vault
+
+    # Application-specific PostgreSQL engine
+    # Creates read-write and read-only roles for app-postgres
+    - type: postgresqlDBEngine
+      name: app-postgres-engine
+      postgresSelector:
+        app: myapp
+        environment: staging
+      serviceAccount: vault

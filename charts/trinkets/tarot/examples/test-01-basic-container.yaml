@@ -1,0 +1,29 @@
+name: test-01-basic-container
+
+spellbook: {name: test}
+chapter: {name: basic}
+
+cards:
+  hello-task:
+    type: card
+    labels: {category: test}
+    container:
+      image: busybox:latest
+      command: ["echo", "Hello from basic test"]
+
+tarot:
+  executionMode: container
+
+  reading:
+    hello:
+      selectors: {category: test}
+      position: foundation
+
+  serviceAccount:
+    enabled: true
+    name: basic-test-runner
+
+  rbac:
+    enabled: true
+
+  generateName: true

@@ -1,0 +1,199 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+
+argo-events.eventBus creates EventBus resources for Argo Events
+Follows kast glyph parameter pattern
+
+Parameters:
+- Glyph usage: (list $root $glyphDefinition)
+
+Usage:
+Example glyphDefinition:
+  name: default
+  type: jetstream
+  jetstream:
+    version: "2.10.1"
+    replicas: 3
+    persistence:
+      storageClassName: standard
+      accessMode: ReadWriteOnce
+      volumeSize: 10Gi
+ */}}
+{{- define "argo-events.eventBus" }}
+{{- $root := index . 0 }}
+{{- $glyphDefinition := index . 1 }}
+{{- $resourceName := default (include "common.name" $root) $glyphDefinition.name }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: {{ $resourceName }}
+  labels:
+    {{- include "common.labels" $root | nindent 4 }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $glyphDefinition.jetstream }}
+  jetstream:
+    {{- with $glyphDefinition.jetstream.version }}
+    version: {{ . }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.replicas }}
+    replicas: {{ . }}
+    {{- end }}
+    {{- if $glyphDefinition.jetstream.persistence }}
+    persistence:
+      {{- with $glyphDefinition.jetstream.persistence.storageClassName }}
+      storageClassName: {{ . }}
+      {{- end }}
+      {{- with $glyphDefinition.jetstream.persistence.accessMode }}
+      accessMode: {{ . }}
+      {{- end }}
+      {{- with $glyphDefinition.jetstream.persistence.volumeSize }}
+      volumeSize: {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.streamConfig }}
+    streamConfig: |
+      {{- . | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.settings }}
+    settings: |
+      {{- . | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.startArgs }}
+    startArgs:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.containerTemplate }}
+    containerTemplate:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.reloaderContainerTemplate }}
+    reloaderContainerTemplate:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.metricsContainerTemplate }}
+    metricsContainerTemplate:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.nodeSelector }}
+    nodeSelector:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.tolerations }}
+    tolerations:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.metadata }}
+    metadata:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.securityContext }}
+    securityContext:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.imagePullSecrets }}
+    imagePullSecrets:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.serviceAccountName }}
+    serviceAccountName: {{ . }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.priority }}
+    priority: {{ . }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.priorityClassName }}
+    priorityClassName: {{ . }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstream.affinity }}
+    affinity:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+  {{- else if $glyphDefinition.jetstreamExotic }}
+  jetstreamExotic:
+    {{- with $glyphDefinition.jetstreamExotic.url }}
+    url: {{ . }}
+    {{- end }}
+    {{- if $glyphDefinition.jetstreamExotic.accessSecret }}
+    accessSecret:
+      {{- with $glyphDefinition.jetstreamExotic.accessSecret.name }}
+      name: {{ . }}
+      {{- end }}
+      {{- with $glyphDefinition.jetstreamExotic.accessSecret.key }}
+      key: {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- with $glyphDefinition.jetstreamExotic.streamConfig }}
+    streamConfig: {{ . }}
+    {{- end }}
+  {{- else if $glyphDefinition.nats }}
+  nats:
+    native:
+      {{- with $glyphDefinition.nats.replicas }}
+      replicas: {{ . }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.auth }}
+      auth: {{ . }}
+      {{- end }}
+      {{- if $glyphDefinition.nats.persistence }}
+      persistence:
+        {{- with $glyphDefinition.nats.persistence.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+        {{- with $glyphDefinition.nats.persistence.accessMode }}
+        accessMode: {{ . }}
+        {{- end }}
+        {{- with $glyphDefinition.nats.persistence.volumeSize }}
+        volumeSize: {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.containerTemplate }}
+      containerTemplate:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.metricsContainerTemplate }}
+      metricsContainerTemplate:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.nodeSelector }}
+      nodeSelector:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.tolerations }}
+      tolerations:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.metadata }}
+      metadata:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with $glyphDefinition.nats.securityContext }}
+      securityContext:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+  {{- else if $glyphDefinition.kafka }}
+  kafka:
+    {{- with $glyphDefinition.kafka.url }}
+    url: {{ . }}
+    {{- end }}
+    {{- with $glyphDefinition.kafka.topic }}
+    topic: {{ . }}
+    {{- end }}
+    {{- if $glyphDefinition.kafka.config }}
+    config:
+      {{- $glyphDefinition.kafka.config | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $glyphDefinition.kafka.sasl }}
+    sasl:
+      {{- $glyphDefinition.kafka.sasl | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $glyphDefinition.kafka.tls }}
+    tls:
+      {{- $glyphDefinition.kafka.tls | toYaml | nindent 6 }}
+    {{- end }}
+  {{- end }}
+{{- end}}

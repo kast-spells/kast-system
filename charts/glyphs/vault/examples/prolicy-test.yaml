@@ -1,0 +1,105 @@
+# Test example for vault prolicy with access to all password policies
+# This validates that prolicy now gives access to all password policies
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Create the prolicy that should have access to all password policies
+    - type: prolicy
+      nameOverride: test-app-policy
+      serviceAccount: test-app-sa
+      extraPolicy:
+        - path: "auth/token/*"
+          capabilities: ["read", "list"]
+        - path: "sys/mounts"
+          capabilities: ["read"]
+
+    # Create multiple custom password policies
+    - type: customPasswordPolicy
+      name: strong-policy
+      policy: |
+        length = 24
+        rule "charset" {
+          charset = "abcdefghijklmnopqrstuvwxyz"
+          min-chars = 6
+        }
+        rule "charset" {
+          charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          min-chars = 6
+        }
+        rule "charset" {
+          charset = "0123456789"
+          min-chars = 6
+        }
+        rule "charset" {
+          charset = "!@#$%^&*"
+          min-chars = 6
+        }
+
+    - type: customPasswordPolicy
+      name: api-key-policy
+      policy: |
+        length = 32
+        rule "charset" {
+          charset = "0123456789abcdef"
+          min-chars = 32
+        }
+
+    - type: customPasswordPolicy
+      name: pin-policy
+      policy: |
+        length = 6
+        rule "charset" {
+          charset = "0123456789"
+          min-chars = 6
+        }
+
+    # Create secrets using different password policies
+    # These should all work because prolicy now has access to all password policies
+    - type: secret
+      name: admin-password
+      format: plain
+      randomKey: password
+      passPolicyName: strong-policy
+      staticData:
+        username: admin
+        role: administrator
+
+    - type: secret
+      name: api-token
+      format: plain
+      randomKey: token
+      passPolicyName: api-key-policy
+      staticData:
+        client-id: app-123
+        environment: production
+
+    - type: secret
+      name: device-pin
+      format: plain
+      randomKey: pin
+      passPolicyName: pin-policy
+      staticData:
+        device-id: DEV-001
+        location: office
+
+    # Also test with the default simple-password-policy
+    - type: secret
+      name: service-account
+      format: plain
+      randomKey: password
+      passPolicyName: simple-password-policy
+      staticData:
+        username: service-user
+        service: background-worker

@@ -1,0 +1,71 @@
+name: app-with-unified-contenttype
+namespace: test
+
+image:
+  repository: nginx
+  tag: latest
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+service:
+  enabled: false
+
+configMaps:
+  # ConfigMap for environment variables
+  env-config:
+    location: create
+    contentType: env  # Using contentType: env instead of type: env
+    content:
+      DATABASE_HOST: postgres.local
+      DATABASE_PORT: "5432"
+      CACHE_HOST: redis.local
+      CACHE_PORT: "6379"
+
+  # ConfigMap with YAML content mounted as file
+  app-config-yaml:
+    location: create
+    contentType: yaml  # Will be mounted as file with YAML format
+    name: config.yml
+    mountPath: /app/config
+    content:
+      database:
+        host: postgres.local
+        port: 5432
+      cache:
+        host: redis.local
+        port: 6379
+
+  # ConfigMap with JSON content mounted as file
+  app-config-json:
+    location: create
+    contentType: json  # Will be mounted as file with JSON format
+    name: settings.json
+    mountPath: /app/settings
+    content:
+      features:
+        - auth
+        - notifications
+      timeout: 30
+
+secrets:
+  # Secret for environment variables
+  db-credentials:
+    location: create
+    contentType: env  # Using contentType: env instead of type: env
+    content:
+      DB_USER: admin
+      DB_PASS: secret123
+
+  # Secret with file content
+  tls-cert:
+    location: create
+    contentType: file  # Plain file content
+    name: cert.pem
+    mountPath: /app/certs
+    content: |
+      -----BEGIN CERTIFICATE-----
+      MIIDXTCCAkWgAwIBAgIJAKLdQVPy90WjMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+      -----END CERTIFICATE-----

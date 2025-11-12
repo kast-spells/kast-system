@@ -1,0 +1,204 @@
+# Example: Advanced Custom Password Policies
+# Shows how to create fully customized password policies with specific requirements
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Fully custom policy with specific charset requirements
+    - type: customPasswordPolicy
+      name: no-ambiguous-chars
+      policy: |
+        length = 20
+        rule "charset" {
+          # Lowercase without ambiguous chars (no l, o)
+          charset = "abcdefghijkmnpqrstuvwxyz"
+          min-chars = 5
+        }
+        rule "charset" {
+          # Uppercase without ambiguous chars (no I, O)
+          charset = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+          min-chars = 5
+        }
+        rule "charset" {
+          # Numbers without ambiguous chars (no 0, 1)
+          charset = "23456789"
+          min-chars = 4
+        }
+        rule "charset" {
+          # Safe special characters
+          charset = "!@#$%^&*"
+          min-chars = 2
+        }
+
+    # Policy for hexadecimal strings (useful for tokens)
+    - type: customPasswordPolicy
+      name: hex-token
+      policy: |
+        length = 32
+        rule "charset" {
+          charset = "0123456789abcdef"
+          min-chars = 32
+        }
+
+    # Policy for base64-like strings (URL-safe)
+    - type: customPasswordPolicy
+      name: base64-url-safe
+      policy: |
+        length = 24
+        rule "charset" {
+          charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+          min-chars = 24
+        }
+
+    # Policy with specific pattern requirements
+    - type: customPasswordPolicy
+      name: formatted-key
+      policy: |
+        length = 29
+        # Format: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX
+        rule "charset" {
+          charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+          min-chars = 29
+        }
+
+    # Policy for database passwords (no single quotes)
+    - type: customPasswordPolicy
+      name: database-safe
+      policy: |
+        length = 24
+        rule "charset" {
+          charset = "abcdefghijklmnopqrstuvwxyz"
+          min-chars = 6
+        }
+        rule "charset" {
+          charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          min-chars = 6
+        }
+        rule "charset" {
+          charset = "0123456789"
+          min-chars = 6
+        }
+        rule "charset" {
+          # Special chars safe for SQL (no quotes or semicolons)
+          charset = "!@#$%^&*()_+-=[]{}|:<>?"
+          min-chars = 6
+        }
+
+    # Policy using map format instead of string
+    - type: customPasswordPolicy
+      name: structured-policy
+      policy:
+        length: 18
+        rules:
+          - type: charset
+            charset: "abcdefghijklmnopqrstuvwxyz"
+            minChars: 6
+          - type: charset
+            charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            minChars: 6
+          - type: charset
+            charset: "0123456789"
+            minChars: 6
+
+    # Create secrets using these advanced policies
+
+    # Token with no ambiguous characters
+    - type: secret
+      name: readable-token
+      format: plain
+      randomKey: token
+      passPolicyName: no-ambiguous-chars
+      staticData:
+        service: token-service
+        description: "Token without ambiguous characters for better readability"
+
+    # Hex token for API
+    - type: secret
+      name: api-hex-token
+      format: plain
+      randomKey: hex-token
+      passPolicyName: hex-token
+      staticData:
+        api-version: v2
+        endpoint: https://api.internal.com
+
+    # Base64 URL-safe key
+    - type: secret
+      name: jwt-signing-key
+      format: plain
+      randomKey: signing-key
+      passPolicyName: base64-url-safe
+      staticData:
+        algorithm: HS256
+        issuer: auth.mycompany.com
+
+    # Formatted license key
+    - type: secret
+      name: license-key
+      format: plain
+      randomKey: key
+      passPolicyName: formatted-key
+      staticData:
+        product: enterprise-edition
+        valid-until: "2025-12-31"
+
+    # Database password without problematic characters
+    - type: secret
+      name: postgres-admin
+      format: plain
+      randomKey: password
+      passPolicyName: database-safe
+      staticData:
+        username: postgres_admin
+        host: postgres.database.svc
+        port: "5432"
+        database: main_db
+
+    # Using structured policy
+    - type: secret
+      name: structured-credentials
+      format: plain
+      randomKey: access-key
+      passPolicyName: structured-policy
+      staticData:
+        account: structured-account
+        region: us-west-2
+
+    # Combining multiple secrets with different policies for a single application
+    - type: secret
+      name: app-credentials-main
+      format: plain
+      randomKey: main-password
+      passPolicyName: database-safe
+      staticData:
+        component: main-app
+        username: app_user
+
+    - type: secret
+      name: app-credentials-token
+      format: plain
+      randomKey: bearer-token
+      passPolicyName: base64-url-safe
+      staticData:
+        component: main-app
+        token-type: bearer
+
+    - type: secret
+      name: app-credentials-apikey
+      format: plain
+      randomKey: api-key
+      passPolicyName: hex-token
+      staticData:
+        component: main-app
+        api-scope: read-write

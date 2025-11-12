@@ -41,7 +41,7 @@ spec:
         {{- if (eq $port.protocol "HTTPS") }}
       tls:
         mode: SIMPLE
-        credentialName: {{ default (printf "%s-cert" (default (default (include "common.name" $root) $glyphDefinition.name) $glyphDefinition.nameOverride)) $glyphDefinition.tls.secretName }}
+        credentialName: {{ default ( print (include "common.name" $root ) "-" $glyphDefinition.tls.issuerName "-cert" ) $glyphDefinition.tls.secretName }}
         {{- end }}
         {{- if and (eq $port.protocol "HTTP" ) (default "True" $port.httpsRedirect) }}
       tls:

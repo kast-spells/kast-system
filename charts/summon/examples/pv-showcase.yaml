@@ -1,0 +1,72 @@
+name: pv-showcase
+namespace: test
+
+image:
+  repository: busybox
+  tag: latest
+
+workload:
+  enabled: true
+  type: deployment
+
+volumes:
+  # CASO 1: S3 CSI con PV generado
+  s3-storage:
+    type: pvc
+    storageClass: csi-s3
+    size: 100Gi
+    accessMode: ReadWriteMany
+    destinationPath: /mnt/s3
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: my-s3-bucket/data
+      volumeAttributes:
+        mounter: geesefs
+        options: --memory-limit 2000 --dir-mode 0755 --file-mode 0644
+        bucket: my-s3-bucket
+        region: us-west-2
+
+  # CASO 2: Azure Files CSI con PV generado
+  azure-files:
+    type: pvc
+    storageClass: azurefile-csi
+    size: 50Gi
+    accessMode: ReadWriteMany
+    destinationPath: /mnt/azure
+    pv:
+      driver: file.csi.azure.com
+      volumeHandle: azure-share-001
+      volumeAttributes:
+        resourceGroup: myResourceGroup
+        storageAccount: mystorageaccount
+        shareName: myshare
+      nodeStageSecretRef:
+        name: azure-secret
+
+  # CASO 3: GCP Filestore CSI con PV generado
+  gcp-filestore:
+    type: pvc
+    storageClass: filestore-csi
+    size: 1Ti
+    accessMode: ReadWriteMany
+    destinationPath: /mnt/gcp
+    pv:
+      driver: filestore.csi.storage.gke.io
+      volumeHandle: filestore-instance-1/vol1
+      volumeAttributes:
+        ip: 10.0.0.2
+        volume: vol1
+
+  # CASO 4: NFS CSI con PV generado
+  nfs-csi:
+    type: pvc
+    storageClass: nfs-csi
+    size: 200Gi
+    accessMode: ReadWriteMany
+    destinationPath: /mnt/nfs
+    pv:
+      driver: nfs.csi.k8s.io
+      volumeHandle: nfs-server.example.com/exports/data
+      volumeAttributes:
+        server: nfs-server.example.com
+        share: /exports/data

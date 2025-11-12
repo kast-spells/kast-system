@@ -1,0 +1,207 @@
+name: test-04-complex-pipeline
+
+spellbook: {name: test}
+chapter: {name: production}
+
+# Lexicon with vault server
+lexicon:
+  prod-vault:
+    type: vault
+    labels: {default: book}
+    server: vault.vault.svc.cluster.local:8200
+    secretPath: secret
+    auth:
+      kubernetes:
+        path: kubernetes
+        role: prod-vault-role
+
+cards:
+  checkout-code:
+    type: card
+    labels: {category: source, stage: foundation}
+    container:
+      image: alpine/git:latest
+      command: ["/bin/sh", "-c"]
+      args: ["git clone $REPO_URL /workspace/code && cd /workspace/code && git checkout $BRANCH"]
+    volumes:
+      workspace:
+        type: emptyDir
+        destinationPath: /workspace
+
+  build-app:
+    type: card
+    labels: {category: build, stage: action}
+    container:
+      image: golang:1.21
+      command: ["/bin/sh", "-c"]
+      args: ["cd /workspace/code && go build -o /workspace/bin/app ./cmd/app"]
+    volumes:
+      workspace:
+        type: emptyDir
+        destinationPath: /workspace
+
+  run-tests:
+    type: card
+    labels: {category: test, stage: action}
+    container:
+      image: golang:1.21
+      command: ["/bin/sh", "-c"]
+      args: ["cd /workspace/code && go test -v ./..."]
+    volumes:
+      workspace:
+        type: emptyDir
+        destinationPath: /workspace
+
+  build-docker:
+    type: card
+    labels: {category: docker, stage: challenge}
+    container:
+      image: docker:24-dind
+      command: ["/bin/sh", "-c"]
+      args: ["docker build -t $REGISTRY/$IMAGE_NAME:$VERSION /workspace/code && docker push $REGISTRY/$IMAGE_NAME:$VERSION"]
+    volumes:
+      workspace:
+        type: emptyDir
+        destinationPath: /workspace
+      docker-sock:
+        type: hostPath
+        hostPath: /var/run/docker.sock
+        destinationPath: /var/run/docker.sock
+
+  deploy-staging:
+    type: card
+    labels: {category: deploy, stage: outcome, env: staging}
+    container:
+      image: bitnami/kubectl:latest
+      command: ["/bin/sh", "-c"]
+      args: ["kubectl set image deployment/$APP_NAME $APP_NAME=$REGISTRY/$IMAGE_NAME:$VERSION -n staging"]
+
+  smoke-test:
+    type: card
+    labels: {category: test, stage: outcome, type: smoke}
+    container:
+      image: curlimages/curl:latest
+      command: ["/bin/sh", "-c"]
+      args: ["curl -f http://$APP_NAME.staging.svc.cluster.local/health || exit 1"]
+
+  deploy-production:
+    type: card
+    labels: {category: deploy, stage: outcome, env: production}
+    container:
+      image: bitnami/kubectl:latest
+      command: ["/bin/sh", "-c"]
+      args: ["kubectl set image deployment/$APP_NAME $APP_NAME=$REGISTRY/$IMAGE_NAME:$VERSION -n production"]
+
+tarot:
+  executionMode: dag
+
+  # Unified secrets - all types
+  secrets:
+    # K8s Secret
+    app-config:
+      contentType: env
+      content:
+        APP_NAME: "myapp"
+        VERSION: "1.2.3"
+        BRANCH: "main"
+        REPO_URL: "https://github.com/example/myapp.git"
+
+    # Vault Secret with keys
+    docker-creds:
+      location: vault
+      path: chapter
+      format: env
+      keys: [DOCKER_USER, DOCKER_PASS]
+
+    # Vault Secret with random
+    deploy-token:
+      location: vault
+      path: chapter
+      random: true
+      randomKey: DEPLOY_TOKEN
+
+    # Vault with static data
+    registry-config:
+      location: vault
+      path: chapter
+      format: env
+      keys: [REGISTRY_PASS]
+      staticData:
+        REGISTRY: "registry.company.com"
+        IMAGE_NAME: "myapp"
+
+  # ConfigMaps
+  configMaps:
+    build-config:
+      contentType: file
+      content: |
+        BUILD_ENV=production
+        OPTIMIZE=true
+        CGO_ENABLED=0
+
+  # Shared volumes
+  volumes:
+    workspace:
+      type: emptyDir
+      sizeLimit: 10Gi
+    docker-sock:
+      type: hostPath
+      hostPath: /var/run/docker.sock
+
+  # Global envs
+  envs:
+    ENVIRONMENT: "production-pipeline"
+    LOG_LEVEL: "info"
+    CI: "true"
+
+  # Complex reading with dependencies
+  reading:
+    checkout:
+      selectors: {category: source, stage: foundation}
+      position: foundation
+
+    build:
+      selectors: {category: build, stage: action}
+      position: action
+      depends: [checkout]
+
+    test:
+      selectors: {category: test, stage: action}
+      position: action
+      depends: [checkout]
+
+    dockerize:
+      selectors: {category: docker, stage: challenge}
+      position: challenge
+      depends: [build, test]
+
+    deploy-stg:
+      selectors: {category: deploy, env: staging}
+      position: outcome
+      depends: [dockerize]
+
+    smoke:
+      selectors: {category: test, type: smoke}
+      position: outcome
+      depends: [deploy-stg]
+
+    deploy-prod:
+      selectors: {category: deploy, env: production}
+      position: outcome
+      depends: [smoke]
+
+  serviceAccount:
+    enabled: true
+    name: pipeline-runner
+    annotations:
+      vault.hashicorp.com/role: "prod-vault-role"
+
+  rbac:
+    enabled: true
+
+  generateName: true
+  labels:
+    pipeline: "ci-cd"
+    version: "v1"
+  annotations:
+    description: "Complex multi-stage CI/CD pipeline"

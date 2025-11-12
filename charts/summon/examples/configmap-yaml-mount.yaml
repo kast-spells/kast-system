@@ -1,0 +1,32 @@
+name: app-with-configmap-yaml
+namespace: test
+
+image:
+  repository: nginx
+  tag: latest
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+service:
+  enabled: false
+
+configMaps:
+  buildarr-config:
+    location: create
+    # contentType: yaml already implies it will be mounted as file
+    contentType: yaml  # Need YAML formatting
+    name: buildarr.yml
+    mountPath: /config
+    content:
+      buildarr:
+        watch_config: true
+        log_level: DEBUG
+        update_times:
+          - "03:00"
+        servers:
+          sonarr:
+            hostname: sonarr.local
+            port: 8989

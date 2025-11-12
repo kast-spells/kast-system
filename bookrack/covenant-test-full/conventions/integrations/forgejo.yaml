@@ -1,0 +1,22 @@
+# Forgejo OIDC Integration
+# Forgejo can auto-create users on first OIDC login
+enabled: true
+clientId: forgejo
+webUrl: https://git.test.local
+redirectUris:
+  - https://git.test.local/user/oauth2/keycloak/callback
+defaultClientScopes:
+  - profile
+  - email
+  - custom-roles
+  - groups
+directAccess: true
+standardFlowEnabled: true
+public: false
+protocol: openid-connect
+webOrigins:
+  - https://git.test.local
+
+# Vault secret for OIDC client_secret
+secret: keycloak-client-forgejo
+passPolicyName: simple-password-policy

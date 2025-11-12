@@ -51,20 +51,46 @@ volumes:
 
 {{- define "summon.common.volumes.configMaps" -}}
   {{- range $name, $content := .  }}
-    {{- if and ( or (eq ( default "local" $content.location ) "local") (eq $content.location "create") ) (eq .type "file") }}
+    {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
-  configMap: 
-    name: {{ default $name $content.key }}
+  configMap:
+    name: {{ ( default $name $content.name ) | replace "." "-" }}
+    {{- if $content.defaultMode }}
+    defaultMode: {{ $content.defaultMode }}
+    {{- end }}
+    {{- if $content.items }}
+    items:
+      {{- range $content.items }}
+      - key: {{ .key }}
+        path: {{ .path }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
     {{- end }}
   {{- end }}
 {{- end -}}
 
 {{- define "summon.common.volumes.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if eq .type "file" }}
+    {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
-  secret: 
-    secretName: {{ default $name $content.key }}
+  secret:
+    secretName: {{ ( default $name $content.name ) | replace "." "-" }}
+    {{- if $content.defaultMode }}
+    defaultMode: {{ $content.defaultMode }}
+    {{- end }}
+    {{- if $content.items }}
+    items:
+      {{- range $content.items }}
+      - key: {{ .key }}
+        path: {{ .path }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
     {{- end }}
   {{- end }}
 {{- end -}}

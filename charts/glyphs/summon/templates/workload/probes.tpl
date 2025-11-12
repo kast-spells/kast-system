@@ -20,7 +20,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     {{- end }}
 {{- end }}
 {{- if eq $pDef.type "tcpSocket"}}
-  TcpSocket:
+  tcpSocket:
     port: {{ $pDef.port }}
 {{- end }}
 {{- if eq $pDef.type "exec" }}

@@ -13,6 +13,9 @@ volumeMounts:
   {{- if .Values.volumes }}
     {{- include "summon.common.volumeMounts.volumes" .Values.volumes | nindent 2 -}}
   {{- end }}
+  {{- if .Values.workload.volumeClaimTemplates }}
+    {{- include "summon.common.volumeMounts.volumeClaimTemplates" .Values.workload.volumeClaimTemplates | nindent 2 -}}
+  {{- end }}
 {{- end -}}
 
 {{- define "summon.common.volumeMounts.volumes" -}}
@@ -27,20 +30,47 @@ volumeMounts:
 ## TODO el name deberia incluir la common.name
 {{- define "summon.common.volumeMounts.configMaps" -}}
   {{- range $name, $content := .  }}
-    {{- if and ( or (eq ( default "local" $content.location ) "local") (eq $content.location "create") ) (eq .type "file") }}
-- name: {{ ( default $name $content.name ) | replace "." "-"}}
+    {{- if ne ( default "file" .contentType ) "env" }}
+    {{- $fileName := ( default $name $content.name ) | replace "." "-" }}
+- name: {{ $fileName }}
+  {{- if $content.items }}
+  {{/* If items are defined, mountPath is the directory */}}
   mountPath: {{ $content.mountPath }}
-  subPath: {{ default $name $content.key }}
+  {{- else }}
+  {{/* If no items, mountPath includes filename (legacy behavior) */}}
+  mountPath: {{ $content.mountPath }}/{{ ( default $name $content.name ) }}
+  {{- end }}
+  {{- if $content.subPath }}
+  subPath: {{ $content.subPath }}
+  {{- else if not $content.items }}
+  {{/* Only use default subPath if items are NOT defined (single file mount) */}}
+  subPath: {{ $fileName }}
+  {{- end }}
     {{- end }}
   {{- end }}
 {{- end -}}
 
 {{- define "summon.common.volumeMounts.secrets" -}}
   {{- range $name, $content := . }}
-    {{- if eq .type "file" }}
+    {{- if ne ( default "file" .contentType ) "env" }}
 - name: {{ ( default $name $content.name ) | replace "." "-"}}
   mountPath: {{ $content.mountPath }}
-  subPath: {{ default $name $content.key }}
+  {{- if $content.subPath }}
+  subPath: {{ $content.subPath }}
+  {{- else if not $content.items }}
+  {{/* Only use default subPath if items are NOT defined (single file mount) */}}
+  subPath: {{ ( default $name $content.name ) | replace "." "-" }}
+  {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+
+{{- define "summon.common.volumeMounts.volumeClaimTemplates" -}}
+  {{- range $name, $content := . }}
+- name: {{ $name }}
+  mountPath: {{ $content.destinationPath }}
+    {{- if $content.readOnly }}
+  readOnly: {{ $content.readOnly }}
     {{- end }}
   {{- end }}
 {{- end -}}

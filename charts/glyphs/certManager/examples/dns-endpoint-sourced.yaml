@@ -1,0 +1,63 @@
+# Test example for certManager dnsEndpointSourced
+# This validates DNSEndpoint creation with values from Vault secrets
+
+spellbook:
+  name: dns-test
+chapter:
+  name: test
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  # First create a cryptoKey that will generate the keypair
+  vault:
+    - type: cryptoKey
+      name: test-dkim
+      algorithm: ed25519
+      domain: test.example.com
+      comment: "DKIM for test.example.com"
+
+    # Test with RSA DKIM
+    - type: cryptoKey
+      name: test-rsa-dkim
+      algorithm: rsa
+      bits: 2048
+      domain: test2.example.com
+      comment: "RSA DKIM for test2.example.com"
+
+  # Then create DNSEndpoint that reads from the secret
+  certManager:
+    # Test DKIM DNS record with format string
+    - type: dnsEndpointSourced
+      name: test-dkim-record
+      dnsName: "default._domainkey.test.example.com"
+      recordType: "TXT"
+      sourceSecret: test-dkim
+      sourceKey: public_key_base64
+      dnsRecordFormat: "v=DKIM1; k=ed25519; p=%s"
+
+    # Test simple TXT record without formatting
+    - type: dnsEndpointSourced
+      name: test-simple-txt
+      dnsName: "_verify.test.example.com"
+      recordType: "TXT"
+      sourceSecret: test-dkim
+      sourceKey: public_key
+
+    - type: dnsEndpointSourced
+      name: test-rsa-dkim-record
+      dnsName: "default._domainkey.test2.example.com"
+      recordType: "TXT"
+      sourceSecret: test-rsa-dkim
+      sourceKey: public_key_base64
+      dnsRecordFormat: "v=DKIM1; k=rsa; p=%s"

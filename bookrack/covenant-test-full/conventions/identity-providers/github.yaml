@@ -1,0 +1,13 @@
+# Identity Provider: GitHub OAuth
+# External authentication via GitHub accounts
+
+enabled: true
+providerId: github
+displayName: "GitHub"
+trustEmail: true
+storeToken: true
+
+config:
+  clientId: "$github-oauth:client_id"
+  clientSecret: "$github-oauth:client_secret"
+  defaultScope: "user:email"

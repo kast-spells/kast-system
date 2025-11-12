@@ -1,0 +1,62 @@
+name: test-02-dag-volumes
+
+spellbook: {name: test}
+chapter: {name: intermediate}
+
+cards:
+  write-data:
+    type: card
+    labels: {category: writer}
+    container:
+      image: busybox:latest
+      command: ["sh", "-c"]
+      args: ["echo 'test data' > /workspace/data.txt"]
+    volumes:
+      workspace:
+        type: emptyDir
+        destinationPath: /workspace
+
+  read-data:
+    type: card
+    labels: {category: reader}
+    container:
+      image: busybox:latest
+      command: ["sh", "-c"]
+      args: ["cat /workspace/data.txt"]
+    volumes:
+      workspace:
+        type: emptyDir
+        destinationPath: /workspace
+
+tarot:
+  executionMode: dag
+
+  # Global volumes shared across workflow
+  volumes:
+    workspace:
+      type: emptyDir
+      sizeLimit: 1Gi
+
+  # Global envs
+  envs:
+    TEST_ENV: "intermediate"
+    LOG_LEVEL: "debug"
+
+  reading:
+    write:
+      selectors: {category: writer}
+      position: foundation
+
+    read:
+      selectors: {category: reader}
+      position: action
+      depends: [write]
+
+  serviceAccount:
+    enabled: true
+    name: dag-test-runner
+
+  rbac:
+    enabled: true
+
+  generateName: true

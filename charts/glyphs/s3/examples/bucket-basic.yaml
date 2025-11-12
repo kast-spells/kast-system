@@ -1,0 +1,66 @@
+# Basic S3 bucket access example
+# Shows app requesting S3 storage via s3.type:bucket
+
+name: my-app
+
+spellbook:
+  name: the-yaml-life
+chapter:
+  name: staging
+
+# Lexicon with vault and s3-provider (normally in global appendix)
+lexicon:
+  - type: vault
+    name: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: the-yaml-life
+    secretPath: kv
+    labels:
+      default: book
+  - type: s3-provider
+    name: seaweedfs
+    namespace: seaweedfs
+    serviceAccount: seaweedfs-s3-aggregator-pod
+    role: seaweedfs-s3-identities
+    endpoint: https://s3-weed.the.yaml.life
+    region: us-east-1
+    vault:
+      path: /s3-identities
+    labels:
+      provider: seaweedfs
+      default: book
+
+# Request S3 bucket access
+glyphs:
+  s3:
+    my-data:
+      type: bucket
+      # Optional overrides:
+      # bucket: custom-bucket-name  # default: {book}-{chapter}-{name}
+      # permissions: ["Read", "Write", "List"]  # default: ["Read", "Write", "List"]
+      # pattern: true  # adds -* suffix for wildcard access
+      # pattern: ["prefix-*", "*-suffix"]  # custom bucket patterns
+      # passPolicyName: short-policy  # default
+
+# Consume S3 credentials in app
+image:
+  repository: myapp
+  tag: latest
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+# Reference the S3 secret created by glyph
+secrets:
+  my-data:
+    contentType: env  # Injects all S3 vars as environment
+
+service:
+  enabled: true
+  ports:
+    - port: 8080
+      name: http

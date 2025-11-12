@@ -1,0 +1,20 @@
+# Integration: Vault
+# HashiCorp Vault OIDC client for secrets management
+
+enabled: true
+clientId: vault
+webUrl: https://vault.test.local
+
+redirectUris:
+  - https://vault.test.local/ui/vault/auth/oidc/oidc/callback
+  - https://vault.test.local/oidc/callback
+
+defaultClientScopes:
+  - profile
+  - email
+  - custom-roles
+  - groups
+
+secret: keycloak-client-vault
+directAccess: true
+public: false

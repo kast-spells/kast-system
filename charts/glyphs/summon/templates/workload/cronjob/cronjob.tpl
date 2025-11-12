@@ -2,57 +2,78 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
  */}}
-{{- define "summon.cronjob" -}}
-apiVersion: batch/v1beta1
+{{- define "summon.workload.cronjob" -}}
+{{- $root := . -}}
+---
+apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "common.name" . }}
+  name: {{ include "common.name" $root }}
   labels:
-{{- include "common.labels" . | nindent 2}}
+    {{- include "common.labels" $root | nindent 4}}
   annotations:
-{{- include "common.annotations" . | nindent 2}}
+    {{- include "common.annotations" $root | nindent 4}}
 spec:
-  schedule: {{ .Values.workload.schedule | quote }}
+  schedule: {{ $root.Values.workload.schedule | quote }}
+  {{- if $root.Values.workload.concurrencyPolicy }}
+  concurrencyPolicy: {{ $root.Values.workload.concurrencyPolicy }}
+  {{- end }}
+  {{- if $root.Values.workload.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ $root.Values.workload.successfulJobsHistoryLimit }}
+  {{- end }}
+  {{- if $root.Values.workload.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $root.Values.workload.failedJobsHistoryLimit }}
+  {{- end }}
   jobTemplate:
     spec:
+      {{- if $root.Values.workload.backoffLimit }}
+      backoffLimit: {{ $root.Values.workload.backoffLimit }}
+      {{- end }}
+      {{- if $root.Values.workload.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ $root.Values.workload.activeDeadlineSeconds }}
+      {{- end }}
       template:
         metadata:
           labels:
-            app: {{ include "common.name" . }}
-            run: {{  .Release.Namespace }}
-            app.kubernetes.io/name: {{ include "common.name" . }}
+            {{- include "common.selectorLabels" $root | nindent 12 }}
+          annotations:
+            {{- include "summon.checksums.annotations" $root | nindent 12 }}
         spec:
-          serviceAccountName: {{ include "common.serviceAccountName" . }}
+          serviceAccountName: {{ include "common.serviceAccountName" $root }}
+          {{- if $root.Values.workload.restartPolicy }}
+          restartPolicy: {{ $root.Values.workload.restartPolicy }}
+          {{- else }}
+          restartPolicy: OnFailure
+          {{- end }}
+          {{- with $root.Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if $root.Values.initContainers }}
           initContainers:
-          {{- if .Values.initContainers }}
-          {{- include "summon.container" (list . .Values.initContainers ) | nindent 12 }}
+            {{- include "summon.common.container" (list $root $root.Values.initContainers ) | nindent 12 }}
           {{- end }}
           containers:
-          {{- if .Values.sideCars }}
-          {{- include "summon.container" (list . .Values.sideCars ) | nindent 12 }}
-          {{- end }}
-          {{- include "summon.container" (list . .Values  ) | nindent 12  }}
-          {{- with .nodeSelector }}
+            {{- if $root.Values.sideCars }}
+            {{- include "summon.common.container" (list $root $root.Values.sideCars ) | nindent 12 }}
+            {{- end }}
+            #main Container
+            {{- include "summon.common.container" (list $root (list $root.Values) ) | nindent 12  }}
+          {{- with $root.Values.nodeSelector }}
           nodeSelector:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .affinity }}
+          {{- with $root.Values.affinity }}
           affinity:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .tolerations }}
+          {{- with $root.Values.tolerations }}
           tolerations:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.imagePullSecrets }}
+          {{- with $root.Values.imagePullSecrets }}
           imagePullSecrets:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .podSecurityContext }}
-          securityContext:
-            {{- toYaml .podSecurityContext | nindent 8 }}
-          {{- end }}
-          {{- include "summon.common.volumes" . | nindent 10 }}
+          {{- include "summon.common.volumes" $root |nindent 10 }}
 {{- end -}}
-
-#TODO faltan los volumenes

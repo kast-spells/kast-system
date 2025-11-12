@@ -1,0 +1,20 @@
+name: keycloak-basic-realm-role
+
+glyphs:
+  keycloak:
+    - type: realmRole
+      name: test-role-developer
+      roleName: developer
+      realmRef: test-realm
+      description: "Developer role with access to dev resources"
+      composite: false
+
+    - type: realmRole
+      name: test-role-admin
+      roleName: admin
+      realmRef: test-realm
+      description: "Administrator role with full access"
+      composite: true
+      compositeRoles:
+        - developer
+        - user-manager

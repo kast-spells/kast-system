@@ -1,0 +1,24 @@
+# Test: Simple rune fallback (only values, no chart/path/repository)
+# This is the minimal test case for rune fallback functionality
+
+name: rune-simple-fallback
+
+# Source 1: Primary deployment
+workload:
+  enabled: true
+  type: deployment
+
+image:
+  repository: busybox
+  tag: latest
+
+# Source 2: Rune with ONLY values → must use defaultTrinket
+runes:
+  - values:
+      workload:
+        enabled: true
+        type: job
+      image:
+        repository: alpine
+        tag: latest
+      command: ["echo", "Hello from rune fallback"]

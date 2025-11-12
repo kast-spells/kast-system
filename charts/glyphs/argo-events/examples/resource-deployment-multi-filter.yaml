@@ -1,0 +1,178 @@
+name: resource-deployment-multi-filter
+
+spellbook:
+  name: example-book
+chapter:
+  name: monitoring
+
+# Lexicon defines available EventBus instances
+lexicon:
+  - name: monitoring-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: production
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+# Test Resource EventSource with multiple filter conditions on Deployments
+glyphs:
+  argo-events:
+    # EventSource: Monitor deployments with complex filtering
+    deployment-multi-filter-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: production
+      resource:
+        deployment-monitoring:
+          namespace: default
+          group: apps
+          version: v1
+          resource: deployments
+          eventTypes:
+            - UPDATE
+          filter:
+            # Multiple label filters (AND logic)
+            labels:
+              - key: app
+                operation: "="
+                value: web-app
+              - key: tier
+                operation: "="
+                value: frontend
+              - key: environment
+                operation: "in"
+                value: "production,staging"
+            # Complex expression filter
+            expression: |
+              has(body.metadata.annotations) &&
+              has(body.metadata.annotations['kast.ing/action']) &&
+              (body.metadata.annotations['kast.ing/action'] == 'restart' ||
+               body.metadata.annotations['kast.ing/action'] == 'scale')
+
+    # Sensor: Handle restart action
+    deployment-restart-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      template:
+        serviceAccountName: deployment-operator
+      dependencies:
+        - name: deployment-restart-event
+          eventSourceName: deployment-multi-filter-source
+          eventName: deployment-monitoring
+          filters:
+            data:
+              - path: body.metadata.annotations.kast\.io/action
+                type: string
+                value:
+                  - "restart"
+      triggers:
+        - name: restart-deployment
+          type: argoWorkflow
+          argoWorkflow:
+            operation: submit
+            source:
+              resource:
+                apiVersion: argoproj.io/v1alpha1
+                kind: Workflow
+                metadata:
+                  generateName: restart-deployment-
+                  namespace: default
+                spec:
+                  entrypoint: restart
+                  serviceAccountName: deployment-operator
+                  arguments:
+                    parameters:
+                      - name: deployment-name
+                        value: "default-deployment"
+                      - name: deployment-namespace
+                        value: "default"
+                  templates:
+                    - name: restart
+                      container:
+                        image: bitnami/kubectl:latest
+                        command: [sh, -c]
+                        args:
+                          - |
+                            echo "Restarting deployment {{workflow.parameters.deployment-name}} in namespace {{workflow.parameters.deployment-namespace}}"
+                            kubectl rollout restart deployment/{{workflow.parameters.deployment-name}} -n {{workflow.parameters.deployment-namespace}}
+          parameters:
+            - src:
+                dependencyName: deployment-restart-event
+                dataKey: body.metadata.name
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: deployment-restart-event
+                dataKey: body.metadata.namespace
+              dest: spec.arguments.parameters.1.value
+
+    # Sensor: Handle scale action
+    deployment-scale-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      template:
+        serviceAccountName: deployment-operator
+      dependencies:
+        - name: deployment-scale-event
+          eventSourceName: deployment-multi-filter-source
+          eventName: deployment-monitoring
+          filters:
+            data:
+              - path: body.metadata.annotations.kast\.io/action
+                type: string
+                value:
+                  - "scale"
+      triggers:
+        - name: scale-deployment
+          type: argoWorkflow
+          argoWorkflow:
+            operation: submit
+            source:
+              resource:
+                apiVersion: argoproj.io/v1alpha1
+                kind: Workflow
+                metadata:
+                  generateName: scale-deployment-
+                  namespace: default
+                spec:
+                  entrypoint: scale
+                  serviceAccountName: deployment-operator
+                  arguments:
+                    parameters:
+                      - name: deployment-name
+                        value: "default-deployment"
+                      - name: deployment-namespace
+                        value: "default"
+                      - name: replicas
+                        value: "3"
+                  templates:
+                    - name: scale
+                      container:
+                        image: bitnami/kubectl:latest
+                        command: [sh, -c]
+                        args:
+                          - |
+                            echo "Scaling deployment {{workflow.parameters.deployment-name}} to {{workflow.parameters.replicas}} replicas"
+                            kubectl scale deployment/{{workflow.parameters.deployment-name}} \
+                              --replicas={{workflow.parameters.replicas}} \
+                              -n {{workflow.parameters.deployment-namespace}}
+          parameters:
+            - src:
+                dependencyName: deployment-scale-event
+                dataKey: body.metadata.name
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: deployment-scale-event
+                dataKey: body.metadata.namespace
+              dest: spec.arguments.parameters.1.value
+            - src:
+                dependencyName: deployment-scale-event
+                dataKey: body.metadata.annotations.kast\.io/replicas
+              dest: spec.arguments.parameters.2.value

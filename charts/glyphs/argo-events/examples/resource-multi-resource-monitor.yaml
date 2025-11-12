@@ -1,0 +1,107 @@
+name: resource-multi-resource-monitor
+
+spellbook:
+  name: example-book
+chapter:
+  name: monitoring
+
+# Lexicon defines available EventBus instances
+lexicon:
+  - name: monitoring-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: development
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+# Test Resource EventSource monitoring multiple resource types
+glyphs:
+  argo-events:
+    # EventSource: Monitor ConfigMaps
+    configmap-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: development
+      resource:
+        configmap-monitoring:
+          namespace: default
+          group: ""
+          version: v1
+          resource: configmaps
+          eventTypes:
+            - ADD
+            - UPDATE
+            - DELETE
+          filter:
+            labels:
+              - key: app.kubernetes.io/managed-by
+                operation: "="
+                value: kast-system
+
+    # EventSource: Monitor StatefulSets
+    statefulset-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: development
+      resource:
+        statefulset-monitoring:
+          namespace: default
+          group: apps
+          version: v1
+          resource: statefulsets
+          eventTypes:
+            - UPDATE
+          filter:
+            expression: |
+              has(body.spec.replicas) &&
+              body.spec.replicas > 0
+
+    # EventSource: Monitor PersistentVolumeClaims
+    pvc-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: development
+      resource:
+        pvc-monitoring:
+          namespace: default
+          group: ""
+          version: v1
+          resource: persistentvolumeclaims
+          eventTypes:
+            - ADD
+          filter:
+            labels:
+              - key: storage-class
+                operation: "="
+                value: fast-ssd
+
+    # Unified Sensor: Handle events from all resource types
+    unified-resource-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: development
+      template:
+        serviceAccountName: resource-monitor
+      dependencies:
+        - name: configmap-event
+          eventSourceName: configmap-source
+          eventName: configmap-monitoring
+        - name: statefulset-event
+          eventSourceName: statefulset-source
+          eventName: statefulset-monitoring
+        - name: pvc-event
+          eventSourceName: pvc-source
+          eventName: pvc-monitoring
+      triggers:
+        - name: log-resource-event
+          type: log
+          log:
+            intervalSeconds: 1
+          conditions: "configmap-event || statefulset-event || pvc-event"

@@ -1,0 +1,30 @@
+# Syntax Validation Example
+# Minimal configuration for TDD syntax testing
+
+name: tarot-syntax-test
+
+# Minimal card definition
+cards:
+  test-task:
+    type: card
+    labels:
+      cardType: task
+    container:
+      image: busybox:latest
+      command: ["echo", "syntax test"]
+
+# Minimal tarot reading
+tarot:
+  executionMode: container
+  reading:
+    test-task:
+      position: foundation
+
+# Minimal workflow configuration
+workflow:
+  serviceAccount: default
+  generateName: true
+
+# Disable RBAC for syntax testing
+rbac:
+  enabled: false
