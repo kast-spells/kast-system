@@ -125,6 +125,10 @@ spec:
       {{- end }}
       {{- if .filters }}
       filters:
+        {{- if .filters.expression }}
+        expression: |
+          {{- .filters.expression | nindent 10 }}
+        {{- end }}
         {{- if .filters.exprs }}
         exprs:
           {{- range .filters.exprs }}
