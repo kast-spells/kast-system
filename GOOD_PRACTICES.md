@@ -19,7 +19,7 @@ A comprehensive guide to best practices, patterns, and anti-patterns for develop
 
 ## TDD Best Practices
 
-### The Sacred TDD Cycle: Red-Green-Refactor
+### TDD Cycle: Red-Green-Refactor
 
 #### Understanding the Mechanics
 
@@ -43,7 +43,7 @@ The TDD commands have specific behaviors that enforce discipline:
 - Includes snapshots, glyphs, and all validations
 - **When to use:** After improving code quality
 
-#### The Golden Rules
+#### Core Rules
 
 1. **ALWAYS write tests first**
    ```bash
@@ -249,13 +249,13 @@ spec:
 #### Template Names
 
 ```go
-// ✅ CORRECT
+// Correct:
 {{- define "istio.virtualService" }}
 {{- define "vault.secret" }}
 {{- define "summon.persistentVolumeClaim" }}
 {{- define "certManager.certificate" }}
 
-// ❌ INCORRECT
+// Incorrect:
 {{- define "summon.pvc" }}              // Abbreviation
 {{- define "istio.vs" }}                // Abbreviation
 {{- define "summon.persistante" }}      // Typo
@@ -265,13 +265,13 @@ spec:
 #### File Names
 
 ```
-✅ CORRECT:
+Correct:
 - virtualService.tpl
 - persistentVolumeClaim.tpl
 - certificate.yaml
 - _helpers.tpl
 
-❌ INCORRECT:
+Incorrect:
 - pvc.tpl                    # Abbreviation
 - VirtualService.tpl         # Capital letter
 - secret-template.tpl        # Redundant suffix
@@ -342,12 +342,12 @@ image: {{ default $root.Values.defaultImage $glyphDefinition.image }}
 ### Single Responsibility Principle
 
 ```go
-// ✅ GOOD: One template per resource type
+// Good: One template per resource type
 {{- define "myglyph.deployment" }}    // Generates Deployment
 {{- define "myglyph.service" }}       // Generates Service
 {{- define "myglyph.configmap" }}     // Generates ConfigMap
 
-// ❌ BAD: One template generating multiple unrelated resources
+// Bad: One template generating multiple unrelated resources
 {{- define "myglyph.everything" }}    // Generates Deployment + Service + ConfigMap
 ```
 
@@ -625,13 +625,13 @@ type: logging           # Logging aggregator
 ### Naming Best Practices
 
 ```yaml
-# ✅ GOOD: Descriptive and specific
+# Good: Descriptive and specific
 - name: external-production-gateway
 - name: vault-production-server
 - name: postgres-primary-database
 - name: jetstream-production-eventbus
 
-# ❌ BAD: Vague and ambiguous
+# Bad: Vague and ambiguous
 - name: gateway1
 - name: server
 - name: db
@@ -754,10 +754,10 @@ make show-snapshot-diff CHART=summon EXAMPLE=basic-deployment
 #### 4. Glyph Testing Through Kaster
 
 ```bash
-# ✅ CORRECT: Test glyph through kaster orchestration
+# Correct: Test glyph through kaster orchestration
 make glyphs vault
 
-# ❌ INCORRECT: Test glyph directly (will fail)
+# Incorrect: Test glyph directly (will fail)
 helm template charts/glyphs/vault
 ```
 
@@ -779,21 +779,21 @@ make test-covenant-all-chapters BOOK=covenant-tyl
 #### 1. Implementation-First Testing
 
 ```yaml
-# ❌ BAD: Writing tests to match existing implementation
+# Bad: Writing tests to match existing implementation
 # This leads to weak tests that don't validate behavior
 
-# ✅ GOOD: Write tests defining expected behavior first
+# Good: Write tests defining expected behavior first
 # Then implement to make tests pass
 ```
 
 #### 2. Single Example per Chart
 
 ```
-# ❌ BAD
+# Bad:
 charts/summon/examples/
 └── basic.yaml  # Only one scenario
 
-# ✅ GOOD
+# Good:
 charts/summon/examples/
 ├── basic-deployment.yaml
 ├── statefulset-with-storage.yaml
@@ -804,37 +804,37 @@ charts/summon/examples/
 #### 3. Ignoring Test Failures
 
 ```bash
-# ❌ BAD: Continuing development with failing tests
+# Bad: Continuing development with failing tests
 make test
-# Output: ❌ Some tests failing
+# Output: Some tests failing
 # Continues working on new features
 
-# ✅ GOOD: Fix all failures before proceeding
+# Good: Fix all failures before proceeding
 make test
-# Output: ❌ Some tests failing
+# Output: Some tests failing
 # Stops, investigates, fixes root cause
 ```
 
 #### 4. Manual Testing Only
 
 ```bash
-# ❌ BAD: Only testing manually with kubectl
+# Bad: Only testing manually with kubectl
 helm install test-release charts/summon
 kubectl get pods
 
-# ✅ GOOD: Automated testing with TDD commands
+# Good: Automated testing with TDD commands
 make test-all
 ```
 
 #### 5. Not Testing Edge Cases
 
 ```yaml
-# ❌ BAD: Only testing happy path
+# Bad: Only testing happy path
 workload:
   enabled: true
   replicas: 2
 
-# ✅ GOOD: Testing edge cases
+# Good: Testing edge cases
 workload:
   enabled: false  # Disabled workload
   replicas: 0     # Zero replicas
@@ -1264,126 +1264,9 @@ image:
 
 ---
 
-## GitOps Workflow Recommendations
-
-### Branch Strategy
-
-```
-master (or main)
-  ↓
-feature/descriptive-name  # Feature development
-  ↓
-PR → Review → Merge
-```
-
-### Commit Message Format
-
-```
-feat(component): Short description
-
-Detailed explanation of changes.
-
-- Added X feature
-- Fixed Y issue
-- Refactored Z
-
-TDD cycle: Red → Green → Refactor
-Tests: make test-all passing
-```
-
-### Pre-Commit Checklist
-
-```bash
-# 1. Run all tests
-make test-all
-
-# 2. Verify test status
-make test-status
-
-# 3. Lint charts
-make lint
-
-# 4. Check for uncommitted files
-git status
-
-# 5. Review changes
-git diff
-
-# 6. Commit with descriptive message
-git commit -m "feat(summon): Add PodDisruptionBudget support"
-```
-
-### ArgoCD Integration
-
-#### Application Naming
-
-```yaml
-# ✅ GOOD: Descriptive application names
-metadata:
-  name: my-book-production-my-app
-  # Pattern: {book}-{chapter}-{spell}
-```
-
-#### Sync Policies
-
-```yaml
-# ✅ GOOD: Automatic sync for dev/staging
-syncPolicy:
-  automated:
-    prune: true
-    selfHeal: true
-
-# ✅ GOOD: Manual sync for production
-syncPolicy:
-  automated: null  # Manual approval required
-```
-
-### Release Process
-
-1. **Development**
-   ```bash
-   # Feature branch
-   git checkout -b feature/new-feature
-   # TDD development
-   make tdd-red
-   # Implement
-   make tdd-green
-   # Refactor
-   make tdd-refactor
-   ```
-
-2. **Testing**
-   ```bash
-   # Comprehensive testing
-   make test-all
-   # Verify no regressions
-   make test-status
-   ```
-
-3. **Review**
-   - Create PR
-   - Code review
-   - Address feedback
-   - Retest
-
-4. **Merge**
-   ```bash
-   # Merge to master
-   git checkout master
-   git merge feature/new-feature
-   git push origin master
-   ```
-
-5. **Deploy**
-   - ArgoCD detects changes
-   - Auto-sync or manual approval
-   - Monitor deployment
-
----
-
 ## Summary
 
-### Golden Rules
+### Core Principles
 
 1. **TDD is mandatory** - Red → Green → Refactor
 2. **Test first, implement second** - Always

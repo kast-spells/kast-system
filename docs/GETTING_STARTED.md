@@ -684,13 +684,13 @@ helm install example-tdd-book librarian --set name=example-tdd-book
 
 **You learned:**
 
-1. ✅ Create book structure (book/chapter/spell)
-2. ✅ Deploy with librarian to ArgoCD
-3. ✅ Add infrastructure with glyphs (vault, istio)
-4. ✅ Use lexicon for infrastructure registry
-5. ✅ Deploy to multiple environments
-6. ✅ Add databases with runes
-7. ✅ Troubleshoot common issues
+1. Create book structure (book/chapter/spell)
+2. Deploy with librarian to ArgoCD
+3. Add infrastructure with glyphs (vault, istio)
+4. Use lexicon for infrastructure registry
+5. Deploy to multiple environments
+6. Add databases with runes
+7. Troubleshoot common issues
 
 **Key Concepts:**
 
