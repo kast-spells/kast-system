@@ -61,12 +61,12 @@ generate_snapshots() {
     fi
 
     if [ ! -d "$chart_dir" ]; then
-        echo -e "${RED}❌ Chart not found: $chart_dir${RESET}"
+        echo -e "${RED}[ERROR] Chart not found: $chart_dir${RESET}"
         exit 1
     fi
 
     if [ ! -d "$chart_dir/examples" ]; then
-        echo -e "${YELLOW}⚠️  No examples directory for $chart_name${RESET}"
+        echo -e "${YELLOW}[WARN]  No examples directory for $chart_name${RESET}"
         exit 0
     fi
 
@@ -82,9 +82,9 @@ generate_snapshots() {
             echo -e "${BLUE}  Generating $example_name.expected.yaml...${RESET}"
 
             if helm template "$test_name" "$chart_dir" -f "$example" > "$output_file" 2>/dev/null; then
-                echo -e "${GREEN}✅ Generated $example_name.expected.yaml${RESET}"
+                echo -e "${GREEN}[OK] Generated $example_name.expected.yaml${RESET}"
             else
-                echo -e "${RED}❌ Failed to generate $example_name.expected.yaml${RESET}"
+                echo -e "${RED}[ERROR] Failed to generate $example_name.expected.yaml${RESET}"
             fi
         fi
     done
@@ -116,7 +116,7 @@ update_snapshot() {
     local output_file="$OUTPUT_TEST_DIR/$chart_name/$example_name.expected.yaml"
 
     if [ ! -f "$example_file" ]; then
-        echo -e "${RED}❌ Example not found: $example_file${RESET}"
+        echo -e "${RED}[ERROR] Example not found: $example_file${RESET}"
         exit 1
     fi
 
@@ -126,9 +126,9 @@ update_snapshot() {
     local test_name="update-$chart_name-$example_name"
 
     if helm template "$test_name" "$chart_dir" -f "$example_file" > "$output_file" 2>/dev/null; then
-        echo -e "${GREEN}✅ Updated $output_file${RESET}"
+        echo -e "${GREEN}[OK] Updated $output_file${RESET}"
     else
-        echo -e "${RED}❌ Failed to update snapshot${RESET}"
+        echo -e "${RED}[ERROR] Failed to update snapshot${RESET}"
         exit 1
     fi
 }
@@ -149,7 +149,7 @@ update_all_snapshots() {
         fi
     done
 
-    echo -e "${GREEN}✅ All snapshots updated${RESET}"
+    echo -e "${GREEN}[OK] All snapshots updated${RESET}"
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -169,7 +169,7 @@ show_diff() {
     local expected="$OUTPUT_TEST_DIR/$chart_name/$example_name.expected.yaml"
 
     if [ ! -f "$actual" ] || [ ! -f "$expected" ]; then
-        echo -e "${RED}❌ Missing files${RESET}"
+        echo -e "${RED}[ERROR] Missing files${RESET}"
         echo -e "${YELLOW}Run: make test-snapshots${RESET}"
         exit 1
     fi

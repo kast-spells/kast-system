@@ -11,7 +11,7 @@ Comprehensive guide to the glyph system in kast. Glyphs are reusable Helm named 
 - Provide consistent interfaces across deployments
 - Enable composition of complex systems from simple definitions
 - Reduce YAML duplication and boilerplate
-- Leverage infrastructure discovery via lexicon
+- Leverage infrastructure discovery via [Lexicon](LEXICON.md)
 
 **Core Concept:** "Spell once, use everywhere"
 
@@ -49,20 +49,24 @@ Comprehensive guide to the glyph system in kast. Glyphs are reusable Helm named 
         └───────────────────────────────┘
 ```
 
+**See [Kaster](KASTER.md) for orchestration details and [Lexicon](LEXICON.md) for infrastructure discovery.**
+
 ## Key Concepts
 
 ### 1. Glyph Definition
 
-User-facing configuration that declares infrastructure requirements:
+User-facing configuration that declares infrastructure requirements using a **map structure** where the key is the resource name:
 
 ```yaml
 glyphs:
   vault:                        # Glyph package name
-    - type: secret              # Template type within package
-      name: database-creds      # Resource name
+    database-creds:             # Resource name (map key)
+      type: secret              # Template type within package
       format: env               # Glyph-specific parameters
       keys: [username, password]
 ```
+
+**IMPORTANT:** Glyphs use a map structure (not a list). The resource name is the map key, not a `name:` field inside the definition.
 
 ### 2. Glyph Template
 
@@ -101,7 +105,7 @@ charts/glyphs/vault/
 
 ### 4. Runic Indexer
 
-Query system for discovering infrastructure from lexicon:
+Query system for discovering infrastructure from [Lexicon](LEXICON.md):
 
 ```go
 {{- $vaults := get (include "runicIndexer.runicIndexer"
@@ -111,7 +115,7 @@ Query system for discovering infrastructure from lexicon:
            $root.Values.chapter.name) | fromJson) "results" }}
 ```
 
-**Pattern:** Glyphs use runic indexer to find infrastructure (vault servers, databases, gateways) from lexicon based on selectors or defaults.
+**Pattern:** Glyphs use runic indexer to find infrastructure (vault servers, databases, gateways) from lexicon based on selectors or defaults. See [Lexicon](LEXICON.md) for query patterns.
 
 ## How Glyphs Work
 
@@ -124,19 +128,19 @@ name: my-app
 
 glyphs:
   vault:
-    - type: secret
-      name: app-config
+    app-config:                 # Resource name as map key
+      type: secret
       keys: [api_key]
 
   istio:
-    - type: virtualService
-      name: app-routing
+    app-routing:                # Resource name as map key
+      type: virtualService
       hosts: [app.example.com]
 ```
 
 ### Step 2: Kaster Detection
 
-Librarian detects `glyphs:` field and adds kaster as multi-source:
+Librarian detects `glyphs:` field and adds [Kaster](KASTER.md) as multi-source:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -148,22 +152,24 @@ spec:
       helm:
         values: |
           glyphs:              # Glyph definitions passed
-            vault: [...]
-            istio: [...]
+            vault: {...}
+            istio: {...}
           spellbook: {...}     # Context passed
           chapter: {...}
           lexicon: [...]
 ```
 
+See [Kaster](KASTER.md) for orchestration mechanics.
+
 ### Step 3: Glyph Iteration
 
-Kaster iterates over glyph definitions and invokes templates:
+[Kaster](KASTER.md) iterates over glyph definitions and invokes templates:
 
 ```go
-{{- range $glyphName, $glyphList := .Values.glyphs }}
-  {{- range $glyphDefinition := $glyphList }}
+{{- range $glyphName, $glyphMap := .Values.glyphs }}
+  {{- range $resourceName, $glyphDefinition := $glyphMap }}
     {{- $templateName := printf "%s.%s" $glyphName $glyphDefinition.type }}
-    {{- include $templateName (list $ $glyphDefinition) }}
+    {{- include $templateName (list $ (merge (dict "name" $resourceName) $glyphDefinition)) }}
   {{- end }}
 {{- end }}
 ```
@@ -171,15 +177,15 @@ Kaster iterates over glyph definitions and invokes templates:
 ### Step 4: Template Execution
 
 Each glyph template:
-1. Receives `$root` (chart context) and `$glyphDefinition` (user config)
-2. Queries lexicon via runic indexer (if needed)
+1. Receives `$root` (chart context) and `$glyphDefinition` (user config with resource name)
+2. Queries lexicon via runic indexer (if needed) - see [Lexicon](LEXICON.md)
 3. Generates Kubernetes resources
 4. Returns YAML manifests
 
 ### Step 5: Resource Deployment
 
 ArgoCD deploys generated resources to Kubernetes:
-- VaultSecret resources
+- VaultSecret resources (see [Vault Integration](VAULT.md))
 - Istio VirtualServices
 - Certificate requests
 - Custom resources
@@ -191,7 +197,7 @@ ArgoCD deploys generated resources to Kubernetes:
 **Purpose:** Connect applications to infrastructure services
 
 **Glyphs:**
-- **vault** - Secrets management, authentication, policies
+- **vault** - Secrets management, authentication, policies (see [Vault Integration](VAULT.md))
 - **istio** - Service mesh, routing, security
 - **certManager** - TLS certificates, DNS records
 - **argo-events** - Event-driven workflows
@@ -200,14 +206,17 @@ ArgoCD deploys generated resources to Kubernetes:
 ```yaml
 glyphs:
   vault:
-    - type: prolicy         # Create policy
-    - type: secret          # Sync secrets
+    app-policy:                 # Resource name as map key
+      type: prolicy             # Create policy
+    app-secret:                 # Resource name as map key
+      type: secret              # Sync secrets
   istio:
-    - type: virtualService  # Configure routing
+    app-routing:                # Resource name as map key
+      type: virtualService      # Configure routing
 ```
 
 **Documentation:**
-- [VAULT.md](VAULT.md) - Vault integration
+- [Vault Integration](VAULT.md) - Vault integration
 - [docs/glyphs/istio.md](glyphs/istio.md) - Istio integration
 - [docs/glyphs/certmanager.md](glyphs/certmanager.md) - Certificate management
 - [docs/glyphs/argo-events.md](glyphs/argo-events.md) - Event workflows
@@ -225,9 +234,12 @@ glyphs:
 ```yaml
 glyphs:
   gcp:
-    - type: bucket          # Create GCS bucket
-    - type: serviceAccount  # Create GCP SA
-    - type: workloadIdentity  # Bind K8s SA to GCP SA
+    my-bucket:                  # Resource name as map key
+      type: bucket              # Create GCS bucket
+    my-sa:                      # Resource name as map key
+      type: serviceAccount      # Create GCP SA
+    app-identity:               # Resource name as map key
+      type: workloadIdentity    # Bind K8s SA to GCP SA
 ```
 
 **Documentation:**
@@ -247,13 +259,13 @@ glyphs:
 ```yaml
 glyphs:
   postgres-cloud:
-    - type: cluster         # Create PostgreSQL cluster
-      name: app-db
+    app-db:                     # Resource name as map key
+      type: cluster             # Create PostgreSQL cluster
       replicas: 3
 
   vault:
-    - type: databaseEngine  # Dynamic credentials
-      name: postgres-engine
+    postgres-engine:            # Resource name as map key
+      type: databaseEngine      # Dynamic credentials
       roles:
         - name: readonly
           dbName: myapp
@@ -261,7 +273,7 @@ glyphs:
 
 **Documentation:**
 - [docs/glyphs/postgres-cloud.md](glyphs/postgres-cloud.md)
-- [VAULT.md](VAULT.md) (databaseEngine section)
+- [Vault Integration](VAULT.md) (databaseEngine section)
 
 ### Identity & Access
 
@@ -275,16 +287,16 @@ glyphs:
 ```yaml
 glyphs:
   keycloak:
-    - type: realm           # Create realm
-      name: myapp-realm
-    - type: client          # OIDC client
-      name: myapp-client
+    myapp-realm:                # Resource name as map key
+      type: realm               # Create realm
+    myapp-client:               # Resource name as map key
+      type: client              # OIDC client
       clientId: myapp
 ```
 
 **Documentation:**
 - [docs/glyphs/keycloak.md](glyphs/keycloak.md)
-- [VAULT.md](VAULT.md) (authentication section)
+- [Vault Integration](VAULT.md) (authentication section)
 
 ### System Utilities
 
@@ -305,7 +317,8 @@ labels:
 # freeForm glyph (for arbitrary resources)
 glyphs:
   freeForm:
-    - type: resource
+    custom-config:              # Resource name as map key
+      type: resource
       yaml: |
         apiVersion: v1
         kind: ConfigMap
@@ -322,7 +335,7 @@ glyphs:
 
 ### Pattern 1: Infrastructure Discovery
 
-**Use lexicon for environment-aware configuration:**
+**Use [Lexicon](LEXICON.md) for environment-aware configuration:**
 
 ```yaml
 # Lexicon (in book _lexicon/)
@@ -338,15 +351,15 @@ lexicon:
 # Spell (automatically finds production-vault in production chapter)
 glyphs:
   vault:
-    - type: secret
-      name: app-secret
-      # Uses chapter default vault automatically
+    app-secret:                 # Resource name as map key
+      type: secret
+      # Uses chapter default vault automatically via runic indexer
 ```
 
 **Benefits:**
 - Same spell works across environments
 - Infrastructure changes don't require spell updates
-- Centralized infrastructure configuration
+- Centralized infrastructure configuration in [Lexicon](LEXICON.md)
 
 ### Pattern 2: Multi-Glyph Composition
 
@@ -358,27 +371,28 @@ name: payment-service
 glyphs:
   # Authentication & Authorization
   vault:
-    - type: prolicy
+    payment-policy:             # Resource name as map key
+      type: prolicy
       serviceAccount: payment-service
-    - type: secret
-      name: database-creds
+    database-creds:             # Resource name as map key
+      type: secret
       keys: [username, password]
-    - type: secret
-      name: stripe-api-key
+    stripe-api-key:             # Resource name as map key
+      type: secret
       keys: [api_key]
 
   # Service Mesh
   istio:
-    - type: virtualService
-      name: payment-api
+    payment-api:                # Resource name as map key
+      type: virtualService
       hosts: [payments.example.com]
       circuitBreaking:
         enabled: true
 
   # TLS Certificates
   certManager:
-    - type: certificate
-      name: payment-tls
+    payment-tls:                # Resource name as map key
+      type: certificate
       dnsNames: [payments.example.com]
       issuerRef:
         name: letsencrypt-prod
@@ -408,7 +422,8 @@ chapter:
 # Spell-level vault policy (application-specific)
 glyphs:
   vault:
-    - type: prolicy
+    app-policy:                 # Resource name as map key
+      type: prolicy
       extraPolicy:
         - path: applications/payment/secrets
           capabilities: [create, read, update]
@@ -425,25 +440,27 @@ glyphs:
 name: my-app
 glyphs:
   vault:
-    - type: secret
-      name: dev-credentials
+    dev-credentials:            # Resource name as map key
+      type: secret
       # Development uses simpler auth
 
 # Production
 name: my-app
 glyphs:
   vault:
-    - type: secret
-      name: prod-credentials
+    prod-credentials:           # Resource name as map key
+      type: secret
       # Production uses mTLS
 
   istio:
-    - type: virtualService
+    app-routing:                # Resource name as map key
+      type: virtualService
       # Only production has external routing
       hosts: [app.production.com]
 
   certManager:
-    - type: certificate
+    app-tls:                    # Resource name as map key
+      type: certificate
       # Only production has TLS certificates
       dnsNames: [app.production.com]
 ```
@@ -456,20 +473,20 @@ glyphs:
 glyphs:
   vault:
     # Book-level (shared across all chapters)
-    - type: secret
-      name: registry-credentials
+    registry-credentials:       # Resource name as map key
+      type: secret
       path: book
       keys: [username, password]
 
     # Chapter-level (shared within chapter)
-    - type: secret
-      name: database-credentials
+    database-credentials:       # Resource name as map key
+      type: secret
       path: chapter
       keys: [host, port, database]
 
     # Namespace-level (application-specific)
-    - type: secret
-      name: app-private-key
+    app-private-key:            # Resource name as map key
+      type: secret
       # Default path (namespace-scoped)
       keys: [private_key]
 ```
@@ -490,13 +507,13 @@ glyph-name.template-type description
 Parameters:
 - $root: Chart root context (index . 0)
 - $glyphDefinition: Configuration (index . 1)
-  - name: Resource name (required)
+  - name: Resource name (injected from map key)
   - field1: Description (optional)
 
 Example:
   glyph-name:
-    - type: template-type
-      name: example
+    my-resource:              # Map key becomes name
+      type: template-type
       field1: value
 */}}
 
@@ -520,7 +537,7 @@ data:
 ```go
 {{- define "myglyph.resource" -}}
 {{- $root := index . 0 -}}           # Chart context
-{{- $glyphDefinition := index . 1 }} # User configuration
+{{- $glyphDefinition := index . 1 }} # User configuration (includes name from map key)
 
 # Access root context
 {{- $spellbookName := $root.Values.spellbook.name }}
@@ -528,7 +545,7 @@ data:
 {{- $namespace := $root.Release.Namespace }}
 
 # Access glyph definition
-{{- $resourceName := $glyphDefinition.name }}
+{{- $resourceName := $glyphDefinition.name }}  # Injected from map key
 {{- $enabled := default true $glyphDefinition.enabled }}
 {{- $replicas := default 1 $glyphDefinition.replicas }}
 {{- end }}
@@ -541,7 +558,7 @@ data:
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1 }}
 
-{{/* Query lexicon for infrastructure */}}
+{{/* Query lexicon for infrastructure (see LEXICON.md) */}}
 {{- $results := get (include "runicIndexer.runicIndexer"
      (list $root.Values.lexicon
            (default dict $glyphDefinition.selector)
@@ -560,6 +577,8 @@ data:
 {{- end }}
 {{- end }}
 ```
+
+**See [Lexicon](LEXICON.md) for runic indexer query patterns.**
 
 ### Common Glyph Integration
 
@@ -600,8 +619,8 @@ lexicon:
 
 glyphs:
   myglyph:
-    - type: resource
-      name: test-resource
+    test-resource:              # Map key is resource name
+      type: resource
 EOF
 
 # Verify test fails (template doesn't exist)
@@ -643,6 +662,8 @@ make glyphs myglyph
 # Output: ✅ myglyph-basic (output matches expected)
 ```
 
+**See [Glyph Development](GLYPH_DEVELOPMENT.md) for complete TDD workflow and [TDD Commands](TDD_COMMANDS.md) for testing commands.**
+
 ### Testing Commands
 
 ```bash
@@ -665,7 +686,7 @@ make show-glyph-diff GLYPH=vault EXAMPLE=secrets
 make clean-output-tests
 ```
 
-**See [TESTING.md](TESTING.md) for complete testing guide**
+**See [TDD Commands](TDD_COMMANDS.md) for complete command reference.**
 
 ## Best Practices
 
@@ -675,21 +696,23 @@ make clean-output-tests
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      selector: {environment: production}  # Environment-aware
+    app-secret:                 # Map key is resource name
+      type: secret
+      selector: {environment: production}  # Environment-aware via lexicon
 ```
 
 **Avoid (hardcoded):**
 ```yaml
 glyphs:
   vault:
-    - type: secret
+    app-secret:                 # Map key is resource name
+      type: secret
       vaultURL: https://vault.prod.svc:8200  # Hardcoded
 ```
 
 ### Use Lexicon for Discovery
 
-**Leverage runic indexer:**
+**Leverage runic indexer with [Lexicon](LEXICON.md):**
 ```yaml
 # Lexicon defines infrastructure
 lexicon:
@@ -703,8 +726,9 @@ lexicon:
 # Glyph discovers automatically
 glyphs:
   database:
-    - type: connection
-      # Finds production-db in production chapter
+    app-connection:             # Map key is resource name
+      type: connection
+      # Finds production-db in production chapter via runic indexer
 ```
 
 ### Validate Inputs
@@ -716,7 +740,7 @@ glyphs:
 
 {{/* Validate required fields */}}
 {{- if not $glyphDefinition.name }}
-  {{- fail "myglyph.resource requires 'name' field" }}
+  {{- fail "myglyph.resource requires 'name' field (injected from map key)" }}
 {{- end }}
 
 {{- if not (hasKey $glyphDefinition "type") }}
@@ -743,14 +767,14 @@ myglyph.resource creates a ConfigMap
 Parameters:
 - $root: Chart root context (index . 0)
 - $glyphDefinition: Configuration (index . 1)
-  - name: ConfigMap name (required)
+  - name: ConfigMap name (injected from map key)
   - enabled: Enable resource (optional, default: true)
   - data: ConfigMap data (optional)
 
 Example:
   myglyph:
-    - type: resource
-      name: my-config
+    my-config:              # Map key becomes name
+      type: resource
       enabled: true
       data:
         key: value
@@ -767,6 +791,8 @@ examples/
 ├── lexicon-integration.yaml  # With runic indexer
 └── multi-resource.yaml     # Multiple instances
 ```
+
+**See [Glyph Development](GLYPH_DEVELOPMENT.md) for testing best practices.**
 
 ## Creating New Glyphs
 
@@ -788,8 +814,8 @@ EOF
 cat > charts/glyphs/myglyph/examples/basic.yaml <<EOF
 glyphs:
   myglyph:
-    - type: resource
-      name: test
+    test-resource:              # Map key is resource name
+      type: resource
 EOF
 
 # 4. Run test (expect failure)
@@ -815,7 +841,7 @@ make glyphs myglyph
 make generate-expected GLYPH=myglyph
 ```
 
-**See [GLYPH_DEVELOPMENT.md](GLYPH_DEVELOPMENT.md) for complete guide**
+**See [Glyph Development](GLYPH_DEVELOPMENT.md) for complete development guide.**
 
 ## Troubleshooting
 
@@ -823,13 +849,15 @@ make generate-expected GLYPH=myglyph
 
 **Check:**
 ```bash
-# Verify kaster source added
+# Verify kaster source added (see KASTER.md)
 helm template my-book librarian --set name=my-book \
   | yq '.spec.sources[] | select(.path | contains("kaster"))'
 
 # Verify glyph configuration passed
 make glyphs <name>
 ```
+
+**See [Kaster](KASTER.md) for orchestration troubleshooting.**
 
 ### Template Not Found
 
@@ -855,6 +883,8 @@ yq '.lexicon[] | select(.type == "<type>")' \
 # Labels: {environment: production}  # Must match
 ```
 
+**See [Lexicon](LEXICON.md) for query troubleshooting.**
+
 ### Resources Not Created
 
 **Check:**
@@ -871,12 +901,12 @@ kubectl get <resource> -n <namespace>
 
 ## Related Documentation
 
-- [KASTER.md](KASTER.md) - Glyph orchestration
-- [GLYPH_DEVELOPMENT.md](GLYPH_DEVELOPMENT.md) - Creating glyphs
+- [Kaster](KASTER.md) - Glyph orchestration
+- [Glyph Development](GLYPH_DEVELOPMENT.md) - Creating glyphs
 - [GLYPHS_REFERENCE.md](GLYPHS_REFERENCE.md) - Complete glyph list
-- [LEXICON.md](LEXICON.md) - Infrastructure discovery
-- [TESTING.md](TESTING.md) - Testing glyphs
-- [VAULT.md](VAULT.md) - Vault glyph details
+- [Lexicon](LEXICON.md) - Infrastructure discovery
+- [TDD Commands](TDD_COMMANDS.md) - Testing commands
+- [Vault Integration](VAULT.md) - Vault glyph details
 - [docs/glyphs/](glyphs/) - Individual glyph documentation
 
 ## Examples
@@ -889,26 +919,27 @@ name: production-app
 glyphs:
   # Secrets & Authentication
   vault:
-    - type: prolicy
+    app-policy:                 # Map key is resource name
+      type: prolicy
       serviceAccount: production-app
       extraPolicy:
         - path: database/creds/app-role
           capabilities: [read]
 
-    - type: secret
-      name: app-config
+    app-config:                 # Map key is resource name
+      type: secret
       format: env
       keys: [api_key, webhook_secret]
 
-    - type: secret
-      name: database-creds
+    database-creds:             # Map key is resource name
+      type: secret
       format: env
       keys: [username, password]
 
   # Service Mesh
   istio:
-    - type: virtualService
-      name: app-routing
+    app-routing:                # Map key is resource name
+      type: virtualService
       hosts: [app.example.com]
       http:
         - match:
@@ -925,8 +956,8 @@ glyphs:
 
   # TLS Certificates
   certManager:
-    - type: certificate
-      name: app-tls
+    app-tls:                    # Map key is resource name
+      type: certificate
       dnsNames:
         - app.example.com
         - api.example.com
@@ -936,8 +967,8 @@ glyphs:
 
   # Database
   postgres-cloud:
-    - type: cluster
-      name: app-database
+    app-database:               # Map key is resource name
+      type: cluster
       replicas: 3
       size: 100Gi
 ```
@@ -951,9 +982,9 @@ glyphs:
 
 **Glyphs:**
 - Reusable infrastructure templates
-- Orchestrated by Kaster
-- Discovered via Runic Indexer
-- Tested via TDD methodology
+- Orchestrated by [Kaster](KASTER.md)
+- Discovered via [Lexicon](LEXICON.md) and Runic Indexer
+- Tested via [TDD methodology](TDD_COMMANDS.md)
 - Composable and environment-aware
 
 **Key Benefits:**
@@ -963,4 +994,4 @@ glyphs:
 - Consistent patterns
 - Testable and maintainable
 
-**Pattern:** Declare infrastructure requirements, glyphs handle implementation details.
+**Pattern:** Declare infrastructure requirements with map structure, glyphs handle implementation details.

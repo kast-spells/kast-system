@@ -53,14 +53,14 @@ Reusable Helm named template for specific functionality. Glyphs are invoked via 
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: my-secret
+    my-secret:
+      type: secret
       format: env
       keys: [username, password]
 
   istio:
-    - type: virtualService
-      name: my-service
+    my-service:
+      type: virtualService
       httpRules:
         - prefix: /
           port: 80

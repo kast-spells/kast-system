@@ -1,6 +1,6 @@
 # Infrastructure Discovery with Lexicon & Runic Indexer
 
-The lexicon and runic indexer form the foundation of kast's intelligent infrastructure discovery system. This system enables glyphs to automatically find and connect to appropriate infrastructure resources based on labels, selectors, and intelligent fallback mechanisms.
+The lexicon and runic indexer form the foundation of kast's intelligent infrastructure discovery system. This system enables [glyphs](GLYPHS.md) to automatically find and connect to appropriate infrastructure resources based on labels, selectors, and intelligent fallback mechanisms.
 
 ## Overview
 
@@ -16,7 +16,7 @@ Instead of hardcoding infrastructure references, kast uses a **lexicon** (regist
 
 ## Lexicon Structure
 
-The lexicon is a list of infrastructure resources defined with labels for selection:
+The lexicon is a list of infrastructure resources defined with labels for selection in the [bookrack structure](BOOKRACK.md):
 
 ```yaml
 # bookrack/my-book/_lexicon/infrastructure.yaml
@@ -72,6 +72,7 @@ Each lexicon entry contains:
 ### Special Labels
 
 #### Default Hierarchy
+The [hierarchy system](HIERARCHY_SYSTEMS.md) uses special labels for intelligent fallbacks:
 - **`default: book`**: Global fallback for the entire book
 - **`default: chapter`**: Chapter-specific fallback
 - **No default**: Must be explicitly selected
@@ -152,6 +153,8 @@ Returns JSON object with `results` array:
 
 ### Gateway Selection (Istio)
 
+Istio [glyphs](GLYPHS.md) use the runic indexer to discover appropriate gateways based on selectors.
+
 **Lexicon Definition:**
 ```yaml
 lexicon:
@@ -176,7 +179,7 @@ glyphs:
       # Runic indexer finds external-gateway
 ```
 
-**Template Implementation:**
+**Template Implementation (within [Kaster](KASTER.md) orchestration):**
 ```helm
 {{- $gateways := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon $glyphDefinition.selector "istio-gw" $root.Values.chapter.name) | fromJson) "results" }}
 {{- range $gateway := $gateways }}
@@ -189,6 +192,8 @@ spec:
 ```
 
 ### Vault Server Discovery
+
+The [Vault integration](VAULT.md) uses the runic indexer to discover Vault servers dynamically.
 
 **Lexicon Definition:**
 ```yaml
@@ -215,6 +220,8 @@ glyphs:
 ```
 
 ### EventBus Selection (Argo Events)
+
+Argo Events [glyphs](GLYPHS.md) discover EventBus resources based on type and environment selectors.
 
 **Lexicon Definition:**
 ```yaml
@@ -420,6 +427,7 @@ lexicon:
 ### Integration Patterns
 
 #### Book-Level Lexicon
+Lexicon entries are typically defined at the [book level](BOOKRACK.md) for organization-wide infrastructure:
 ```yaml
 # bookrack/my-book/_lexicon/infrastructure.yaml
 lexicon:
@@ -430,6 +438,7 @@ lexicon:
 ```
 
 #### Chapter-Level Overrides
+Chapter-specific resources follow the [hierarchy system](HIERARCHY_SYSTEMS.md) for environment-specific configuration:
 ```yaml
 # In chapter values
 lexicon:

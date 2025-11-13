@@ -1,0 +1,67 @@
+spellbook:
+  name: test-postgresql
+  chapters:
+    - databases
+
+chapter:
+  name: databases
+
+glyphs:
+  postgresql:
+    production-db:
+      type: cluster
+      description: Production PostgreSQL cluster with custom configuration
+      instances: 3
+      startDelay: 3000
+      stopDelay: 100
+      primaryUpdateStrategy: supervised
+
+      image:
+        name: cloudnative-pg/postgresql
+        repository: ghcr.io
+        tag: "17.5"
+
+      roles:
+        - name: app-user
+          ensure: present
+          connectionLimit: -1
+          inherit: true
+          comment: Application database user
+          login: true
+          superuser: false
+          createdb: true
+          createrole: false
+          passwordSecret:
+            name: app-user-password
+
+      dbName: production_db
+      userName: app-user
+      secret: db-credentials
+
+      postInitApp:
+        database: production_db
+        owner: app-user
+        type: cm
+        name: db-init-sql
+        key: init.sql
+        # Note: create: true requires summon templates
+        # In real usage, create the ConfigMap separately or use summon chart
+
+      storage:
+        storageClass: fast-ssd
+        size: 20Gi
+
+      resources:
+        limits:
+          cpu: "2"
+          memory: 4Gi
+        requests:
+          cpu: "1"
+          memory: 2Gi
+
+      postgresql:
+        parameters:
+          max_connections: "200"
+          shared_buffers: "1GB"
+          effective_cache_size: "3GB"
+          work_mem: "5242kB"

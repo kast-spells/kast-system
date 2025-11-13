@@ -1,6 +1,6 @@
 # Kaster
 
-Orchestration chart that serves as the package manager for glyphs. Kaster coordinates multiple glyphs by iterating glyph definitions and invoking templates.
+Orchestration chart that serves as the package manager for [glyphs](GLYPHS.md). Kaster coordinates multiple glyphs by iterating glyph definitions and invoking templates.
 
 ## Overview
 
@@ -15,7 +15,7 @@ Kaster is the central orchestration mechanism in kast-system that:
 
 **Location:** `charts/kaster/`
 
-**Deployment:** Automatically added as multi-source by Librarian when spell has `glyphs:` field
+**Deployment:** Automatically added as multi-source by [Librarian](LIBRARIAN.md) when spell has `glyphs:` field
 
 ## Architecture
 
@@ -60,22 +60,22 @@ Kaster is the central orchestration mechanism in kast-system that:
 
 ### 1. Glyph Detection
 
-Librarian scans spell for glyph definitions:
+[Librarian](LIBRARIAN.md) scans spell for glyph definitions:
 
 ```yaml
 # Spell
 glyphs:
-  vault:              # Vault glyph definitions
-    - type: secret
-      name: app-secret
-  istio:              # Istio glyph definitions
-    - type: virtualService
-      name: app-vs
+  vault:                    # Vault glyph definitions
+    app-secret:             # Resource name
+      type: secret
+  istio:                    # Istio glyph definitions
+    app-vs:                 # Resource name
+      type: virtualService
 ```
 
 ### 2. Multi-Source Addition
 
-Librarian adds kaster as additional source:
+[Librarian](LIBRARIAN.md) adds kaster as additional source:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -97,11 +97,11 @@ spec:
         values: |
           glyphs:
             vault:
-              - type: secret
-                name: app-secret
+              app-secret:               # Resource name
+                type: secret
             istio:
-              - type: virtualService
-                name: app-vs
+              app-vs:                   # Resource name
+                type: virtualService
           spellbook:
             name: my-book
           chapter:
@@ -117,10 +117,10 @@ spec:
 Kaster template iterates over each glyph type:
 
 ```go
-{{- range $glyphName, $glyphList := .Values.glyphs }}
-  {{- range $glyphDefinition := $glyphList }}
-    {{- $templateName := printf "%s.%s" $glyphName $glyphDefinition.type }}
-    {{- include $templateName (list $ $glyphDefinition) }}
+{{- range $chartName, $_ := $root.Subcharts }}
+  {{- range $glyphName, $glyph := index $root.Values.glyphs $chartName }}
+    {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+    {{- include (printf "%s.%s" $chartName $glyph.type) (list $root $glyphWithName) }}
   {{- end }}
 {{- end }}
 ```
@@ -129,18 +129,18 @@ Kaster template iterates over each glyph type:
 
 ```yaml
 glyphs:
-  vault:                        # $glyphName = "vault"
-    - type: secret              # $glyphDefinition.type = "secret"
-      name: app-secret
+  vault:                        # $chartName = "vault"
+    app-secret:                 # $glyphName = "app-secret"
+      type: secret              # $glyph.type = "secret"
       # Template invoked: "vault.secret"
 
-    - type: prolicy             # $glyphDefinition.type = "prolicy"
-      name: app-policy
+    app-policy:                 # $glyphName = "app-policy"
+      type: prolicy             # $glyph.type = "prolicy"
       # Template invoked: "vault.prolicy"
 
-  istio:                        # $glyphName = "istio"
-    - type: virtualService      # $glyphDefinition.type = "virtualService"
-      name: app-vs
+  istio:                        # $chartName = "istio"
+    app-vs:                     # $glyphName = "app-vs"
+      type: virtualService      # $glyph.type = "virtualService"
       # Template invoked: "istio.virtualService"
 ```
 
@@ -186,8 +186,8 @@ metadata:
 ```yaml
 glyphs:
   <glyph-name>:                  # Glyph package (vault, istio, etc.)
-    - type: <template-type>      # Template to invoke
-      name: <resource-name>      # Resource name
+    <resource-name>:             # Resource identifier (becomes map key)
+      type: <template-type>      # Template to invoke
       # Additional glyph-specific parameters
 ```
 
@@ -216,6 +216,8 @@ All glyphs receive:
 | `$glyphDefinition.*` | Glyph configuration | Spell |
 
 ## Context Propagation
+
+See [Hierarchy Systems](HIERARCHY_SYSTEMS.md) for detailed information on how context flows through the system.
 
 ### Spellbook Context
 
@@ -405,12 +407,12 @@ name: my-app
 
 glyphs:
   vault:
-    - type: secret
-      name: app-config
+    app-config:                 # Resource name
+      type: secret
       keys: [api_key, database_url]
 ```
 
-**Result:** VaultSecret resource syncing to K8s Secret
+**Result:** [VaultSecret](VAULT.md) resource syncing to K8s Secret
 
 ### Multi-Glyph Composition
 
@@ -420,27 +422,27 @@ name: my-app
 glyphs:
   # Secrets management
   vault:
-    - type: prolicy
-      name: app-policy
+    app-policy:                 # Resource name
+      type: prolicy
       serviceAccount: my-app
-    - type: secret
-      name: app-secrets
+    app-secrets:                # Resource name
+      type: secret
       keys: [password]
 
   # Service mesh
   istio:
-    - type: virtualService
-      name: app-vs
+    app-vs:                     # Resource name
+      type: virtualService
       hosts: [app.example.com]
 
   # TLS certificates
   certManager:
-    - type: certificate
-      name: app-tls
+    app-tls:                    # Resource name
+      type: certificate
       dnsNames: [app.example.com]
 ```
 
-**Result:** Policy, Secret, VirtualService, Certificate all generated
+**Result:** [Policy](VAULT.md), Secret, VirtualService, Certificate all generated
 
 ### Infrastructure Glyph (No Workload)
 
@@ -451,15 +453,15 @@ name: vault-setup
 
 glyphs:
   vault:
-    - type: prolicy
-      name: team-policy
+    team-policy:                # Resource name
+      type: prolicy
       serviceAccount: team-sa
       extraPolicy:
         - path: database/creds/*
           capabilities: [read]
 
-    - type: customPasswordPolicy
-      name: strong-passwords
+    strong-passwords:           # Resource name
+      type: customPasswordPolicy
       policy: |
         length = 24
         rule "charset" {
@@ -468,7 +470,7 @@ glyphs:
         }
 ```
 
-**Result:** Vault policy and password policy (no pods)
+**Result:** [Vault policy](VAULT.md) and password policy (no pods)
 
 ### Lexicon-Driven Glyph
 
@@ -486,14 +488,14 @@ lexicon:
 # Spell
 glyphs:
   istio:
-    - type: virtualService
-      name: app-vs
+    app-vs:                     # Resource name
+      type: virtualService
       selector:
         environment: production  # Selects production-gateway
       hosts: [app.example.com]
 ```
 
-**Result:** VirtualService uses production-gateway from lexicon
+**Result:** VirtualService uses production-gateway from [lexicon](LEXICON.md)
 
 ## Testing Glyphs
 
@@ -537,8 +539,8 @@ lexicon:
 
 glyphs:
   vault:
-    - type: secret
-      name: test-secret
+    test-secret:                # Resource name
+      type: secret
       keys: [password]
 EOF
 ```
@@ -573,7 +575,8 @@ make generate-expected GLYPH=vault
 # Automatically populated by Librarian
 glyphs:
   <glyph-name>:
-    - type: <template-type>
+    <resource-name>:            # Resource identifier
+      type: <template-type>
       # Glyph-specific config
 
 spellbook:

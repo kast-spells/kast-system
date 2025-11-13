@@ -43,88 +43,81 @@ tdd-refactor: ## TDD Refactor: Run tests after refactoring (should still pass)
 	@$(MAKE) test-all
 
 # =============================================================================
-# CORE TESTING TARGETS
+# TDD TESTING - Kubernetes-style semantic commands
+# =============================================================================
+#
+# Usage:
+#   make test syntax glyph vault           # Test syntax for vault glyph
+#   make test comprehensive trinket tarot  # Comprehensive test for tarot
+#   make test all glyph                    # All tests for all glyphs
+#   make test snapshots glyph vault istio  # Snapshots for specific glyphs
+#
+# Auto-discovery:
+#   make test all                          # Test everything (auto-discover)
+#   make test glyphs                       # All glyphs (auto-discover)
+#   make test glyph vault istio            # Specific glyphs
+#   make test trinkets                     # All trinkets
+#   make test charts                       # All charts
+#
+# Context-based (spell/book testing):
+#   make test spell example-api BOOK=example-tdd-book
+#   make test book covenant-tyl
+#
+# Legacy shortcuts (still work):
+#   make test            # Run comprehensive tests on all charts
+#   make glyphs vault    # Test specific glyph
+#
 # =============================================================================
 
-test: test-comprehensive test-tarot lint ## Run comprehensive TDD tests (original)
-	@echo "$(GREEN)✅ TDD tests completed successfully!$(RESET)"
+# Main test target - Kubernetes-style semantic dispatcher
+test:
+	@$(eval ARGS := $(filter-out test,$(MAKECMDGOALS)))
+	@if [ -z "$(ARGS)" ]; then \
+		echo "$(BLUE)Running default comprehensive test suite...$(RESET)"; \
+		bash tests/core/test-dispatcher.sh comprehensive chart && \
+		bash tests/core/test-dispatcher.sh snapshots chart && \
+		$(MAKE) lint && \
+		echo "$(GREEN)✅ TDD tests completed successfully!$(RESET)"; \
+	else \
+		bash tests/core/test-dispatcher.sh $(ARGS); \
+	fi
 
-test-all: test-comprehensive test-snapshots test-glyphs-all test-tarot lint ## Run all TDD tests (comprehensive + snapshots + glyphs)
+# Backward compatibility - old commands still work
+test-syntax: ## Quick syntax validation for all charts
+	@echo "$(YELLOW)Note: Use 'make test syntax chart' for new syntax$(RESET)"
+	@bash tests/core/test-dispatcher.sh syntax chart
+
+test-comprehensive: ## Test charts with comprehensive validation
+	@echo "$(YELLOW)Note: Use 'make test comprehensive chart' for new syntax$(RESET)"
+	@bash tests/core/test-dispatcher.sh comprehensive chart
+
+test-snapshots: ## Test charts with snapshot validation
+	@echo "$(YELLOW)Note: Use 'make test snapshots chart' for new syntax$(RESET)"
+	@bash tests/core/test-dispatcher.sh snapshots chart
+
+test-all: test-comprehensive test-snapshots test-glyphs-all test-tarot lint ## Run all TDD tests
 	@echo "$(GREEN)✅ All TDD tests completed successfully!$(RESET)"
 
-test-status: ## Show testing status for all charts, glyphs, and trinkets
-	@tests/scripts/test-status.sh
-	@echo "$(BLUE)📊 Testing Status Report$(RESET)"
-	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+test-status: ## Show testing status for all components
+	@echo "$(BLUE)Testing Status Report$(RESET)"
+	@echo "Run tests with: make test [MODE] [TYPE] [COMPONENTS]"
+	@echo "  Modes: syntax, comprehensive, snapshots, all"
+	@echo "  Types: glyph, trinket, chart, spell, book, glyphs, trinkets, charts"
 	@echo ""
-	@echo "$(BLUE)📦 Main Charts:$(RESET)"
-	@find . -name "Chart.yaml" -not -path "./charts/glyphs/*" -not -path "./charts/trinkets/*" | while read chart_file; do \
-		chart_dir=$$(dirname $$chart_file); \
-		chart_name=$$(basename $$chart_dir); \
-		if [ -d "$$chart_dir/examples" ]; then \
-			example_count=$$(find $$chart_dir/examples -name "*.yaml" -type f 2>/dev/null | wc -l); \
-			snapshot_count=$$(find output-test/$$chart_name -name "*.expected.yaml" -type f 2>/dev/null | wc -l); \
-			if [ $$snapshot_count -gt 0 ]; then \
-				echo "  $(GREEN)✅ $$chart_name: $$example_count examples ($$snapshot_count snapshots)$(RESET)"; \
-			else \
-				echo "  $(YELLOW)⚠️  $$chart_name: $$example_count examples (no snapshots)$(RESET)"; \
-			fi; \
-		else \
-			echo "  $(RED)❌ $$chart_name: NO examples/$(RESET)"; \
-		fi; \
-	done
+	@echo "Examples:"
+	@echo "  make test syntax glyph vault"
+	@echo "  make test all glyphs"
+	@echo "  make test comprehensive trinket tarot"
 	@echo ""
-	@echo "$(BLUE)🎭 Glyphs:$(RESET)"
-	@for glyph_dir in charts/glyphs/*/; do \
-		glyph_name=$$(basename $$glyph_dir); \
-		if [ -d "$$glyph_dir/examples" ]; then \
-			example_count=$$(find $$glyph_dir/examples -name "*.yaml" -type f 2>/dev/null | wc -l); \
-			snapshot_count=$$(find output-test/$$glyph_name -name "*.expected.yaml" -type f 2>/dev/null | wc -l); \
-			if [ $$snapshot_count -gt 0 ]; then \
-				echo "  $(GREEN)✅ $$glyph_name: $$example_count examples ($$snapshot_count snapshots)$(RESET)"; \
-			else \
-				echo "  $(YELLOW)⚠️  $$glyph_name: $$example_count examples (no snapshots)$(RESET)"; \
-			fi; \
-		else \
-			echo "  $(RED)❌ $$glyph_name: NO examples/$(RESET)"; \
-		fi; \
-	done
-	@echo ""
-	@echo "$(BLUE)🔮 Trinkets:$(RESET)"
-	@for trinket_dir in charts/trinkets/*/; do \
-		trinket_name=$$(basename $$trinket_dir); \
-		if [ -d "$$trinket_dir/examples" ]; then \
-			example_count=$$(find $$trinket_dir/examples -name "*.yaml" -type f 2>/dev/null | wc -l); \
-			snapshot_count=$$(find output-test/$$trinket_name -name "*.expected.yaml" -type f 2>/dev/null | wc -l); \
-			if [ $$snapshot_count -gt 0 ]; then \
-				echo "  $(GREEN)✅ $$trinket_name: $$example_count examples ($$snapshot_count snapshots)$(RESET)"; \
-			else \
-				echo "  $(YELLOW)⚠️  $$trinket_name: $$example_count examples (no snapshots)$(RESET)"; \
-			fi; \
-		else \
-			echo "  $(RED)❌ $$trinket_name: NO examples/$(RESET)"; \
-		fi; \
-	done
-	@echo ""
-	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
-
-test-syntax: ## Quick syntax validation for all charts
-	@tests/scripts/test-charts.sh syntax
-
-test-comprehensive: ## Test charts with comprehensive validation (rendering + resource completeness)
-	@tests/scripts/test-charts.sh comprehensive
-
-test-snapshots: ## Test charts with snapshot validation + K8s schema (dry-run)
-	@tests/scripts/test-charts.sh snapshots
 
 # =============================================================================
-# GLYPH TESTING (via Kaster orchestration)
+# GLYPH TESTING
 # =============================================================================
 
 # Output test directory for expected results
 OUTPUT_TEST_DIR := output-test
 
-# Dynamic glyph testing - Usage: make glyphs <glyph-name>
+# Legacy compatibility for 'make glyphs <name>'
 glyphs: ## Test specific glyph (Usage: make glyphs vault)
 	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
 		echo "$(RED)Usage: make glyphs <glyph-name>$(RESET)"; \
@@ -132,18 +125,20 @@ glyphs: ## Test specific glyph (Usage: make glyphs vault)
 		ls -1 $(GLYPHS_DIR) | sed 's/^/  - /'; \
 		exit 1; \
 	fi
-	@$(MAKE) test-glyph-$(filter-out $@,$(MAKECMDGOALS))
+	@echo "$(YELLOW)Note: Use 'make test comprehensive glyph $(filter-out $@,$(MAKECMDGOALS))' for new syntax$(RESET)"
+	@$(MAKE) test comprehensive glyph $(filter-out $@,$(MAKECMDGOALS))
 
-# Catch-all rule for glyph names to prevent make errors
+# Catch-all rule for arguments to prevent make errors
 %:
 	@:
 
-test-glyphs-all: ## Test all glyphs through kaster system
-	@tests/scripts/test-glyphs.sh all
+test-glyphs-all: ## Test all glyphs
+	@echo "$(YELLOW)Note: Use 'make test all glyph' for new syntax$(RESET)"
+	@bash tests/core/test-dispatcher.sh all glyph
 
-# Generic glyph testing with diff validation
+# Generic glyph testing - backward compatibility
 test-glyph-%:
-	@tests/scripts/test-glyphs.sh test $*
+	@bash tests/core/test-dispatcher.sh comprehensive glyph $*
 
 # =============================================================================
 # INSPECTION AND DEBUGGING
@@ -170,10 +165,15 @@ debug-chart: ## Debug chart rendering with verbose output (Usage: make debug-cha
 # =============================================================================
 
 generate-expected: ## Generate expected outputs for glyph (Usage: make generate-expected GLYPH=vault)
-	@tests/scripts/test-glyphs.sh generate $(GLYPH)
+	@bash tests/core/test-dispatcher.sh snapshots glyph $(GLYPH)
 
 show-glyph-diff: ## Show diff for specific glyph test (Usage: make show-glyph-diff GLYPH=vault EXAMPLE=secrets)
-	@tests/scripts/test-glyphs.sh show-diff $(GLYPH) $(EXAMPLE)
+	@echo "$(YELLOW)Showing diff for $(GLYPH)/$(EXAMPLE)...$(RESET)"
+	@if [ -f "output-test/glyph-$(GLYPH)/$(EXAMPLE).yaml" ] && [ -f "output-test/glyph-$(GLYPH)/$(EXAMPLE).expected.yaml" ]; then \
+		diff -u "output-test/glyph-$(GLYPH)/$(EXAMPLE).expected.yaml" "output-test/glyph-$(GLYPH)/$(EXAMPLE).yaml" || true; \
+	else \
+		echo "$(RED)Expected or actual output not found$(RESET)"; \
+	fi
 
 list-glyphs: ## List all available glyphs
 	@echo "$(BLUE)Available glyphs:$(RESET)"
@@ -223,83 +223,79 @@ create-example: ## Create a new example file (Usage: make create-example CHART=s
 # TAROT SYSTEM TESTING
 # =============================================================================
 
-test-tarot: ## Test Tarot trinket system comprehensively
-	@tests/scripts/test-tarot.sh all
-
-test-tarot-syntax: ## Test Tarot template syntax validation
-	@tests/scripts/test-tarot.sh syntax
-
-test-tarot-execution-modes: ## Test all Tarot execution modes
-	@tests/scripts/test-tarot.sh execution-modes
-
-test-tarot-card-resolution: ## Test Tarot card resolution system
-	@tests/scripts/test-tarot.sh card-resolution
-
-test-tarot-secrets: ## Test Tarot secret management
-	@tests/scripts/test-tarot.sh secrets
-
-test-tarot-rbac: ## Test Tarot RBAC system
-	@tests/scripts/test-tarot.sh rbac
-
-test-tarot-complex: ## Test complex Tarot workflows
-	@tests/scripts/test-tarot.sh complex
+test-tarot: ## Test Tarot trinket system (all modes: syntax, execution, cards, secrets, rbac)
+	@bash tests/core/test-dispatcher.sh all trinket tarot
 
 # =============================================================================
 # COVENANT BOOK TESTING
 # =============================================================================
 
-.PHONY: test-covenant test-covenant-tyl test-covenant-test-full list-covenant-books
+.PHONY: test-covenant list-covenant-books
 
-test-covenant: test-covenant-tyl test-covenant-test-full ## Test all covenant books
-
-test-covenant-tyl: ## Test covenant-tyl book
-	@echo "$(BLUE)📖 Testing covenant-tyl book...$(RESET)"
-	@tests/scripts/test-covenant-book.sh covenant-tyl
-
-test-covenant-test-full: ## Test covenant-test-full book
-	@echo "$(BLUE)📖 Testing covenant-test-full book...$(RESET)"
-	@tests/scripts/test-covenant-book.sh covenant-test-full
-
-test-covenant-book: ## Test specific covenant book (use BOOK=<name>)
+test-covenant: ## Test all covenant books (Usage: make test-covenant or make test-covenant BOOK=covenant-tyl)
 	@if [ -z "$(BOOK)" ]; then \
-		echo "$(RED)Error: BOOK variable not set$(RESET)"; \
-		echo "$(YELLOW)Usage: make test-covenant-book BOOK=covenant-tyl$(RESET)"; \
+		echo "$(BLUE)📖 Testing all covenant books...$(RESET)"; \
+		tests/scripts/test-covenant-book.sh covenant-tyl; \
+		tests/scripts/test-covenant-book.sh covenant-test-full; \
+	else \
+		echo "$(BLUE)📖 Testing covenant book: $(BOOK)...$(RESET)"; \
+		tests/scripts/test-covenant-book.sh $(BOOK); \
+	fi
+
+list-covenant-books: ## List all available covenant books
+	@echo "$(BLUE)📚 Available Covenant Books:$(RESET)"
+	@BOOKRACK_PATH=$${COVENANT_BOOKRACK_PATH:-$$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack}; \
+	if [ -d "$$BOOKRACK_PATH" ]; then \
+		find "$$BOOKRACK_PATH" -maxdepth 2 -name "index.yaml" -exec grep -l "realm:" {} \; 2>/dev/null | \
+			xargs -I {} dirname {} | xargs -I {} basename {} | sort | sed 's/^/  - /'; \
+	else \
+		echo "  $(YELLOW)Bookrack not found at: $$BOOKRACK_PATH$(RESET)"; \
+		echo "  $(YELLOW)Set COVENANT_BOOKRACK_PATH to override$(RESET)"; \
+	fi
+
+# =============================================================================
+# SPELL TESTING (Simple individual spell testing)
+# =============================================================================
+
+test-spell: ## Test individual spell with context (Usage: make test-spell BOOK=example-tdd-book SPELL=example-api)
+	@if [ -z "$(BOOK)" ] || [ -z "$(SPELL)" ]; then \
+		echo "$(RED)Error: BOOK and SPELL variables required$(RESET)"; \
+		echo "$(YELLOW)Usage: make test-spell BOOK=example-tdd-book SPELL=example-api$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)📖 Testing covenant book: $(BOOK)...$(RESET)"
-	@tests/scripts/test-covenant-book.sh $(BOOK)
+	@tests/scripts/test-spell.sh $(BOOK) $(SPELL)
 
-test-covenant-chapter: ## Test specific chapter of covenant book (use BOOK=<name> CHAPTER=<chapter>)
-	@if [ -z "$(BOOK)" ] || [ -z "$(CHAPTER)" ]; then \
-		echo "$(RED)Error: BOOK and CHAPTER variables required$(RESET)"; \
-		echo "$(YELLOW)Usage: make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl$(RESET)"; \
+# =============================================================================
+# LINTING & VALIDATION
+# =============================================================================
+
+lint: ## Run helm lint on all charts (glyphs as templates, not dependencies)
+	@echo "$(BLUE)🔍 Linting all charts...$(RESET)"
+	@echo "$(YELLOW)Note: Glyphs are copied templates, not helm dependencies - lint warnings about missing dependencies are expected$(RESET)"
+	@echo ""
+	@FAILED=0; \
+	for chart_dir in $(CHARTS_DIR)/summon $(CHARTS_DIR)/kaster $(LIBRARIAN_DIR) $(CHARTS_DIR)/trinkets/*; do \
+		if [ -f "$$chart_dir/Chart.yaml" ]; then \
+			chart_name=$$(basename $$chart_dir); \
+			echo "$(BLUE)  Linting $$chart_name...$(RESET)"; \
+			LINT_OUTPUT=$$(helm lint $$chart_dir 2>&1); \
+			LINT_EXIT=$$?; \
+			if echo "$$LINT_OUTPUT" | grep -q "chart metadata is missing these dependencies"; then \
+				echo "$(YELLOW)  ⚠️  $$chart_name (glyphs not declared as dependencies - by design)$(RESET)"; \
+			elif [ $$LINT_EXIT -eq 0 ]; then \
+				echo "$(GREEN)  ✅ $$chart_name$(RESET)"; \
+			else \
+				echo "$(RED)  ❌ $$chart_name (real errors found)$(RESET)"; \
+				echo "$$LINT_OUTPUT" | grep -E "\[ERROR\]" | sed 's/^/     /'; \
+				FAILED=1; \
+			fi; \
+		fi; \
+	done; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo ""; \
+		echo "$(RED)❌ Lint found real errors (not dependency warnings)$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)📖 Testing covenant book chapter: $(BOOK) / $(CHAPTER)...$(RESET)"
-	@tests/scripts/test-covenant-book.sh $(BOOK) --chapter-filter $(CHAPTER)
-
-test-covenant-all-chapters: ## Test covenant book with all chapters (use BOOK=<name>)
-	@if [ -z "$(BOOK)" ]; then \
-		echo "$(RED)Error: BOOK variable not set$(RESET)"; \
-		echo "$(YELLOW)Usage: make test-covenant-all-chapters BOOK=covenant-tyl$(RESET)"; \
-		exit 1; \
-	fi
-	@echo "$(BLUE)📖 Testing covenant book with all chapters: $(BOOK)...$(RESET)"
-	@tests/scripts/test-covenant-book.sh $(BOOK) --all-chapters
-
-test-covenant-debug: ## Debug covenant book rendering (use BOOK=<name>)
-	@if [ -z "$(BOOK)" ]; then \
-		echo "$(RED)Error: BOOK variable not set$(RESET)"; \
-		echo "$(YELLOW)Usage: make test-covenant-debug BOOK=covenant-tyl$(RESET)"; \
-		exit 1; \
-	fi
-	@echo "$(BLUE)🔍 Debug rendering covenant book: $(BOOK)...$(RESET)"
-	@tests/scripts/test-covenant-book.sh $(BOOK) --debug
-
-list-covenant-books: ## List all available covenant books (from proto-the-yaml-life)
-	@echo "$(BLUE)📚 Available Covenant Books (proto-the-yaml-life):$(RESET)"
-	@find /home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack -maxdepth 2 -name "index.yaml" -exec grep -l "realm:" {} \; 2>/dev/null | \
-		xargs -I {} dirname {} | xargs -I {} basename {} | sort | sed 's/^/  - /' || echo "  $(YELLOW)No covenant books found$(RESET)"
 
 # =============================================================================
 # CLEANUP
@@ -309,69 +305,4 @@ clean: ## Clean up generated test files
 	@echo "$(BLUE)🧹 TDD: Cleaning up test files...$(RESET)"
 	@rm -rf $(OUTPUT_TEST_DIR)
 	@echo "$(GREEN)✅ Cleanup completed$(RESET)"
-# RunicIndexer Tests
-.PHONY: test-runic-indexer test-runic-and-logic test-runic-fallback test-runic-empty
 
-test-runic-indexer: test-runic-and-logic test-runic-fallback test-runic-empty
-
-test-runic-and-logic:
-	@echo "🧪 Testing runicIndexer AND logic (multi-selector)..."
-	@echo "Expected: Only external-gateway (matches access=external AND environment=staging)"
-	@helm template test-lexicon charts/kaster -f charts/glyphs/runic-system/examples/lexicon-lookup.yaml 2>&1 | \
-		grep -E "(kind: VirtualService|name: test-|hosts:)" | \
-		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
-	@echo ""
-
-test-runic-fallback:
-	@echo "🧪 Testing runicIndexer fallback to chapter/book defaults..."
-	@echo "Expected: chapter-default-gateway (selector doesn't match, falls back to chapter default)"
-	@helm template test-fallback charts/kaster -f charts/glyphs/runic-system/examples/fallback-defaults.yaml 2>&1 | \
-		grep -E "(kind: VirtualService|name:|hosts:)" | \
-		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
-	@echo ""
-
-test-runic-empty:
-	@echo "🧪 Testing runicIndexer with empty selector..."
-	@echo "Expected: chapter-default (NOT all gateways!)"
-	@helm template test-empty charts/kaster -f charts/glyphs/runic-system/examples/empty-selector.yaml 2>&1 | \
-		grep -E "(kind: VirtualService|name:|hosts:)" | \
-		grep -A2 "kind: VirtualService" || echo "  ❌ Test failed"
-	@echo ""
-
-# =============================================================================
-# LIBRARIAN MIGRATION TESTING (ApplicationSets TDD)
-# =============================================================================
-
-.PHONY: snapshot-librarian test-librarian-appsets compare-librarian-migration tdd-librarian-red tdd-librarian-green tdd-librarian-refactor render-spell-from-cluster
-
-LIBRARIAN_SNAPSHOT_DIR := $(OUTPUT_TEST_DIR)/librarian-snapshot
-LIBRARIAN_APPSETS_DIR := $(OUTPUT_TEST_DIR)/librarian-appsets
-
-snapshot-librarian: ## Generate snapshot of current librarian Applications (TDD baseline)
-	@echo "$(BLUE)📸 TDD: Generating librarian Applications snapshot...$(RESET)"
-	@tests/scripts/test-librarian-migration.sh baseline the-yaml-life $(LIBRARIAN_SNAPSHOT_DIR)
-
-# Deprecated - use snapshot-librarian
-test-librarian-appsets: ## Test ApplicationSet expansion (simulates git files generator)
-	@echo "$(BLUE)🔮 TDD: Testing ApplicationSet expansion...$(RESET)"
-	@tests/scripts/test-librarian-migration.sh test the-yaml-life /home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack $(LIBRARIAN_APPSETS_DIR)
-
-# Deprecated - use compare-librarian-migration  
-compare-librarian-migration: ## Compare current vs ApplicationSet generated Applications
-	@echo "$(BLUE)🔍 TDD: Comparing librarian migration...$(RESET)"
-	@tests/scripts/test-librarian-migration.sh compare $(LIBRARIAN_SNAPSHOT_DIR) $(LIBRARIAN_APPSETS_DIR)
-
-render-spell-from-cluster: ## Render spell from cluster Application (Usage: make render-spell-from-cluster SPELL=stalwart)
-	@tests/scripts/test-librarian-migration.sh render $(SPELL)
-
-tdd-librarian-red: snapshot-librarian ## TDD Red: Generate snapshot baseline (before ApplicationSets)
-	@echo "$(GREEN)✅ Snapshot generated at $(LIBRARIAN_SNAPSHOT_DIR)$(RESET)"
-	@echo "$(YELLOW)Next: Modify librarian to generate ApplicationSets, then run 'make tdd-librarian-green'$(RESET)"
-
-tdd-librarian-green: test-librarian-appsets compare-librarian-migration ## TDD Green: Test ApplicationSets match snapshot
-	@echo "$(GREEN)✅ TDD Green phase complete!$(RESET)"
-
-tdd-librarian-refactor: tdd-librarian-green ## TDD Refactor: Verify after refactoring
-	@echo "$(BLUE)🔵 TDD Refactor: Re-running tests...$(RESET)"
-	@$(MAKE) test-librarian-appsets
-	@$(MAKE) compare-librarian-migration

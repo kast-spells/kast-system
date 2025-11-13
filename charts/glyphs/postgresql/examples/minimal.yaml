@@ -1,0 +1,13 @@
+spellbook:
+  name: test-postgresql
+  chapters:
+    - databases
+
+chapter:
+  name: databases
+
+glyphs:
+  postgresql:
+    minimal-db:
+      type: cluster
+      description: Minimal PostgreSQL cluster
