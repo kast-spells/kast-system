@@ -1,0 +1,19 @@
+# Test para una feature que NO existe
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+# Feature inexistente: maxUnavailable
+rollingUpdate:
+  maxUnavailable: 50%
+  maxSurge: 1
+
+image:
+  repository: nginx
+  tag: alpine
+
+service:
+  enabled: true
+  ports:
+    - port: 80

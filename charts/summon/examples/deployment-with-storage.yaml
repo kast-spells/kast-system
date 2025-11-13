@@ -1,0 +1,29 @@
+# Deployment with Storage Example
+# Shows PVC usage with deployment workload
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+service:
+  enabled: true
+
+# Test PVC functionality
+volumes:
+  data:
+    type: pvc
+    size: 10Gi
+    storageClassName: standard
+    destinationPath: /data
+    accessMode: ReadWriteOnce
+  cache:
+    type: pvc  
+    size: 5Gi
+    name: custom-cache-pvc
+    destinationPath: /cache
+    accessMode: ReadWriteMany
+
+image:
+  name: nginx
+  tag: latest
