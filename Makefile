@@ -53,16 +53,20 @@ test-all: test-comprehensive test-snapshots test-glyphs-all test-tarot lint ## R
 	@echo "$(GREEN)✅ All TDD tests completed successfully!$(RESET)"
 
 test-status: ## Show testing status for all charts, glyphs, and trinkets
-	@tests/scripts/test-status.sh
+	@echo "$(BLUE)Testing Status Report$(RESET)"
+	@echo "Run specific tests with: bash tests/core/test-dispatcher.sh [MODE] [TYPE] [COMPONENTS]"
+	@echo "  Modes: syntax, comprehensive, snapshots, all"
+	@echo "  Types: glyph, trinket, chart, spell, book"
+	@echo ""
 
 test-syntax: ## Quick syntax validation for all charts
-	@tests/scripts/test-charts.sh syntax
+	@bash tests/core/test-dispatcher.sh syntax chart
 
 test-comprehensive: ## Test charts with comprehensive validation (rendering + resource completeness)
-	@tests/scripts/test-charts.sh comprehensive
+	@bash tests/core/test-dispatcher.sh comprehensive chart
 
 test-snapshots: ## Test charts with snapshot validation + K8s schema (dry-run)
-	@tests/scripts/test-charts.sh snapshots
+	@bash tests/core/test-dispatcher.sh snapshots chart
 
 # =============================================================================
 # GLYPH TESTING (via Kaster orchestration)
@@ -86,11 +90,11 @@ glyphs: ## Test specific glyph (Usage: make glyphs vault)
 	@:
 
 test-glyphs-all: ## Test all glyphs through kaster system
-	@tests/scripts/test-glyphs.sh all
+	@bash tests/core/test-dispatcher.sh all glyph
 
 # Generic glyph testing with diff validation
 test-glyph-%:
-	@tests/scripts/test-glyphs.sh test $*
+	@bash tests/core/test-dispatcher.sh comprehensive glyph $*
 
 # =============================================================================
 # INSPECTION AND DEBUGGING
@@ -117,10 +121,15 @@ debug-chart: ## Debug chart rendering with verbose output (Usage: make debug-cha
 # =============================================================================
 
 generate-expected: ## Generate expected outputs for glyph (Usage: make generate-expected GLYPH=vault)
-	@tests/scripts/test-glyphs.sh generate $(GLYPH)
+	@bash tests/core/test-dispatcher.sh snapshots glyph $(GLYPH)
 
 show-glyph-diff: ## Show diff for specific glyph test (Usage: make show-glyph-diff GLYPH=vault EXAMPLE=secrets)
-	@tests/scripts/test-glyphs.sh show-diff $(GLYPH) $(EXAMPLE)
+	@echo "$(YELLOW)Showing diff for $(GLYPH)/$(EXAMPLE)...$(RESET)"
+	@if [ -f "output-test/glyph-$(GLYPH)/$(EXAMPLE).yaml" ] && [ -f "output-test/glyph-$(GLYPH)/$(EXAMPLE).expected.yaml" ]; then \
+		diff -u "output-test/glyph-$(GLYPH)/$(EXAMPLE).expected.yaml" "output-test/glyph-$(GLYPH)/$(EXAMPLE).yaml" || true; \
+	else \
+		echo "$(RED)Expected or actual output not found$(RESET)"; \
+	fi
 
 list-glyphs: ## List all available glyphs
 	@echo "$(BLUE)Available glyphs:$(RESET)"
@@ -171,7 +180,7 @@ create-example: ## Create a new example file (Usage: make create-example CHART=s
 # =============================================================================
 
 test-tarot: ## Test Tarot trinket system (all modes: syntax, execution, cards, secrets, rbac)
-	@tests/scripts/test-tarot.sh all
+	@bash tests/core/test-dispatcher.sh all trinket tarot
 
 # =============================================================================
 # COVENANT BOOK TESTING

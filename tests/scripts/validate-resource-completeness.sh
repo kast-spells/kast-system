@@ -115,75 +115,75 @@ validate_completeness() {
     # Workload validation
     if [ "$WORKLOAD_ENABLED" = "true" ]; then
         if [ "$WORKLOAD_TYPE" = "deployment" ] && [ "$ACTUAL_DEPLOYMENTS" -eq 0 ]; then
-            echo -e "${RED}    ❌ Expected Deployment but found none${RESET}"
+            echo -e "${RED}    [ERROR] Expected Deployment but found none${RESET}"
             ((issues++))
         elif [ "$WORKLOAD_TYPE" = "statefulset" ] && [ "$ACTUAL_STATEFULSETS" -eq 0 ]; then
-            echo -e "${RED}    ❌ Expected StatefulSet but found none${RESET}"
+            echo -e "${RED}    [ERROR] Expected StatefulSet but found none${RESET}"
             ((issues++))
         elif [ "$WORKLOAD_TYPE" = "job" ] && [ "$ACTUAL_JOBS" -eq 0 ]; then
-            echo -e "${RED}    ❌ Expected Job but found none${RESET}"
+            echo -e "${RED}    [ERROR] Expected Job but found none${RESET}"
             ((issues++))
         elif [ "$WORKLOAD_TYPE" = "cronjob" ] && [ "$ACTUAL_CRONJOBS" -eq 0 ]; then
-            echo -e "${RED}    ❌ Expected CronJob but found none${RESET}"
+            echo -e "${RED}    [ERROR] Expected CronJob but found none${RESET}"
             ((issues++))
         else
-            echo -e "${GREEN}    ✅ Workload resource present (${WORKLOAD_TYPE})${RESET}"
+            echo -e "${GREEN}    [OK] Workload resource present (${WORKLOAD_TYPE})${RESET}"
         fi
     fi
     
     # Service validation
     if [ "$SERVICE_ENABLED" = "true" ] && [ "$ACTUAL_SERVICES" -eq 0 ]; then
-        echo -e "${RED}    ❌ Expected Service but found none${RESET}"
+        echo -e "${RED}    [ERROR] Expected Service but found none${RESET}"
         ((issues++))
     elif [ "$SERVICE_ENABLED" = "true" ]; then
-        echo -e "${GREEN}    ✅ Service resource present${RESET}"
+        echo -e "${GREEN}    [OK] Service resource present${RESET}"
     fi
     
     # ServiceAccount validation
     if [ "$SERVICEACCOUNT_ENABLED" = "true" ] && [ "$ACTUAL_SERVICEACCOUNTS" -eq 0 ]; then
-        echo -e "${RED}    ❌ Expected ServiceAccount but found none${RESET}"
+        echo -e "${RED}    [ERROR] Expected ServiceAccount but found none${RESET}"
         ((issues++))
     elif [ "$SERVICEACCOUNT_ENABLED" = "true" ]; then
-        echo -e "${GREEN}    ✅ ServiceAccount resource present${RESET}"
+        echo -e "${GREEN}    [OK] ServiceAccount resource present${RESET}"
     fi
     
     # PVC validation (handles both regular PVCs and StatefulSet volumeClaimTemplates)
     if [ "$PVC_COUNT" -gt 0 ] && [ "$ACTUAL_PVCS" -lt "$PVC_COUNT" ]; then
-        echo -e "${RED}    ❌ Expected $PVC_COUNT PVCs but found $ACTUAL_PVCS${RESET}"
+        echo -e "${RED}    [ERROR] Expected $PVC_COUNT PVCs but found $ACTUAL_PVCS${RESET}"
         ((issues++))
     elif [ "$PVC_COUNT" -gt 0 ]; then
-        echo -e "${GREEN}    ✅ All $PVC_COUNT PVC resources present${RESET}"
+        echo -e "${GREEN}    [OK] All $PVC_COUNT PVC resources present${RESET}"
     fi
     
     # StatefulSet volumeClaimTemplates validation (these don't generate PVC resources)
     if [ "$VOLUMECLAIMTEMPLATE_COUNT" -gt 0 ] && [ "$WORKLOAD_TYPE" = "statefulset" ]; then
-        echo -e "${GREEN}    ✅ StatefulSet with $VOLUMECLAIMTEMPLATE_COUNT volumeClaimTemplates configured${RESET}"
+        echo -e "${GREEN}    [OK] StatefulSet with $VOLUMECLAIMTEMPLATE_COUNT volumeClaimTemplates configured${RESET}"
     elif [ "$VOLUMECLAIMTEMPLATE_COUNT" -gt 0 ] && [ "$WORKLOAD_TYPE" != "statefulset" ]; then
-        echo -e "${YELLOW}    ⚠️  volumeClaimTemplates configured but workload type is not StatefulSet${RESET}"
+        echo -e "${YELLOW}    [WARN]  volumeClaimTemplates configured but workload type is not StatefulSet${RESET}"
     fi
     
     # Secret validation
     if [ "$SECRET_COUNT" -gt 0 ] && [ "$ACTUAL_SECRETS" -lt "$SECRET_COUNT" ]; then
-        echo -e "${RED}    ❌ Expected $SECRET_COUNT Secrets but found $ACTUAL_SECRETS${RESET}"
+        echo -e "${RED}    [ERROR] Expected $SECRET_COUNT Secrets but found $ACTUAL_SECRETS${RESET}"
         ((issues++))
     elif [ "$SECRET_COUNT" -gt 0 ]; then
-        echo -e "${GREEN}    ✅ All $SECRET_COUNT Secret resources present${RESET}"
+        echo -e "${GREEN}    [OK] All $SECRET_COUNT Secret resources present${RESET}"
     fi
     
     # HPA validation
     if [ "$AUTOSCALING_ENABLED" = "true" ] && [ "$ACTUAL_HPAS" -eq 0 ]; then
-        echo -e "${RED}    ❌ Expected HorizontalPodAutoscaler but found none${RESET}"
+        echo -e "${RED}    [ERROR] Expected HorizontalPodAutoscaler but found none${RESET}"
         ((issues++))
     elif [ "$AUTOSCALING_ENABLED" = "true" ]; then
-        echo -e "${GREEN}    ✅ HorizontalPodAutoscaler resource present${RESET}"
+        echo -e "${GREEN}    [OK] HorizontalPodAutoscaler resource present${RESET}"
     fi
     
     # VirtualService validation (for external services)
     if [ "$SERVICE_EXTERNAL" = "true" ] || [ "$NEEDS_VIRTUALSERVICE" = "true" ]; then
         if [ "$ACTUAL_VIRTUALSERVICES" -eq 0 ]; then
-            echo -e "${YELLOW}    ⚠️  Expected VirtualService for external service but found none (may need Istio glyph)${RESET}"
+            echo -e "${YELLOW}    [WARN]  Expected VirtualService for external service but found none (may need Istio glyph)${RESET}"
         else
-            echo -e "${GREEN}    ✅ VirtualService resource present${RESET}"
+            echo -e "${GREEN}    [OK] VirtualService resource present${RESET}"
         fi
     fi
     
@@ -211,13 +211,13 @@ validate_microspell_completeness() {
     # Microspell should always create a workload (deployment, statefulset, job, or cronjob)
     local total_workloads=$((ACTUAL_DEPLOYMENTS + ACTUAL_STATEFULSETS + ACTUAL_JOBS + ACTUAL_CRONJOBS))
     if [ "$total_workloads" -eq 0 ]; then
-        echo -e "${RED}      ❌ Microspell must generate at least one workload${RESET}"
+        echo -e "${RED}      [ERROR] Microspell must generate at least one workload${RESET}"
         ((issues++))
     fi
     
     # If secrets are configured, they should be present or referenced
     if [ "$SECRET_COUNT" -gt 0 ]; then
-        echo -e "${GREEN}      ✅ Secrets configuration detected${RESET}"
+        echo -e "${GREEN}      [OK] Secrets configuration detected${RESET}"
     fi
     
     return $issues
@@ -231,17 +231,17 @@ validate_summon_completeness() {
     
     # StatefulSet examples should have persistent storage (either PVCs or volumeClaimTemplates)
     if [[ "$example_name" == *"statefulset"* ]] && [ "$ACTUAL_PVCS" -eq 0 ] && [ "$VOLUMECLAIMTEMPLATE_COUNT" -eq 0 ]; then
-        echo -e "${YELLOW}      ⚠️  StatefulSet example without persistent storage (PVCs or volumeClaimTemplates)${RESET}"
+        echo -e "${YELLOW}      [WARN]  StatefulSet example without persistent storage (PVCs or volumeClaimTemplates)${RESET}"
     elif [[ "$example_name" == *"statefulset"* ]] && [ "$VOLUMECLAIMTEMPLATE_COUNT" -gt 0 ]; then
-        echo -e "${GREEN}      ✅ StatefulSet with volumeClaimTemplates storage properly configured${RESET}"
+        echo -e "${GREEN}      [OK] StatefulSet with volumeClaimTemplates storage properly configured${RESET}"
     fi
     
     # Storage examples should have PVCs or volumeClaimTemplates
     if [[ "$example_name" == *"storage"* ]] && [ "$ACTUAL_PVCS" -eq 0 ] && [ "$VOLUMECLAIMTEMPLATE_COUNT" -eq 0 ]; then
-        echo -e "${RED}      ❌ Storage example but no PVCs or volumeClaimTemplates configured${RESET}"
+        echo -e "${RED}      [ERROR] Storage example but no PVCs or volumeClaimTemplates configured${RESET}"
         ((issues++))
     elif [[ "$example_name" == *"storage"* ]] && [ "$VOLUMECLAIMTEMPLATE_COUNT" -gt 0 ]; then
-        echo -e "${GREEN}      ✅ Storage example with volumeClaimTemplates properly configured${RESET}"
+        echo -e "${GREEN}      [OK] Storage example with volumeClaimTemplates properly configured${RESET}"
     fi
     
     return $issues
@@ -260,7 +260,7 @@ main() {
     local chart_name=$(basename "$chart_dir")
     local example_name=$(basename "$example_file" .yaml)
     
-    echo -e "${BLUE}🧪 Validating resource completeness for $test_name${RESET}"
+    echo -e "${BLUE}[TEST] Validating resource completeness for $test_name${RESET}"
     
     # Parse expected configuration
     echo -e "${BLUE}  Parsing configuration expectations...${RESET}"
@@ -270,7 +270,7 @@ main() {
     local yaml_content
     yaml_content=$(helm template "$test_name" "$chart_dir" -f "$example_file" 2>/dev/null)
     if [ $? -ne 0 ]; then
-        echo -e "${RED}  ❌ Failed to render template${RESET}"
+        echo -e "${RED}  [ERROR] Failed to render template${RESET}"
         return 1
     fi
     
@@ -287,10 +287,10 @@ main() {
     
     # Validate completeness
     if validate_completeness "$chart_name" "$example_name"; then
-        echo -e "${GREEN}✅ Resource completeness validation passed${RESET}"
+        echo -e "${GREEN}[OK] Resource completeness validation passed${RESET}"
         return 0
     else
-        echo -e "${RED}❌ Resource completeness validation failed${RESET}"
+        echo -e "${RED}[ERROR] Resource completeness validation failed${RESET}"
         return 1
     fi
 }
