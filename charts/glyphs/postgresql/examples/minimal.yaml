@@ -8,6 +8,6 @@ chapter:
 
 glyphs:
   postgresql:
-    - type: cluster
-      name: minimal-db
+    minimal-db:
+      type: cluster
       description: Minimal PostgreSQL cluster

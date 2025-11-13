@@ -8,8 +8,8 @@ chapter:
 
 glyphs:
   postgresql:
-    - type: cluster
-      name: production-db
+    production-db:
+      type: cluster
       description: Production PostgreSQL cluster with custom configuration
       instances: 3
       startDelay: 3000
