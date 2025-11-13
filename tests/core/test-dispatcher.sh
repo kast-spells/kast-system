@@ -126,24 +126,18 @@ dispatch() {
             bash "$DISPATCHER_DIR/test-glyph.sh" "$MODE" "${COMPONENTS[@]}"
             ;;
         trinket)
-            log_warning "Trinket testing not yet implemented in new system"
-            log_info "Use legacy: make test-tarot"
-            exit 1
+            bash "$DISPATCHER_DIR/test-trinket.sh" "$MODE" "${COMPONENTS[@]}"
             ;;
         chart)
-            log_warning "Chart testing not yet implemented in new system"
-            log_info "Use legacy: make test-comprehensive"
-            exit 1
+            bash "$DISPATCHER_DIR/test-chart.sh" "$MODE" "${COMPONENTS[@]}"
             ;;
         spell)
-            log_warning "Spell testing not yet implemented in new system"
-            log_info "Use legacy: make test-spell"
-            exit 1
+            # Spell requires special handling with flags
+            bash "$DISPATCHER_DIR/test-spell.sh" "${COMPONENTS[0]}" "${FLAGS[@]}"
             ;;
         book)
-            log_warning "Book testing not yet implemented in new system"
-            log_info "Use legacy: make test-covenant"
-            exit 1
+            # Book also needs flags
+            bash "$DISPATCHER_DIR/test-book.sh" "$MODE" "${COMPONENTS[@]}" "${FLAGS[@]}"
             ;;
         "")
             log_error "No type specified"
