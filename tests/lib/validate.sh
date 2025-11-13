@@ -43,7 +43,8 @@ render_template() {
 # Count resources in rendered output
 count_resources() {
     local output="$1"
-    echo "$output" | grep -c "^kind:" || echo "0"
+    local count=$(echo "$output" | grep -c "^kind:" 2>/dev/null)
+    echo "${count:-0}"
 }
 
 # Get resource types from rendered output
