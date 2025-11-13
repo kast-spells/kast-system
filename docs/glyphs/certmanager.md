@@ -32,8 +32,8 @@ Certificate management via cert-manager integration.
 ```yaml
 glyphs:
   certManager:
-    - type: certificate
-      name: example-cert
+    example-cert:
+      type: certificate
       dnsNames:
         - example.com
         - "*.example.com"

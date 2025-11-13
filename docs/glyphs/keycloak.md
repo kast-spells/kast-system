@@ -27,8 +27,8 @@ Identity provider configuration via Keycloak operator.
 ```yaml
 glyphs:
   keycloak:
-    - type: realm
-      name: production
+    production:
+      type: realm
       displayName: Production Environment
 ```
 
@@ -37,8 +37,8 @@ glyphs:
 ```yaml
 glyphs:
   keycloak:
-    - type: client
-      name: my-app
+    my-app:
+      type: client
       realm: production
       redirectUris:
         - https://myapp.example.com/*

@@ -15,8 +15,8 @@ Cloud provider database CRDs.
 ```yaml
 glyphs:
   postgres-cloud:
-    - type: postgres-cg
-      name: production-db
+    production-db:
+      type: postgres-cg
       version: "15"
       instances: 3
 ```

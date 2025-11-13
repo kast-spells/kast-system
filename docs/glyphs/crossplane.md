@@ -16,8 +16,8 @@ Cloud resource provisioning via Crossplane.
 ```yaml
 glyphs:
   crossplane:
-    - type: provider
-      name: aws-provider
+    aws-provider:
+      type: provider
       package: crossplane/provider-aws
 ```
 
