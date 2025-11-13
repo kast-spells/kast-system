@@ -152,8 +152,8 @@ HashiCorp Vault integration for secrets management, authentication, and policy e
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: database-creds
+    database-creds:
+      type: secret
       format: env
       keys: [username, password]
 ```
@@ -163,8 +163,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: api-credentials
+    api-credentials:
+      type: secret
       format: env
       random: true
       randomKey: api-password
@@ -176,8 +176,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: prolicy
-      name: app-policy
+    app-policy:
+      type: prolicy
       serviceAccount: my-app
       extraPolicy:
         - path: databases/static/mydb/*
@@ -189,8 +189,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: cryptoKey
-      name: deploy-key
+    deploy-key:
+      type: cryptoKey
       algorithm: ed25519
       comment: "Deployment key"
 ```
@@ -222,25 +222,26 @@ lexicon:
 glyphs:
   vault:
     # Step 1: Mount the database secrets engine
-    - type: secretEngineMount
+    db-mount:
+      type: secretEngineMount
       mountType: database
       description: "Database secrets engine for PostgreSQL dynamic credentials"
 
     # Step 2: Configure database engine
-    - type: postgresqlDBEngine
-      name: postgres-engine
+    postgres-engine:
+      type: postgresqlDBEngine
       postgresSelector:
         app: postgres
       serviceAccount: vault
 
     # Step 3: Create policy (auto-generates database credential access)
-    - type: prolicy
-      name: myapp-policy
+    myapp-policy:
+      type: prolicy
       serviceAccount: myapp
 
     # Step 4: Application consumes dynamic credentials
-    - type: secret
-      name: myapp-db-credentials
+    myapp-db-credentials:
+      type: secret
       generationType: "database"       # Database engine mode
       databaseEngine: "main-postgres"  # Engine name from lexicon
       databaseRole: "read-write"       # or "read-only"
@@ -296,14 +297,16 @@ spec:
 Standard Vault KV v2 secrets with `/data/` prefix:
 
 ```yaml
-- type: secret
-  name: api-credentials
-  generationType: "kv"  # Optional, this is the default
-  format: env
-  path: "chapter"
-  keys:
-    - api-key
-    - api-secret
+glyphs:
+  vault:
+    api-credentials:
+      type: secret
+      generationType: "kv"  # Optional, this is the default
+      format: env
+      path: "chapter"
+      keys:
+        - api-key
+        - api-secret
 ```
 
 **Path**: `secret/data/{book}/{chapter}/publics/api-credentials`
@@ -313,18 +316,20 @@ Standard Vault KV v2 secrets with `/data/` prefix:
 Dynamic credentials from database secrets engine:
 
 ```yaml
-- type: secret
-  name: db-credentials
-  generationType: "database"
-  databaseEngine: "postgres"       # Required: name from lexicon
-  databaseRole: "read-write"       # Required: "read-write" or "read-only"
-  databaseMount: "database-custom" # Optional: override mount path
-  format: env
-  serviceAccount: myapp
-  refreshPeriod: 30m
-  keys:
-    - username
-    - password
+glyphs:
+  vault:
+    db-credentials:
+      type: secret
+      generationType: "database"
+      databaseEngine: "postgres"       # Required: name from lexicon
+      databaseRole: "read-write"       # Required: "read-write" or "read-only"
+      databaseMount: "database-custom" # Optional: override mount path
+      format: env
+      serviceAccount: myapp
+      refreshPeriod: 30m
+      keys:
+        - username
+        - password
 ```
 
 **Default path**: `database-{book}-{chapter}/creds/{engine}-{role}`
@@ -355,8 +360,8 @@ glyphs:
   vault:
     # Policy for application to read database credentials
     # This will AUTO-GENERATE database credential access
-    - type: prolicy
-      name: myapp-db-policy
+    myapp-db-policy:
+      type: prolicy
       serviceAccount: myapp
 ```
 
@@ -375,13 +380,15 @@ path "database-mybook-prod/creds/*" {
 
 **For fine-grained control**, use `extraPolicy`:
 ```yaml
-- type: prolicy
-  name: myapp-readonly-policy
-  serviceAccount: myapp-readonly
-  extraPolicy:
-    # Only allow read-only role
-    - path: "database-mybook-prod/creds/main-postgres-read-only"
-      capabilities: ["read"]
+glyphs:
+  vault:
+    myapp-readonly-policy:
+      type: prolicy
+      serviceAccount: myapp-readonly
+      extraPolicy:
+        # Only allow read-only role
+        - path: "database-mybook-prod/creds/main-postgres-read-only"
+          capabilities: ["read"]
 ```
 
 **Generated KubernetesAuthEngineRole**:

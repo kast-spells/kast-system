@@ -7,8 +7,8 @@ namespace: istio-system
 # This spell uses glyphs through kaster
 glyphs:
   istio:
-    - type: gateway
-      name: external-gateway
+    external-gateway:
+      type: gateway
       selector:
         istio: gateway
       servers:
@@ -19,7 +19,7 @@ glyphs:
           hosts:
             - "*.example-tdd.com"
         - port:
-            number: 443  
+            number: 443
             name: https
             protocol: HTTPS
           hosts:

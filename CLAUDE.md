@@ -538,12 +538,12 @@ The project uses a unique "glyphs" pattern where reusable Helm templates are org
 # In a spell or values file
 glyphs:
   vault:
-    - type: secret
-      name: my-secret
+    my-secret:
+      type: secret
       path: secret/data/my-app
   istio:
-    - type: virtualService
-      name: my-service
+    my-service:
+      type: virtualService
       selector:
         access: external
 ```
@@ -1052,12 +1052,12 @@ service:
 # Glyphs configuration (kaster source)
 glyphs:
   vault:
-    - type: secret
-      name: database-credentials
+    database-credentials:
+      type: secret
       path: secret/data/production/db
   istio:
-    - type: virtualService
-      name: api-service
+    api-service:
+      type: virtualService
       selector:
         access: external
         environment: production
