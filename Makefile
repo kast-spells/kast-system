@@ -216,19 +216,33 @@ test-spell: ## Test individual spell with context (Usage: make test-spell BOOK=e
 # LINTING & VALIDATION
 # =============================================================================
 
-lint: ## Run helm lint on all charts
+lint: ## Run helm lint on all charts (glyphs as templates, not dependencies)
 	@echo "$(BLUE)🔍 Linting all charts...$(RESET)"
-	@for chart_dir in $(CHARTS_DIR)/summon $(CHARTS_DIR)/kaster $(LIBRARIAN_DIR) $(CHARTS_DIR)/trinkets/*; do \
+	@echo "$(YELLOW)Note: Glyphs are copied templates, not helm dependencies - lint warnings about missing dependencies are expected$(RESET)"
+	@echo ""
+	@FAILED=0; \
+	for chart_dir in $(CHARTS_DIR)/summon $(CHARTS_DIR)/kaster $(LIBRARIAN_DIR) $(CHARTS_DIR)/trinkets/*; do \
 		if [ -f "$$chart_dir/Chart.yaml" ]; then \
 			chart_name=$$(basename $$chart_dir); \
 			echo "$(BLUE)  Linting $$chart_name...$(RESET)"; \
-			if helm lint $$chart_dir > /dev/null 2>&1; then \
+			LINT_OUTPUT=$$(helm lint $$chart_dir 2>&1); \
+			LINT_EXIT=$$?; \
+			if echo "$$LINT_OUTPUT" | grep -q "chart metadata is missing these dependencies"; then \
+				echo "$(YELLOW)  ⚠️  $$chart_name (glyphs not declared as dependencies - by design)$(RESET)"; \
+			elif [ $$LINT_EXIT -eq 0 ]; then \
 				echo "$(GREEN)  ✅ $$chart_name$(RESET)"; \
 			else \
-				echo "$(RED)  ❌ $$chart_name$(RESET)"; \
+				echo "$(RED)  ❌ $$chart_name (real errors found)$(RESET)"; \
+				echo "$$LINT_OUTPUT" | grep -E "\[ERROR\]" | sed 's/^/     /'; \
+				FAILED=1; \
 			fi; \
 		fi; \
-	done
+	done; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo ""; \
+		echo "$(RED)❌ Lint found real errors (not dependency warnings)$(RESET)"; \
+		exit 1; \
+	fi
 
 # =============================================================================
 # CLEANUP
