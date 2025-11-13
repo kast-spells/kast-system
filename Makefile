@@ -207,6 +207,24 @@ test-spell: ## Test individual spell with context (Usage: make test-spell BOOK=e
 	@tests/scripts/test-spell.sh $(BOOK) $(SPELL)
 
 # =============================================================================
+# LINTING & VALIDATION
+# =============================================================================
+
+lint: ## Run helm lint on all charts
+	@echo "$(BLUE)🔍 Linting all charts...$(RESET)"
+	@for chart_dir in $(CHARTS_DIR)/summon $(CHARTS_DIR)/kaster $(LIBRARIAN_DIR) $(CHARTS_DIR)/trinkets/*; do \
+		if [ -f "$$chart_dir/Chart.yaml" ]; then \
+			chart_name=$$(basename $$chart_dir); \
+			echo "$(BLUE)  Linting $$chart_name...$(RESET)"; \
+			if helm lint $$chart_dir > /dev/null 2>&1; then \
+				echo "$(GREEN)  ✅ $$chart_name$(RESET)"; \
+			else \
+				echo "$(RED)  ❌ $$chart_name$(RESET)"; \
+			fi; \
+		fi; \
+	done
+
+# =============================================================================
 # CLEANUP
 # =============================================================================
 
