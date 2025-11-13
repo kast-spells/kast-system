@@ -15,8 +15,8 @@ GCP-specific CRDs via Crossplane or Config Connector.
 ```yaml
 glyphs:
   gcp:
-    - type: s3
-      name: my-bucket
+    my-bucket:
+      type: s3
 ```
 
 ## Testing

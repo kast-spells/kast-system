@@ -7,8 +7,8 @@ namespace: cert-manager
 # Uses certManager glyph through kaster
 glyphs:
   certManager:
-    - type: certificate
-      name: example-tdd-wildcard
+    example-tdd-wildcard:
+      type: certificate
       secretName: example-tdd-cert
       dnsNames:
         - "*.example-tdd.com"

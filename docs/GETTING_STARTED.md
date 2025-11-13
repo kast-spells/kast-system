@@ -250,12 +250,12 @@ service:
 glyphs:
   # Vault secrets
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
 
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       path: chapter
       keys:
@@ -264,8 +264,8 @@ glyphs:
 
   # Istio routing
   istio:
-    - type: virtualService
-      name: web-app-vs
+    web-app-vs:
+      type: virtualService
       http:
         - match:
             - uri:
@@ -350,12 +350,12 @@ envs:
 # Same glyphs as development
 glyphs:
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
 
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       path: chapter
       keys:
@@ -363,8 +363,8 @@ glyphs:
         - database_url
 
   istio:
-    - type: virtualService
-      name: web-app-vs
+    web-app-vs:
+      type: virtualService
       http:
         - match:
             - uri:
@@ -450,19 +450,19 @@ envs:
 # Glyphs (same as before)
 glyphs:
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       path: chapter
       keys:
         - api_key
 
   istio:
-    - type: virtualService
-      name: web-app-vs
+    web-app-vs:
+      type: virtualService
       hosts:
         - app.production.com
 EOF
@@ -544,8 +544,8 @@ values:
 # Add vault secret for alertmanager
 glyphs:
   vault:
-    - type: secret
-      name: alertmanager-config
+    alertmanager-config:
+      type: secret
       format: yaml
       keys:
         - alertmanager.yml
@@ -684,13 +684,13 @@ helm install example-tdd-book librarian --set name=example-tdd-book
 
 **You learned:**
 
-1. ✅ Create book structure (book/chapter/spell)
-2. ✅ Deploy with librarian to ArgoCD
-3. ✅ Add infrastructure with glyphs (vault, istio)
-4. ✅ Use lexicon for infrastructure registry
-5. ✅ Deploy to multiple environments
-6. ✅ Add databases with runes
-7. ✅ Troubleshoot common issues
+1. Create book structure (book/chapter/spell)
+2. Deploy with librarian to ArgoCD
+3. Add infrastructure with glyphs (vault, istio)
+4. Use lexicon for infrastructure registry
+5. Deploy to multiple environments
+6. Add databases with runes
+7. Troubleshoot common issues
 
 **Key Concepts:**
 

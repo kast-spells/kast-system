@@ -24,7 +24,8 @@ Any Kubernetes resource defined in `definition` field.
 ```yaml
 glyphs:
   freeForm:
-    - type: manifest
+    custom-config:
+      type: manifest
       definition:
         apiVersion: v1
         kind: ConfigMap
@@ -39,7 +40,8 @@ glyphs:
 ```yaml
 glyphs:
   freeForm:
-    - type: manifest
+    my-custom-resource:
+      type: manifest
       definition:
         apiVersion: example.com/v1
         kind: CustomResource

@@ -45,23 +45,23 @@ values:
 
 glyphs:
   istio:
-  - type: virtualService
-    nameOverride: minio-s3-external
-    enabled: True
-    subdomain: s3
-    selector:
-      access: external
-    host: minio
-    httpRules:
-      - prefix: /
-        port: 9000
-  - type: virtualService
-    nameOverride: minio-console-external
-    enabled: True
-    subdomain: s3-console
-    selector:
-      access: external
-    host: minio-console
-    httpRules:
-      - prefix: /
-        port: 9001
+    minio-s3-external:
+      type: virtualService
+      enabled: True
+      subdomain: s3
+      selector:
+        access: external
+      host: minio
+      httpRules:
+        - prefix: /
+          port: 9000
+    minio-console-external:
+      type: virtualService
+      enabled: True
+      subdomain: s3-console
+      selector:
+        access: external
+      host: minio-console
+      httpRules:
+        - prefix: /
+          port: 9001

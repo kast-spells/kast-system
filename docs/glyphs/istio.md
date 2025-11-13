@@ -43,8 +43,8 @@ Service mesh integration for traffic management and routing.
 ```yaml
 glyphs:
   istio:
-    - type: istio-gw
-      name: external-gateway
+    external-gateway:
+      type: istio-gw
       hosts:
         - "*.example.com"
       istioSelector:
@@ -66,8 +66,8 @@ glyphs:
 ```yaml
 glyphs:
   istio:
-    - type: virtualService
-      name: my-service
+    my-service:
+      type: virtualService
       enabled: true
       subdomain: myapp
       host: my-service

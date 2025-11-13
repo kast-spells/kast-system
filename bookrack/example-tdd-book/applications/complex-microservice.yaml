@@ -51,8 +51,8 @@ volumes:
 # Infrastructure integration (routing)
 glyphs:
   istio:
-    - type: virtualService
-      name: payment-service-vs
+    payment-service-vs:
+      type: virtualService
       http:
         - match:
             - uri:

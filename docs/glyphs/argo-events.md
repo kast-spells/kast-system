@@ -51,8 +51,8 @@ Event-driven workflows with Argo Events integration.
 ```yaml
 glyphs:
   argo-events:
-    - type: eventBus
-      name: production-bus
+    production-bus:
+      type: eventBus
       jetstream:
         version: "2.10.1"
         replicas: 3
@@ -66,8 +66,8 @@ glyphs:
 ```yaml
 glyphs:
   argo-events:
-    - type: eventSource
-      name: github-webhooks
+    github-webhooks:
+      type: eventSource
       github:
         myrepo:
           owner: myorg
@@ -83,8 +83,8 @@ glyphs:
 ```yaml
 glyphs:
   argo-events:
-    - type: sensor
-      name: build-trigger
+    build-trigger:
+      type: sensor
       dependencies:
         - name: github-push
           eventSourceName: github-webhooks
