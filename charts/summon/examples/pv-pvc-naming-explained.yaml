@@ -1,0 +1,134 @@
+# PV and PVC Naming Logic in Summon
+# ====================================
+# This file explains how PV and PVC names are determined in summon
+
+name: pv-naming-demo
+namespace: test
+
+workload:
+  enabled: true
+  type: deployment
+
+volumes:
+  # CASO 1: Naming automático (más común)
+  # --------------------------------------
+  # Si no especificas 'name' ni 'volumeName':
+  # - PVC name: {app-name}-{volume-key} = "pv-naming-demo-data1"
+  # - PV name (si se crea): {app-name}-{volume-key} = "pv-naming-demo-data1"
+  data1:
+    type: pvc
+    size: 10Gi
+    storageClass: s3-csi
+    destinationPath: /data1
+    accessMode: ReadWriteMany
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: bucket/data1
+      volumeAttributes:
+        mounter: geesefs
+
+  # CASO 2: Especificando 'name' (personaliza el nombre del PVC)
+  # --------------------------------------------------------------
+  # Con 'name' defines el nombre del PVC:
+  # - PVC name: "my-custom-pvc"
+  # - PV name (si se crea): "my-custom-pvc" (usa el mismo name)
+  data2:
+    type: pvc
+    name: my-custom-pvc  # Este nombre se usa para PVC y PV
+    size: 20Gi
+    storageClass: s3-csi
+    destinationPath: /data2
+    accessMode: ReadWriteMany
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: bucket/data2
+      volumeAttributes:
+        mounter: geesefs
+
+  # CASO 3: Especificando 'volumeName' (control total)
+  # ----------------------------------------------------
+  # Con 'volumeName' defines explícitamente el nombre del PV:
+  # - PVC name: {app-name}-{volume-key} = "pv-naming-demo-data3"
+  # - PV name: "specific-pv-name" (usa volumeName)
+  # - El PVC se vincula específicamente a este PV
+  data3:
+    type: pvc
+    volumeName: specific-pv-name  # Nombre específico del PV
+    size: 30Gi
+    storageClass: s3-csi
+    destinationPath: /data3
+    accessMode: ReadWriteMany
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: bucket/data3
+      volumeAttributes:
+        mounter: geesefs
+
+  # CASO 4: Combinando 'name' y 'volumeName'
+  # ------------------------------------------
+  # Puedes usar ambos para control total:
+  # - PVC name: "custom-pvc-name"
+  # - PV name: "custom-pv-name"
+  data4:
+    type: pvc
+    name: custom-pvc-name        # Nombre del PVC
+    volumeName: custom-pv-name   # Nombre del PV
+    size: 40Gi
+    storageClass: s3-csi
+    destinationPath: /data4
+    accessMode: ReadWriteMany
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: bucket/data4
+      volumeAttributes:
+        mounter: geesefs
+
+  # CASO 5: PVC sin PV (usa provisioning dinámico)
+  # ------------------------------------------------
+  # Sin sección 'pv:', el PVC usa el provisioner de la storageClass
+  # - PVC name: {app-name}-{volume-key} = "pv-naming-demo-dynamic"
+  # - PV: Creado automáticamente por el provisioner
+  dynamic:
+    type: pvc
+    size: 5Gi
+    storageClass: standard  # Usa el provisioner dinámico
+    destinationPath: /dynamic
+    accessMode: ReadWriteOnce
+
+  # CASO 6: Vinculando a un PV pre-existente con volumeName
+  # ---------------------------------------------------------
+  # Si tienes un PV que ya existe en el cluster:
+  # - PVC name: {app-name}-{volume-key} = "pv-naming-demo-preexisting"
+  # - Se vincula al PV: "already-existing-pv"
+  # Nota: NO se crea el PV (no hay sección 'pv:')
+  preexisting:
+    type: pvc
+    volumeName: already-existing-pv  # Nombre del PV existente
+    size: 100Gi
+    storageClass: ""  # Vacío para binding manual
+    destinationPath: /preexisting
+    accessMode: ReadWriteMany
+
+# RESUMEN DE PRIORIDADES DE NAMING:
+# ==================================
+#
+# Para el nombre del PVC:
+# 1. Si existe 'name' → usa ese valor
+# 2. Si no → {app-name}-{volume-key}
+#
+# Para el nombre del PV (cuando se crea con 'pv:'):
+# 1. Si existe 'volumeName' → usa ese valor
+# 2. Si existe 'name' → usa ese valor
+# 3. Si no → {app-name}-{volume-key}
+#
+# Para vincular PVC a PV:
+# - Si hay 'volumeName' → el PVC se vincula a un PV con ese nombre
+# - Si hay 'pv:' → se crea el PV y se vincula automáticamente
+# - Si no hay ninguno → usa provisioning dinámico
+
+image:
+  repository: nginx
+  tag: latest
+
+service:
+  enabled: false

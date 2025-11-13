@@ -1,0 +1,32 @@
+# Basic Deployment Example
+# Shows simple container deployment with summon
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+image:
+  name: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+
+serviceAccount:
+  enabled: true
+
+# Basic resource limits
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
