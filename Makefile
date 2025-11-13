@@ -191,8 +191,14 @@ test-covenant: ## Test all covenant books (Usage: make test-covenant or make tes
 
 list-covenant-books: ## List all available covenant books
 	@echo "$(BLUE)📚 Available Covenant Books:$(RESET)"
-	@find /home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack -maxdepth 2 -name "index.yaml" -exec grep -l "realm:" {} \; 2>/dev/null | \
-		xargs -I {} dirname {} | xargs -I {} basename {} | sort | sed 's/^/  - /' || echo "  $(YELLOW)No covenant books found$(RESET)"
+	@BOOKRACK_PATH=$${COVENANT_BOOKRACK_PATH:-$$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack}; \
+	if [ -d "$$BOOKRACK_PATH" ]; then \
+		find "$$BOOKRACK_PATH" -maxdepth 2 -name "index.yaml" -exec grep -l "realm:" {} \; 2>/dev/null | \
+			xargs -I {} dirname {} | xargs -I {} basename {} | sort | sed 's/^/  - /'; \
+	else \
+		echo "  $(YELLOW)Bookrack not found at: $$BOOKRACK_PATH$(RESET)"; \
+		echo "  $(YELLOW)Set COVENANT_BOOKRACK_PATH to override$(RESET)"; \
+	fi
 
 # =============================================================================
 # SPELL TESTING (Simple individual spell testing)

@@ -101,19 +101,43 @@ if ! command -v yq &> /dev/null; then
     exit 1
 fi
 
-# Production covenant location
-COVENANT_CHART_PATH="/home/namen/_home/the.yaml.life/proto-the-yaml-life/covenant"
-BOOKRACK_PATH="/home/namen/_home/the.yaml.life/proto-the-yaml-life/bookrack"
+# Covenant and bookrack paths (configurable via env vars)
+# Priority: 1. Env var, 2. Relative path, 3. Default user path
+COVENANT_CHART_PATH="${COVENANT_CHART_PATH:-}"
+BOOKRACK_PATH="${COVENANT_BOOKRACK_PATH:-}"
+
+# Auto-detect if not set
+if [ -z "$COVENANT_CHART_PATH" ]; then
+    # Try relative path first (if working in proto-the-yaml-life repo)
+    if [ -d "../proto-the-yaml-life/covenant" ]; then
+        COVENANT_CHART_PATH="../proto-the-yaml-life/covenant"
+    elif [ -d "$HOME/_home/the.yaml.life/proto-the-yaml-life/covenant" ]; then
+        COVENANT_CHART_PATH="$HOME/_home/the.yaml.life/proto-the-yaml-life/covenant"
+    fi
+fi
+
+if [ -z "$BOOKRACK_PATH" ]; then
+    # Try relative path first
+    if [ -d "../proto-the-yaml-life/bookrack" ]; then
+        BOOKRACK_PATH="../proto-the-yaml-life/bookrack"
+    elif [ -d "$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack" ]; then
+        BOOKRACK_PATH="$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack"
+    fi
+fi
 
 # Verify covenant chart exists
 if [ ! -d "$COVENANT_CHART_PATH" ]; then
     echo -e "${RED}Error: Covenant chart not found: $COVENANT_CHART_PATH${RESET}"
+    echo -e "${YELLOW}Set COVENANT_CHART_PATH to point to covenant chart location${RESET}"
+    echo -e "${YELLOW}Example: export COVENANT_CHART_PATH=/path/to/proto-the-yaml-life/covenant${RESET}"
     exit 1
 fi
 
 # Verify covenant book exists
 if [ ! -d "$BOOKRACK_PATH/$COVENANT_BOOK" ]; then
     echo -e "${RED}Error: Covenant book not found: $BOOKRACK_PATH/$COVENANT_BOOK${RESET}"
+    echo -e "${YELLOW}Set COVENANT_BOOKRACK_PATH to point to bookrack location${RESET}"
+    echo -e "${YELLOW}Example: export COVENANT_BOOKRACK_PATH=/path/to/proto-the-yaml-life/bookrack${RESET}"
     exit 1
 fi
 
