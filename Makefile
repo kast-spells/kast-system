@@ -43,39 +43,81 @@ tdd-refactor: ## TDD Refactor: Run tests after refactoring (should still pass)
 	@$(MAKE) test-all
 
 # =============================================================================
-# CORE TESTING TARGETS
+# TDD TESTING - Kubernetes-style semantic commands
+# =============================================================================
+#
+# Usage:
+#   make test syntax glyph vault           # Test syntax for vault glyph
+#   make test comprehensive trinket tarot  # Comprehensive test for tarot
+#   make test all glyph                    # All tests for all glyphs
+#   make test snapshots glyph vault istio  # Snapshots for specific glyphs
+#
+# Auto-discovery:
+#   make test all                          # Test everything (auto-discover)
+#   make test glyphs                       # All glyphs (auto-discover)
+#   make test glyph vault istio            # Specific glyphs
+#   make test trinkets                     # All trinkets
+#   make test charts                       # All charts
+#
+# Context-based (spell/book testing):
+#   make test spell example-api BOOK=example-tdd-book
+#   make test book covenant-tyl
+#
+# Legacy shortcuts (still work):
+#   make test            # Run comprehensive tests on all charts
+#   make glyphs vault    # Test specific glyph
+#
 # =============================================================================
 
-test: test-comprehensive test-tarot lint ## Run comprehensive TDD tests (original)
-	@echo "$(GREEN)✅ TDD tests completed successfully!$(RESET)"
+# Main test target - Kubernetes-style semantic dispatcher
+test:
+	@$(eval ARGS := $(filter-out test,$(MAKECMDGOALS)))
+	@if [ -z "$(ARGS)" ]; then \
+		echo "$(BLUE)Running default comprehensive test suite...$(RESET)"; \
+		bash tests/core/test-dispatcher.sh comprehensive chart && \
+		bash tests/core/test-dispatcher.sh snapshots chart && \
+		$(MAKE) lint && \
+		echo "$(GREEN)✅ TDD tests completed successfully!$(RESET)"; \
+	else \
+		bash tests/core/test-dispatcher.sh $(ARGS); \
+	fi
 
-test-all: test-comprehensive test-snapshots test-glyphs-all test-tarot lint ## Run all TDD tests (comprehensive + snapshots + glyphs)
-	@echo "$(GREEN)✅ All TDD tests completed successfully!$(RESET)"
-
-test-status: ## Show testing status for all charts, glyphs, and trinkets
-	@echo "$(BLUE)Testing Status Report$(RESET)"
-	@echo "Run specific tests with: bash tests/core/test-dispatcher.sh [MODE] [TYPE] [COMPONENTS]"
-	@echo "  Modes: syntax, comprehensive, snapshots, all"
-	@echo "  Types: glyph, trinket, chart, spell, book"
-	@echo ""
-
+# Backward compatibility - old commands still work
 test-syntax: ## Quick syntax validation for all charts
+	@echo "$(YELLOW)Note: Use 'make test syntax chart' for new syntax$(RESET)"
 	@bash tests/core/test-dispatcher.sh syntax chart
 
-test-comprehensive: ## Test charts with comprehensive validation (rendering + resource completeness)
+test-comprehensive: ## Test charts with comprehensive validation
+	@echo "$(YELLOW)Note: Use 'make test comprehensive chart' for new syntax$(RESET)"
 	@bash tests/core/test-dispatcher.sh comprehensive chart
 
-test-snapshots: ## Test charts with snapshot validation + K8s schema (dry-run)
+test-snapshots: ## Test charts with snapshot validation
+	@echo "$(YELLOW)Note: Use 'make test snapshots chart' for new syntax$(RESET)"
 	@bash tests/core/test-dispatcher.sh snapshots chart
 
+test-all: test-comprehensive test-snapshots test-glyphs-all test-tarot lint ## Run all TDD tests
+	@echo "$(GREEN)✅ All TDD tests completed successfully!$(RESET)"
+
+test-status: ## Show testing status for all components
+	@echo "$(BLUE)Testing Status Report$(RESET)"
+	@echo "Run tests with: make test [MODE] [TYPE] [COMPONENTS]"
+	@echo "  Modes: syntax, comprehensive, snapshots, all"
+	@echo "  Types: glyph, trinket, chart, spell, book, glyphs, trinkets, charts"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make test syntax glyph vault"
+	@echo "  make test all glyphs"
+	@echo "  make test comprehensive trinket tarot"
+	@echo ""
+
 # =============================================================================
-# GLYPH TESTING (via Kaster orchestration)
+# GLYPH TESTING
 # =============================================================================
 
 # Output test directory for expected results
 OUTPUT_TEST_DIR := output-test
 
-# Dynamic glyph testing - Usage: make glyphs <glyph-name>
+# Legacy compatibility for 'make glyphs <name>'
 glyphs: ## Test specific glyph (Usage: make glyphs vault)
 	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
 		echo "$(RED)Usage: make glyphs <glyph-name>$(RESET)"; \
@@ -83,16 +125,18 @@ glyphs: ## Test specific glyph (Usage: make glyphs vault)
 		ls -1 $(GLYPHS_DIR) | sed 's/^/  - /'; \
 		exit 1; \
 	fi
-	@$(MAKE) test-glyph-$(filter-out $@,$(MAKECMDGOALS))
+	@echo "$(YELLOW)Note: Use 'make test comprehensive glyph $(filter-out $@,$(MAKECMDGOALS))' for new syntax$(RESET)"
+	@$(MAKE) test comprehensive glyph $(filter-out $@,$(MAKECMDGOALS))
 
-# Catch-all rule for glyph names to prevent make errors
+# Catch-all rule for arguments to prevent make errors
 %:
 	@:
 
-test-glyphs-all: ## Test all glyphs through kaster system
+test-glyphs-all: ## Test all glyphs
+	@echo "$(YELLOW)Note: Use 'make test all glyph' for new syntax$(RESET)"
 	@bash tests/core/test-dispatcher.sh all glyph
 
-# Generic glyph testing with diff validation
+# Generic glyph testing - backward compatibility
 test-glyph-%:
 	@bash tests/core/test-dispatcher.sh comprehensive glyph $*
 
