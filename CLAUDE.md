@@ -122,7 +122,7 @@ make clean-output-tests    # Clean generated test outputs
 
 - **charts/** - Core Helm charts (all TDD-tested)
   - **glyphs/** - Reusable Helm template library (source of truth)
-    - Individual glyphs: common, summon, vault, istio, certManager, crossplane, gcp, freeForm, argo-events, keycloak, postgres-cloud, s3, runic-system, default-verbs
+    - Individual glyphs: common, summon, vault, istio, certManager, crossplane, gcp, freeForm, argo-events, keycloak, postgresql, s3, runic-system
     - Each glyph has: Chart.yaml, templates/, examples/ (for testing)
     - Copied to other charts via rsync during GitHub Actions sync
   - **kaster/** - Glyph orchestrator chart
@@ -148,12 +148,22 @@ make clean-output-tests    # Clean generated test outputs
   - Spells are individual YAML files = ArgoCD Applications
   - _lexicon/ subdirectories contain infrastructure registry
 - **tests/** - TDD testing infrastructure
-  - **scripts/** - Validation and testing scripts (5 core scripts, 1,788 lines)
+  - **core/** - Modular test system (dispatcher + handlers)
+    - `test-dispatcher.sh` - Routes test commands to appropriate handlers
+    - `test-glyph.sh` - Glyph testing handler (renders via kaster)
+    - `test-trinket.sh` - Trinket testing handler (tarot, microspell)
+    - `test-chart.sh` - Main chart testing handler (summon, kaster)
+    - `test-spell.sh` - Individual spell testing with K8s resource rendering
+    - `test-book.sh` - Book testing handler (covenant, regular books)
+  - **lib/** - Shared libraries
+    - `utils.sh` - Logging, test tracking, output formatting
+    - `discover.sh` - Auto-discovery of components (glyphs, trinkets, charts)
+    - `validate.sh` - Helm validation, rendering, resource counting
+  - **scripts/** - Legacy validation scripts
     - `validate-resource-completeness.sh` - Resource validation engine
     - `test-covenant-book.sh` - Covenant identity & access testing
-    - `test-librarian-migration.sh` - Librarian ApplicationSet TDD (consolidated 4 scripts)
-    - `test-tarot.sh` - Tarot workflow testing (extracted from Makefile)
-    - `test-book-render.sh` - Book/spell rendering with librarian context
+    - `test-tarot.sh` - Tarot workflow testing
+    - `test-spell.sh` - Spell rendering with librarian context
 - **output-test/** - Generated test outputs (created automatically, gitignored)
   - **<chart-name>/** - Per-chart/glyph test results
     - **<example>.yaml** - Actual rendered output
@@ -222,6 +232,43 @@ Legend:
   [MISSING]  = No examples (needs TDD work)
 ```
 
+### Modular Test Architecture
+
+The test system uses a dispatcher pattern for scalable, semantic testing:
+
+**Command Structure:**
+```bash
+bash tests/core/test-dispatcher.sh [MODE] [TYPE] [COMPONENTS...]
+```
+
+**Modes:** `syntax`, `comprehensive`, `snapshots`, `all`
+**Types:** `glyph`, `trinket`, `chart`, `spell`, `book`
+**Components:** Specific names or empty for all
+
+**Examples:**
+```bash
+# Test specific glyph
+bash tests/core/test-dispatcher.sh comprehensive glyph vault
+
+# Test all glyphs
+bash tests/core/test-dispatcher.sh all glyph
+
+# Test specific trinket
+bash tests/core/test-dispatcher.sh syntax trinket tarot
+
+# Test all trinkets
+bash tests/core/test-dispatcher.sh comprehensive trinket
+```
+
+**Auto-Discovery:** System automatically discovers all glyphs, trinkets, and charts with `examples/` directories.
+
+**Handler Architecture:**
+- **test-glyph.sh**: Tests glyphs through kaster (NEVER directly)
+- **test-trinket.sh**: Tests trinkets (tarot, microspell)
+- **test-chart.sh**: Tests main charts (summon, kaster, librarian)
+- **test-spell.sh**: Renders individual spells with full K8s resources
+- **test-book.sh**: Tests books (detects covenant vs regular)
+
 ## TDD Development Workflow
 
 ### Understanding the TDD Cycle Mechanics
@@ -232,8 +279,8 @@ The TDD commands (`tdd-red`, `tdd-green`, `tdd-refactor`) have different behavio
 
 ```makefile
 tdd-red: ## TDD Red: Run tests expecting failures
-	@echo "🔴 TDD RED: Running tests expecting failures..."
-	@$(MAKE) test-comprehensive || echo "✅ Good! Tests are failing - now implement"
+	@echo "TDD RED: Running tests expecting failures..."
+	@$(MAKE) test-comprehensive || echo "Good! Tests are failing - now implement"
 ```
 
 **Key mechanic:** Uses the `||` operator (logical OR)
@@ -251,7 +298,7 @@ tdd-red: ## TDD Red: Run tests expecting failures
 
 ```makefile
 tdd-green: ## TDD Green: Run tests expecting success
-	@echo "🟢 TDD GREEN: Running tests expecting success..."
+	@echo "TDD GREEN: Running tests expecting success..."
 	@$(MAKE) test-comprehensive
 ```
 
@@ -270,7 +317,7 @@ tdd-green: ## TDD Green: Run tests expecting success
 
 ```makefile
 tdd-refactor: ## TDD Refactor: Run tests after refactoring
-	@echo "🔵 TDD REFACTOR: Running tests after refactoring..."
+	@echo "TDD REFACTOR: Running tests after refactoring..."
 	@$(MAKE) test-all
 ```
 
