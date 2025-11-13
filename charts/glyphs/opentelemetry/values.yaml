@@ -1,0 +1,150 @@
+# Default values for opentelemetry glyph
+# This file contains default configurations that can be overridden in spells
+
+# OpenTelemetry Collector default image
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.91.0"
+  pullPolicy: IfNotPresent
+
+# Default collector configuration
+collector:
+  # Mode: gateway (centralized), agent (daemonset), sidecar
+  mode: gateway
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 200m
+      memory: 400Mi
+
+  # Default receivers
+  receivers:
+    otlp:
+      enabled: true
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+    prometheus:
+      enabled: false
+      config:
+        scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 30s
+
+    jaeger:
+      enabled: false
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:14250"
+        thrift_http:
+          endpoint: "0.0.0.0:14268"
+
+  # Default processors
+  processors:
+    batch:
+      timeout: 10s
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+
+    memory_limiter:
+      check_interval: 1s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+
+    resourcedetection:
+      detectors:
+        - env
+        - system
+        - docker
+        - kubernetes
+      timeout: 5s
+      override: false
+
+  # Default exporters
+  exporters:
+    datadog:
+      enabled: true
+      api:
+        site: "datadoghq.com"
+        fail_on_invalid_key: true
+
+      host_metadata:
+        enabled: true
+        hostname_source: config_or_system
+
+      traces:
+        span_name_as_resource_name: true
+        trace_buffer: 500
+
+      metrics:
+        histograms:
+          mode: distributions
+          send_aggregation_metrics: true
+
+    prometheus:
+      enabled: false
+      endpoint: "0.0.0.0:8889"
+
+    logging:
+      enabled: false
+      loglevel: info
+
+# Service configuration
+service:
+  type: ClusterIP
+  annotations: {}
+
+  ports:
+    otlp-grpc:
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+
+    otlp-http:
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+
+    metrics:
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+
+    jaeger-grpc:
+      port: 14250
+      targetPort: 14250
+      protocol: TCP
+      enabled: false
+
+    jaeger-thrift:
+      port: 14268
+      targetPort: 14268
+      protocol: TCP
+      enabled: false
+
+# ServiceMonitor for Prometheus Operator
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+
+# Auto-instrumentation configuration
+instrumentation:
+  enabled: false
+  languages:
+    java:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+    python:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+    nodejs:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+    dotnet:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest
+    go:
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:latest

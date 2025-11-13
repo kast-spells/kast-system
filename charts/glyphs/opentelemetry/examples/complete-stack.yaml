@@ -1,0 +1,212 @@
+# Complete OpenTelemetry Stack Example
+# Shows how to deploy Gateway + Agent + Instrumented App together
+# This would typically be split into multiple spells/chapters
+
+name: otel-complete-stack
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+spellbook:
+  name: production-book
+
+# Global lexicon for Datadog
+appendix:
+  lexicon:
+    - type: datadog
+      name: datadog-prod
+      site: datadoghq.com
+      vaultSecretPath: "chapter"
+      apiKeySecret:
+        vaultPath: "/datadog/api-key"
+        vaultKey: apiKey
+      appKeySecret:
+        vaultPath: "/datadog/app-key"
+        vaultKey: appKey
+      labels:
+        environment: production
+        team: platform
+        stack: kubernetes
+
+glyphs:
+  # 1. Vault secrets for Datadog credentials
+  vault:
+    - type: secret
+      name: datadog-creds
+      path: "chapter"
+      keys:
+        - apiKey
+        - appKey
+      serviceAccount: otel-collector-gateway-gateway
+
+  # 2. OpenTelemetry Gateway (centralized)
+  opentelemetry:
+    - type: collectorGateway
+      name: gateway
+      replicas: 3
+
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.91.0"
+
+      receivers:
+        - otlp
+        - prometheus
+        - jaeger
+
+      processors:
+        - batch
+        - memory_limiter
+        - resourcedetection
+        - k8sattributes
+        - spanmetrics
+
+      exporters:
+        - datadog
+        - prometheus
+        - logging
+
+      datadogSelector:
+        name: datadog-prod
+
+      # Custom pipeline configurations
+      metricsPath:
+        receivers: [otlp, prometheus]
+        processors: [batch, memory_limiter, resourcedetection, k8sattributes]
+        exporters: [datadog, prometheus]
+
+      tracesPath:
+        receivers: [otlp, jaeger]
+        processors: [batch, memory_limiter, resourcedetection, k8sattributes, spanmetrics]
+        exporters: [datadog]
+
+      logsPath:
+        receivers: [otlp]
+        processors: [batch, memory_limiter]
+        exporters: [datadog]
+
+      # Performance tuning
+      batchTimeout: "10s"
+      batchSize: 2048
+      batchMaxSize: 4096
+      traceBuffer: 1000
+
+      # Resources
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+        requests:
+          cpu: 500m
+          memory: 1Gi
+
+      # High availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                        - opentelemetry-collector
+                topologyKey: kubernetes.io/hostname
+
+      # Service configuration
+      serviceType: ClusterIP
+      service:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8888"
+
+      # Pod annotations
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"
+        prometheus.io/path: "/metrics"
+
+    # 3. OpenTelemetry Agent (DaemonSet)
+    - type: collectorAgent
+      name: agent
+
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.91.0"
+
+      # Forward to gateway
+      forwardTo: otel-collector-gateway-gateway.observability.svc:4317
+
+      receivers:
+        - otlp
+        - prometheus
+
+      processors:
+        - batch
+        - memory_limiter
+        - resourcedetection
+
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+
+      # Tolerations to run on all nodes
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+        - operator: Exists
+          effect: NoExecute
+
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"
+
+    # 4. Auto-instrumentation for Java apps
+    - type: instrumentation
+      name: java-instrumentation
+      language: java
+      endpoint: http://otel-collector-agent.observability.svc:4317
+
+      propagators:
+        - tracecontext
+        - baggage
+        - b3
+
+      env:
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_TRACES_SAMPLER
+          value: "parentbased_traceidratio"
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.1"  # Sample 10% of traces
+
+    # 5. Auto-instrumentation for Python apps
+    - type: instrumentation
+      name: python-instrumentation
+      language: python
+      endpoint: http://otel-collector-agent.observability.svc:4317
+
+      propagators:
+        - tracecontext
+        - baggage
+
+    # 6. Auto-instrumentation for Node.js apps
+    - type: instrumentation
+      name: nodejs-instrumentation
+      language: nodejs
+      endpoint: http://otel-collector-agent.observability.svc:4317
+
+      propagators:
+        - tracecontext
+        - baggage

@@ -1,0 +1,23 @@
+apiVersion: v2
+name: opentelemetry
+description: OpenTelemetry Collector glyph for metrics, traces, and logs collection with Datadog integration
+version: 1.0.0
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-system
+  - https://opentelemetry.io
+  - https://github.com/open-telemetry/opentelemetry-collector-contrib
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: laaledesiempre
+    email: laaledesiempre@disroot.org
+keywords:
+  - opentelemetry
+  - otel
+  - observability
+  - metrics
+  - traces
+  - logs
+  - datadog
+  - telemetry

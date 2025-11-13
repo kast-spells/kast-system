@@ -1,0 +1,59 @@
+# OpenTelemetry Collector Agent (DaemonSet)
+# Per-node collector that forwards to gateway
+
+name: otel-collector-agent
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+spellbook:
+  name: production-book
+
+glyphs:
+  opentelemetry:
+    - type: collectorAgent
+      name: agent
+
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.91.0"
+
+      # Forward to gateway instead of exporting directly
+      forwardTo: otel-collector-gateway-gateway.observability.svc:4317
+
+      # Receivers for local collection
+      receivers:
+        - otlp
+        - prometheus
+        - jaeger
+
+      # Processors for local processing
+      processors:
+        - batch
+        - memory_limiter
+        - resourcedetection
+
+      # Resources (lighter than gateway)
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+
+      # Run on all nodes
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+        - operator: Exists
+          effect: NoExecute
+
+      # Host network for better performance (optional)
+      hostNetwork: false
+
+      # Pod annotations
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"

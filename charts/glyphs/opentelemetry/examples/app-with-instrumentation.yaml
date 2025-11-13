@@ -1,0 +1,84 @@
+# Application with OpenTelemetry Auto-Instrumentation
+# Java application that automatically sends telemetry
+
+name: payment-api
+namespace: applications
+
+chapter:
+  name: applications
+
+spellbook:
+  name: production-book
+
+# Application workload
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: myorg/payment-api
+  tag: v2.0.0
+
+# Service
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+# Environment variables for OTLP
+env:
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector-agent.observability.svc:4317"
+  - name: OTEL_SERVICE_NAME
+    value: "payment-api"
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=production,service.version=v2.0.0,service.namespace=applications"
+  - name: OTEL_METRICS_EXPORTER
+    value: "otlp"
+  - name: OTEL_TRACES_EXPORTER
+    value: "otlp"
+  - name: OTEL_LOGS_EXPORTER
+    value: "otlp"
+
+# Resources
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+# Auto-scaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# OpenTelemetry auto-instrumentation
+glyphs:
+  opentelemetry:
+    - type: instrumentation
+      name: java-auto
+      language: java
+      endpoint: http://otel-collector-agent.observability.svc:4317
+
+      propagators:
+        - tracecontext
+        - baggage
+        - b3
+
+      env:
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_ENABLED
+          value: "false"
+
+# Pod annotations to enable auto-instrumentation
+podAnnotations:
+  instrumentation.opentelemetry.io/inject-java: "java-auto"

@@ -1,0 +1,116 @@
+# Basic OpenTelemetry Collector Gateway Example
+# Centralized collector that exports to Datadog
+
+name: otel-collector-gateway
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+spellbook:
+  name: production-book
+
+# Datadog configuration in lexicon
+lexicon:
+  - type: datadog
+    name: datadog-prod
+    site: datadoghq.com
+    vaultSecretPath: "chapter"
+    apiKeySecret:
+      vaultPath: "/datadog/api-key"
+      vaultKey: apiKey
+    labels:
+      environment: production
+      team: platform
+
+# Vault secret for Datadog API key
+glyphs:
+  vault:
+    - type: secret
+      name: datadog-api-key
+      path: "chapter"
+      keys:
+        - apiKey
+      serviceAccount: otel-collector-gateway
+
+  # OpenTelemetry Gateway Collector
+  opentelemetry:
+    - type: collectorGateway
+      name: gateway
+      replicas: 3
+
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.91.0"
+
+      # Receivers
+      receivers:
+        - otlp
+        - prometheus
+
+      # Processors
+      processors:
+        - batch
+        - memory_limiter
+        - resourcedetection
+        - k8sattributes
+
+      # Exporters
+      exporters:
+        - datadog
+        - logging  # For debugging
+
+      # Datadog selector from lexicon
+      datadogSelector:
+        name: datadog-prod
+
+      # Pipeline configuration
+      metricsPath:
+        receivers:
+          - otlp
+          - prometheus
+        processors:
+          - batch
+          - memory_limiter
+          - resourcedetection
+          - k8sattributes
+        exporters:
+          - datadog
+
+      tracesPath:
+        receivers:
+          - otlp
+        processors:
+          - batch
+          - memory_limiter
+          - resourcedetection
+          - k8sattributes
+        exporters:
+          - datadog
+
+      logsPath:
+        receivers:
+          - otlp
+        processors:
+          - batch
+          - memory_limiter
+        exporters:
+          - datadog
+
+      # Resources
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+        requests:
+          cpu: 200m
+          memory: 400Mi
+
+      # Service configuration
+      serviceType: ClusterIP
+
+      # Pod annotations
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"
+        prometheus.io/path: "/metrics"
