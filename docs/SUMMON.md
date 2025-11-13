@@ -16,7 +16,7 @@ Summon is the fundamental chart for deploying workloads (Deployments, StatefulSe
 
 **Location:** `charts/summon/`
 
-**Default Trinket:** Used when spell has no `chart` or `path` specified
+**Default Trinket:** Used when spell has no `chart` or `path` specified. See [Bookrack](BOOKRACK.md) for spell configuration details.
 
 ## Architecture
 
@@ -241,7 +241,7 @@ serviceAccount:
 ```
 
 **Used for:**
-- Vault authentication
+- Vault authentication (see [Vault Integration](VAULT.md))
 - AWS IAM roles (IRSA)
 - GCP Workload Identity
 - RBAC bindings
@@ -669,19 +669,22 @@ volumes:
 
 ### With Vault (Secrets)
 
+For complete Vault integration details, see [Vault Integration](VAULT.md) and [Glyphs](GLYPHS.md).
+
 ```yaml
 name: app
 image:
   repository: myapp
 
 # Glyphs create vault policy and secret
+# See Kaster documentation for glyph orchestration: KASTER.md
 glyphs:
   vault:
-    - type: prolicy
-      name: app-policy
+    app-policy:                      # Resource name becomes map key
+      type: prolicy
       serviceAccount: app
-    - type: secret
-      name: app-secret
+    app-secret:                      # Resource name becomes map key
+      type: secret
       format: env
       keys: [api_key, database_url]
 
@@ -693,6 +696,8 @@ serviceAccount:
 **Result:** VaultSecret synced to K8s Secret, mounted as env vars
 
 ### With Istio (Service Mesh)
+
+For Istio glyph configuration details, see [Glyphs](GLYPHS.md) and [Kaster](KASTER.md).
 
 ```yaml
 name: api-service
@@ -706,8 +711,8 @@ service:
 # Istio routing
 glyphs:
   istio:
-    - type: virtualService
-      name: api-vs
+    api-vs:                          # Resource name becomes map key
+      type: virtualService
       hosts:
         - api.example.com
       http:
@@ -721,6 +726,8 @@ glyphs:
 **Result:** Istio VirtualService routes traffic to service
 
 ### With External Charts (Runes)
+
+For multi-source deployment patterns, see [Bookrack](BOOKRACK.md).
 
 ```yaml
 name: web-app
@@ -793,13 +800,16 @@ service:
 
 ### Enable ServiceAccount for Vault
 
+For Vault authentication details, see [Vault Integration](VAULT.md).
+
 ```yaml
 serviceAccount:
   enabled: true
 
 glyphs:
   vault:
-    - type: prolicy
+    app-policy:                      # Resource name becomes map key
+      type: prolicy
       serviceAccount: <app-name>
 ```
 
@@ -905,6 +915,9 @@ kubectl describe pvc -n <namespace> <pvc-name>
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Tutorial using summon
 - [BOOKRACK.md](BOOKRACK.md) - Book/chapter/spell structure
 - [LIBRARIAN.md](LIBRARIAN.md) - ArgoCD deployment
+- [GLYPHS.md](GLYPHS.md) - Reusable template libraries
+- [KASTER.md](KASTER.md) - Glyph orchestrator
+- [VAULT.md](VAULT.md) - Vault integration
 - [MICROSPELL.md](MICROSPELL.md) - Opinionated wrapper
 - [EXAMPLES_INDEX.md](EXAMPLES_INDEX.md) - All summon examples
 

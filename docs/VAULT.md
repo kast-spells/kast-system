@@ -4,7 +4,7 @@ HashiCorp Vault integration for secrets management, authentication, and cryptogr
 
 ## Overview
 
-The vault glyph provides:
+The [vault glyph](GLYPHS.md) provides:
 - Secret synchronization from Vault to Kubernetes Secrets
 - Automatic policy generation with path-based access control
 - Random password generation with custom policies
@@ -54,7 +54,7 @@ Implementation uses [vault-operator](https://github.com/redhat-cop/vault-config-
 
 ### Vault Server Discovery
 
-Vault server configuration is stored in lexicon and queried via runic indexer:
+Vault server configuration is stored in [lexicon](LEXICON.md) and queried via runic indexer:
 
 ```yaml
 lexicon:
@@ -84,8 +84,8 @@ Glyph definitions can specify selector to choose vault server:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: app-secret
+    app-secret:
+      type: secret
       selector:
         environment: production  # Selects production-vault
 ```
@@ -121,8 +121,8 @@ Each spell gets a ServiceAccount that authenticates to Vault:
 ```yaml
 glyphs:
   vault:
-    - type: prolicy
-      name: app-policy
+    app-policy:
+      type: prolicy
       serviceAccount: my-app  # Binds policy to this SA
 ```
 
@@ -181,8 +181,8 @@ The `generateSecretPath` template resolves paths based on `path` field:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: database-readonly
+    database-readonly:
+      type: secret
       path: book
       keys: [username, password]
 
@@ -194,8 +194,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: api-credentials
+    api-credentials:
+      type: secret
       path: chapter
       keys: [api_key, api_secret]
 
@@ -207,8 +207,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: app-secret
+    app-secret:
+      type: secret
       # No path - defaults to namespace scope
       keys: [private_key]
 
@@ -220,8 +220,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: shared-config
+    shared-config:
+      type: secret
       path: /infrastructure/shared
       keys: [config]
 
@@ -235,8 +235,8 @@ The `private` field controls path segment (defaults to "publics"):
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: internal-key
+    internal-key:
+      type: secret
       private: privates  # Uses "privates" instead of "publics"
       keys: [key]
 
@@ -308,8 +308,8 @@ Add custom policy paths via `extraPolicy`:
 ```yaml
 glyphs:
   vault:
-    - type: prolicy
-      name: database-app
+    database-app:
+      type: prolicy
       serviceAccount: database-app
       extraPolicy:
         # Read database static credentials
@@ -332,8 +332,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: prolicy
-      name: web-app
+    web-app:
+      type: prolicy
       serviceAccount: web-app
 
 # Automatically gets:
@@ -347,8 +347,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: prolicy
-      name: api-service
+    api-service:
+      type: prolicy
       serviceAccount: api-service
       extraPolicy:
         - path: database/creds/api-role
@@ -391,8 +391,8 @@ Keys preserved as-is:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: database-creds
+    database-creds:
+      type: secret
       format: plain
       keys: [username, password, host]
 ```
@@ -417,8 +417,8 @@ Keys converted to SCREAMING_SNAKE_CASE for environment variables:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: api-config
+    api-config:
+      type: secret
       format: env
       keys: [api-key, api-secret, base-url]
 ```
@@ -451,8 +451,8 @@ Entire secret as JSON:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: config-blob
+    config-blob:
+      type: secret
       format: json
       key: config.json  # Output key name
 ```
@@ -475,8 +475,8 @@ Entire secret as YAML:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: yaml
       key: config.yaml
 ```
@@ -488,8 +488,8 @@ Add static key-value pairs to secrets:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: database-creds
+    database-creds:
+      type: secret
       format: env
       keys: [password]
       staticData:
@@ -509,8 +509,8 @@ Generate random passwords with custom policies:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: admin-creds
+    admin-creds:
+      type: secret
       format: env
       random: true
       randomKey: admin_password
@@ -534,8 +534,8 @@ Define custom password policies:
 ```yaml
 glyphs:
   vault:
-    - type: customPasswordPolicy
-      name: strong-password
+    strong-password:
+      type: customPasswordPolicy
       policy: |
         length = 24
         rule "charset" {
@@ -555,8 +555,8 @@ glyphs:
           min-chars = 6
         }
 
-    - type: secret
-      name: user-password
+    user-password:
+      type: secret
       format: plain
       randomKey: password
       passPolicyName: strong-password
@@ -571,8 +571,8 @@ Generate multiple random passwords in one secret:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: multi-creds
+    multi-creds:
+      type: secret
       format: env
       randomKeys: [api_key, webhook_secret, encryption_key]
       staticData:
@@ -597,8 +597,8 @@ Generate Ed25519 or RSA keypairs:
 ```yaml
 glyphs:
   vault:
-    - type: cryptoKey
-      name: ssh-deploy-key
+    ssh-deploy-key:
+      type: cryptoKey
       algorithm: ed25519
       comment: "Deployment key for GitOps"
 ```
@@ -642,8 +642,8 @@ data:
 ```yaml
 glyphs:
   vault:
-    - type: cryptoKey
-      name: tls-key
+    tls-key:
+      type: cryptoKey
       algorithm: rsa
       bits: 4096
 ```
@@ -655,8 +655,8 @@ Generate DKIM keys for email:
 ```yaml
 glyphs:
   vault:
-    - type: cryptoKey
-      name: mail-dkim
+    mail-dkim:
+      type: cryptoKey
       algorithm: ed25519
       domain: example.com
       comment: "DKIM for example.com"
@@ -667,7 +667,8 @@ glyphs:
 ```yaml
 glyphs:
   certManager:
-    - type: dnsEndpointSourced
+    dkim-dns:
+      type: dnsEndpointSourced
       sourceSecret: mail-dkim
       sourceKey: public_key_base64
       dnsRecordFormat: "v=DKIM1; k=ed25519; p=%s"
@@ -852,7 +853,7 @@ Deploys Vault server (development mode).
 
 ### With Summon
 
-Summon workloads automatically use vault secrets:
+[Summon](SUMMON.md) workloads automatically use vault secrets:
 
 ```yaml
 name: web-app
@@ -862,12 +863,12 @@ image:
 
 glyphs:
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
 
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       keys: [database_url, api_key]
 ```
@@ -885,14 +886,14 @@ Combine vault secrets with Istio VirtualService:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: oauth-client
+    oauth-client:
+      type: secret
       format: env
       keys: [client_id, client_secret]
 
   istio:
-    - type: virtualService
-      name: api-service
+    api-service:
+      type: virtualService
       hosts: [api.example.com]
       routes:
         - destination: api-service
@@ -905,14 +906,14 @@ Use vault secrets in Argo Workflows triggered by events:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: github-webhook
+    github-webhook:
+      type: secret
       format: env
       keys: [webhook_secret]
 
   argo-events:
-    - type: eventSource
-      name: github-events
+    github-events:
+      type: eventSource
       github:
         webhookSecret:
           name: github-webhook
@@ -921,7 +922,7 @@ glyphs:
 
 ### Multi-Environment Pattern
 
-Use lexicon + selectors for environment-specific vaults:
+Use [lexicon](LEXICON.md) + selectors for environment-specific vaults:
 
 ```yaml
 # Book lexicon
@@ -945,8 +946,8 @@ lexicon:
 # Spell (works in both environments)
 glyphs:
   vault:
-    - type: secret
-      name: database-creds
+    database-creds:
+      type: secret
       # Automatically uses chapter default vault
       keys: [username, password]
 ```
@@ -1141,8 +1142,8 @@ extraPolicy:
 # Book level - available to all chapters
 glyphs:
   vault:
-    - type: customPasswordPolicy
-      name: org-standard-password
+    org-standard-password:
+      type: customPasswordPolicy
       policy: |
         length = 16
         rule "charset" {
@@ -1157,8 +1158,8 @@ glyphs:
 ```yaml
 glyphs:
   vault:
-    - type: secret
-      name: api-key
+    api-key:
+      type: secret
       refreshPeriod: 1h  # Sync every hour
       keys: [key]
 ```
@@ -1194,6 +1195,9 @@ make show-glyph-diff GLYPH=vault EXAMPLE=secrets
 
 ## Related Documentation
 
+- [GLYPHS.md](GLYPHS.md) - Glyph system architecture and overview
+- [KASTER.md](KASTER.md) - Glyph orchestration and rendering
+- [BOOKRACK.md](BOOKRACK.md) - Spell configuration and book structure
 - [GLYPHS_REFERENCE.md](GLYPHS_REFERENCE.md) - All available glyphs
 - [LEXICON.md](LEXICON.md) - Infrastructure discovery system
 - [HIERARCHY_SYSTEMS.md](HIERARCHY_SYSTEMS.md#2-vault-path-hierarchy) - Vault path hierarchy details

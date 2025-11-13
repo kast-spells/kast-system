@@ -41,8 +41,8 @@ envs:
 # Infrastructure integration using glyphs
 glyphs:
   istio:
-    - type: virtualService
-      name: example-api-vs
+    example-api-vs:
+      type: virtualService
       http:
         - match:
             - uri:

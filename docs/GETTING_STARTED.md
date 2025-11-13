@@ -52,7 +52,7 @@ kubectl get svc -n my-app
 
 ### Step 1: Create Book Structure
 
-**Book:** Top-level organization (team, product, project)
+**Book:** Top-level organization (team, product, project). See [Bookrack](BOOKRACK.md) for complete details on the book/chapter/spell structure.
 
 ```bash
 # Create book directory
@@ -105,7 +105,7 @@ EOF
 
 ### Step 2: Create First Spell (Simple Application)
 
-**Spell:** Single application deployment
+**Spell:** Single application deployment. Spells use the [Summon](SUMMON.md) chart by default for containerized workloads.
 
 ```bash
 # Create simple web application
@@ -151,6 +151,8 @@ EOF
 
 ### Step 3: Deploy with Librarian
 
+The [Librarian](LIBRARIAN.md) reads your book structure and generates ArgoCD Applications for each spell.
+
 ```bash
 # Deploy book to ArgoCD
 helm install tutorial-book librarian --set name=tutorial-book
@@ -194,11 +196,11 @@ curl http://localhost:8080
 
 ### Step 5: Add Infrastructure (Glyphs)
 
-Now let's add vault secrets and istio routing.
+Now let's add vault secrets and istio routing. [Glyphs](GLYPHS.md) are reusable templates for infrastructure resources, orchestrated by the [Kaster](KASTER.md) chart.
 
 #### 5.1: Create Lexicon
 
-**Lexicon:** Infrastructure registry
+**Lexicon:** Infrastructure registry for dynamic resource discovery. See [Lexicon](LEXICON.md) for query patterns and label matching.
 
 ```bash
 # Create lexicon entries
@@ -246,16 +248,16 @@ service:
     - port: 80
       name: http
 
-# Infrastructure integration
+# Infrastructure integration (see VAULT.md for complete secret management patterns)
 glyphs:
   # Vault secrets
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
 
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       path: chapter
       keys:
@@ -264,8 +266,8 @@ glyphs:
 
   # Istio routing
   istio:
-    - type: virtualService
-      name: web-app-vs
+    web-app-vs:
+      type: virtualService
       http:
         - match:
             - uri:
@@ -298,6 +300,8 @@ argocd app sync web-app
 ```
 
 ### Step 6: Add Production Environment
+
+Chapter configurations inherit from the book and can override settings. See [Hierarchy Systems](HIERARCHY_SYSTEMS.md) for how values merge across book/chapter/spell levels.
 
 ```bash
 # Create production chapter config
@@ -350,12 +354,12 @@ envs:
 # Same glyphs as development
 glyphs:
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
 
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       path: chapter
       keys:
@@ -363,8 +367,8 @@ glyphs:
         - database_url
 
   istio:
-    - type: virtualService
-      name: web-app-vs
+    web-app-vs:
+      type: virtualService
       http:
         - match:
             - uri:
@@ -395,7 +399,7 @@ argocd app sync web-app-prod
 
 ### Step 7: Add Database with Runes
 
-**Runes:** Additional Helm charts deployed with spell
+**Runes:** Additional Helm charts deployed with your spell in a multi-source ArgoCD Application. See [Librarian](LIBRARIAN.md) for multi-source configuration details.
 
 ```bash
 # Update production app with PostgreSQL
@@ -450,19 +454,19 @@ envs:
 # Glyphs (same as before)
 glyphs:
   vault:
-    - type: prolicy
-      name: web-app-policy
+    web-app-policy:
+      type: prolicy
       serviceAccount: web-app
-    - type: secret
-      name: app-config
+    app-config:
+      type: secret
       format: env
       path: chapter
       keys:
         - api_key
 
   istio:
-    - type: virtualService
-      name: web-app-vs
+    web-app-vs:
+      type: virtualService
       hosts:
         - app.production.com
 EOF
@@ -478,6 +482,8 @@ argocd app sync web-app-prod
 4. Kaster (glyphs)
 
 ## Common Patterns
+
+These patterns demonstrate how kast-system's [Hierarchy Systems](HIERARCHY_SYSTEMS.md) enable powerful configuration management strategies.
 
 ### Pattern 1: Multi-Environment
 
@@ -503,7 +509,7 @@ bookrack/my-book/
 
 ### Pattern 2: Microservices Monorepo
 
-**Multiple services in one book:**
+**Multiple services in one book:** Consider using [Microspell](MICROSPELL.md) for opinionated microservice deployments.
 
 ```
 bookrack/microservices/
@@ -527,7 +533,7 @@ bookrack/microservices/
 
 ### Pattern 3: External Chart with Glyphs
 
-**Use existing Helm chart with kast glyphs:**
+**Use existing Helm chart with kast glyphs:** Combine any Helm chart with kast infrastructure. See [Glyphs Reference](GLYPHS_REFERENCE.md) for all available glyphs.
 
 ```yaml
 name: prometheus
@@ -544,8 +550,8 @@ values:
 # Add vault secret for alertmanager
 glyphs:
   vault:
-    - type: secret
-      name: alertmanager-config
+    alertmanager-config:
+      type: secret
       format: yaml
       keys:
         - alertmanager.yml
@@ -593,7 +599,7 @@ kubectl describe deployment -n web-app web-app
 
 ### Glyphs Not Working
 
-**Check:**
+**Check:** See [Kaster](KASTER.md) documentation for glyph orchestration details.
 
 ```bash
 # 1. Verify lexicon merged
@@ -684,13 +690,13 @@ helm install example-tdd-book librarian --set name=example-tdd-book
 
 **You learned:**
 
-1. ✅ Create book structure (book/chapter/spell)
-2. ✅ Deploy with librarian to ArgoCD
-3. ✅ Add infrastructure with glyphs (vault, istio)
-4. ✅ Use lexicon for infrastructure registry
-5. ✅ Deploy to multiple environments
-6. ✅ Add databases with runes
-7. ✅ Troubleshoot common issues
+1. Create [book structure](BOOKRACK.md) (book/chapter/spell)
+2. Deploy with [librarian](LIBRARIAN.md) to ArgoCD
+3. Add infrastructure with [glyphs](GLYPHS.md) (vault, istio)
+4. Use [lexicon](LEXICON.md) for infrastructure registry
+5. Deploy to multiple environments with [hierarchy systems](HIERARCHY_SYSTEMS.md)
+6. Add databases with runes (multi-source applications)
+7. Troubleshoot common issues
 
 **Key Concepts:**
 

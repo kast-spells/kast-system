@@ -5,10 +5,10 @@ ArgoCD App-of-Apps orchestrator for kast-system. Librarian transforms book/chapt
 ## Overview
 
 Librarian is a Helm chart that:
-- Reads book configuration from `bookrack/`
+- Reads [book configuration](BOOKRACK.md) from `bookrack/`
 - Generates ArgoCD `Application` resources
 - Coordinates multi-source deployments (trinkets)
-- Propagates context (lexicon, cards, book/chapter metadata)
+- Propagates context ([lexicon](LEXICON.md), cards, book/chapter metadata)
 - Manages deployment targeting (clusters, namespaces)
 
 **Pattern:** App of Apps (ArgoCD ApplicationSet alternative)
@@ -49,6 +49,8 @@ Librarian is a Helm chart that:
 ```
 
 ## Book Structure
+
+See [Bookrack documentation](BOOKRACK.md) for comprehensive details on book/chapter/spell structure and configuration.
 
 ### Directory Layout
 
@@ -209,6 +211,8 @@ localAppendix:
 
 **Hierarchy:**
 
+See [Hierarchy Systems documentation](HIERARCHY_SYSTEMS.md) for detailed merge behavior.
+
 ```
 Book appParams → Chapter appParams → Spell appParams
 Book defaultTrinket → Chapter defaultTrinket
@@ -219,7 +223,7 @@ Chapter localAppendix (chapter-only, not propagated to book)
 
 ### Spell YAML
 
-**Purpose:** Define single application deployment.
+**Purpose:** Define single application deployment. See [Bookrack documentation](BOOKRACK.md) for detailed spell configuration.
 
 **Structure:**
 
@@ -236,14 +240,14 @@ service:
   enabled: true
   port: 80
 
-# Infrastructure integration
+# Infrastructure integration (see Glyphs documentation)
 glyphs:
   vault:
-    - type: secret
-      name: app-secret
+    app-secret:
+      type: secret
   istio:
-    - type: virtualService
-      name: my-app-vs
+    my-app-vs:
+      type: virtualService
 
 # Additional charts
 runes:
@@ -265,7 +269,7 @@ appendix:
       type: service
 ```
 
-**Spell Types:** See [Deployment Strategies](#deployment-strategies)
+**Spell Types:** See [Deployment Strategies](#deployment-strategies) and [Glyphs documentation](GLYPHS.md) for glyph orchestration patterns.
 
 ## Deployment Strategies
 
@@ -325,7 +329,7 @@ spec:
 
 ### 2. Infrastructure (Glyphs via Kaster)
 
-**Pattern:** Spell has `glyphs:` field. Librarian detects this and adds kaster chart as second source.
+**Pattern:** Spell has `glyphs:` field. Librarian detects this and adds [kaster chart](KASTER.md) as second source. See [Glyphs documentation](GLYPHS.md) for glyph templates and [Vault documentation](VAULT.md) for Vault integration examples.
 
 **Example:**
 
@@ -342,11 +346,11 @@ trinkets:
 name: vault-setup
 glyphs:
   vault:
-    - type: prolicy
-      name: app-policy
+    app-policy:
+      type: prolicy
       serviceAccount: my-app
-    - type: secret
-      name: database-creds
+    database-creds:
+      type: secret
       keys: [username, password]
 ```
 
@@ -378,18 +382,22 @@ spec:
         values: |
           glyphs:
             vault:
-              - type: prolicy
-                name: app-policy
+              app-policy:
+                type: prolicy
+                serviceAccount: my-app
+              database-creds:
+                type: secret
+                keys: [username, password]
           spellbook: {...}
           chapter: {...}
           lexicon: [...]
 ```
 
-**Use case:** Infrastructure resources (vault policies, istio routes, certificates).
+**Use case:** Infrastructure resources (vault policies, istio routes, certificates). See [Vault documentation](VAULT.md) for detailed Vault secret integration patterns.
 
 ### 3. Multi-Source (Multiple Trinkets)
 
-**Pattern:** Spell has multiple trinket keys (e.g., `glyphs:` + `tarot:`). Librarian adds all matching trinkets as sources.
+**Pattern:** Spell has multiple trinket keys (e.g., `glyphs:` + `tarot:`). Librarian adds all matching trinkets as sources. See [Glyphs documentation](GLYPHS.md) and [Kaster documentation](KASTER.md) for glyph orchestration.
 
 **Example:**
 
@@ -416,11 +424,11 @@ image:
 # Infrastructure glyphs
 glyphs:
   vault:
-    - type: secret
-      name: app-secret
+    app-secret:
+      type: secret
   istio:
-    - type: virtualService
-      name: app-vs
+    app-vs:
+      type: virtualService
 
 # CI/CD workflow
 tarot:
@@ -507,8 +515,8 @@ values:
 # Can still use trinkets
 glyphs:
   vault:
-    - type: secret
-      name: redis-password
+    redis-password:
+      type: secret
 ```
 
 **Generated Application:**
@@ -541,7 +549,9 @@ spec:
       helm:
         values: |
           glyphs:
-            vault: [...]
+            vault:
+              redis-password:
+                type: secret
 ```
 
 **Use case:** External Helm charts (bitnami, prometheus, etc.).
@@ -651,7 +661,7 @@ runes:
 
 ## Appendix System
 
-**Appendix** propagates context (lexicon, cards) across book → chapter → spell hierarchy.
+**Appendix** propagates context ([lexicon](LEXICON.md), cards) across book → chapter → spell hierarchy. See [Lexicon documentation](LEXICON.md) for infrastructure registry details.
 
 ### Global Appendix
 
@@ -724,6 +734,8 @@ localAppendix:
 
 **Hierarchy:**
 
+See [Hierarchy Systems documentation](HIERARCHY_SYSTEMS.md) for detailed merge patterns.
+
 ```
 Global Appendix = Book.appendix + Chapter.appendix + Spell.appendix
 Chapter Appendix = Global Appendix + Chapter.localAppendix
@@ -775,7 +787,7 @@ lexicon:
 
 ## Values Hierarchy
 
-Values merge from book → chapter → spell:
+Values merge from book → chapter → spell. See [Hierarchy Systems documentation](HIERARCHY_SYSTEMS.md) for comprehensive merge behavior and patterns.
 
 ```
 Book defaultTrinket.values
@@ -830,7 +842,7 @@ resources:
 
 ## Cluster Targeting
 
-Librarian supports multi-cluster deployments via `clusterSelector` and lexicon.
+Librarian supports multi-cluster deployments via `clusterSelector` and [lexicon](LEXICON.md).
 
 ### Cluster Selection
 
@@ -1070,7 +1082,7 @@ runes:
 
 1. **ArgoCD installed** in cluster
 2. **Librarian chart** available
-3. **Book structure** in `bookrack/`
+3. **[Book structure](BOOKRACK.md)** in `bookrack/`
 
 ### Deployment
 
@@ -1140,7 +1152,7 @@ yq eval bookrack/my-book/chapter/spell.yaml
 
 ### Multi-Source Not Detected
 
-**Symptoms:** Spell has `glyphs:` but kaster not added as source.
+**Symptoms:** Spell has `glyphs:` but [kaster](KASTER.md) not added as source.
 
 **Check:**
 
@@ -1183,6 +1195,8 @@ helm template my-book librarian --debug | yq '.spec.sources[0].helm.values'
 - Arrays replace instead of merge
 - Expecting merge behavior on primitives
 
+See [Hierarchy Systems documentation](HIERARCHY_SYSTEMS.md) for detailed merge behavior.
+
 ### Cluster Not Resolved
 
 **Symptoms:** Application deploys to wrong cluster or default.
@@ -1202,7 +1216,7 @@ helm template my-book librarian --debug | grep -A 10 "k8s-cluster"
 ```
 
 **Common causes:**
-- No matching cluster in lexicon
+- No matching cluster in [lexicon](LEXICON.md)
 - Multiple clusters match selector (uses first)
 - clusterSelector typo
 
@@ -1231,7 +1245,7 @@ argocd app manifests my-app
 
 ### Appendix Not Propagating
 
-**Symptoms:** Lexicon entries not available in spell.
+**Symptoms:** [Lexicon](LEXICON.md) entries not available in spell.
 
 **Check:**
 
@@ -1334,6 +1348,8 @@ localAppendix:
       type: service
 ```
 
+See [Lexicon documentation](LEXICON.md) for infrastructure registry best practices.
+
 ### Rune Naming
 
 **Use descriptive names:**
@@ -1371,11 +1387,16 @@ clusterSelector:
   size: large
 ```
 
+See [Lexicon documentation](LEXICON.md) for cluster targeting patterns.
+
 ## Related Documentation
 
 - [BOOKRACK.md](BOOKRACK.md) - Book/chapter/spell structure
 - [HIERARCHY_SYSTEMS.md](HIERARCHY_SYSTEMS.md) - Values merging patterns
 - [LEXICON.md](LEXICON.md) - Infrastructure registry
+- [GLYPHS.md](GLYPHS.md) - Glyph template library
+- [KASTER.md](KASTER.md) - Glyph orchestrator
+- [VAULT.md](VAULT.md) - Vault secret integration
 - [README.md](../README.md) - Architecture overview
 - [ArgoCD Documentation](https://argo-cd.readthedocs.io/) - ArgoCD concepts
 

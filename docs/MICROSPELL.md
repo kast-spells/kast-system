@@ -721,18 +721,18 @@ serviceAccount:
 
 glyphs:
   vault:
-    - type: prolicy
-      name: api-service-policy
+    api-service-policy:
+      type: prolicy
       serviceAccount: api-service
-    - type: secret
-      name: database-creds
+    database-creds:
+      type: secret
       format: env
       path: chapter
       keys: [username, password]
 
   istio:
-    - type: virtualService
-      name: api-service-vs
+    api-service-vs:
+      type: virtualService
       hosts:
         - api.example.com
       http:

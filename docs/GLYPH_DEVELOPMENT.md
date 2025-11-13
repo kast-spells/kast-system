@@ -12,6 +12,8 @@ Guide for creating new glyphs in kast-system. Glyphs are reusable Helm named tem
 - Enable composition of complex systems from simple definitions
 - Reduce YAML duplication
 
+For a complete reference of all available glyphs, see [GLYPHS.md](GLYPHS.md).
+
 **Architecture:**
 
 ```
@@ -36,6 +38,8 @@ Guide for creating new glyphs in kast-system. Glyphs are reusable Helm named tem
 │ - Deployments, Services, CRDs, etc.                 │
 └─────────────────────────────────────────────────────┘
 ```
+
+For details on how the [Kaster](KASTER.md) chart orchestrates glyphs, see the Kaster documentation.
 
 ## Glyph Structure
 
@@ -215,7 +219,7 @@ kind: ConfigMap
 
 ## Common Glyph Integration
 
-Common glyph provides shared utility templates.
+Common glyph provides shared utility templates. For details, see [glyphs/common.md](glyphs/common.md).
 
 ### Available Templates
 
@@ -265,7 +269,7 @@ name: {{ include "common.name" $root }}-{{ $glyphDefinition.suffix }}
 
 ## Runic Indexer Integration
 
-Query lexicon for infrastructure resources.
+Query lexicon for infrastructure resources. For comprehensive documentation on the lexicon system, see [LEXICON.md](LEXICON.md).
 
 ### Pattern
 
@@ -339,7 +343,8 @@ lexicon:
 
 glyphs:
   myglyph:
-    - type: resource
+    app-config:
+      type: resource
       name: app-config
       selector:
         environment: production
@@ -347,7 +352,7 @@ glyphs:
 
 ## TDD Workflow
 
-Glyphs are developed using Test-Driven Development.
+Glyphs are developed using Test-Driven Development. For complete testing command reference, see [TDD_COMMANDS.md](TDD_COMMANDS.md).
 
 ### Red-Green-Refactor Cycle
 
@@ -358,7 +363,8 @@ Glyphs are developed using Test-Driven Development.
 cat > charts/glyphs/myglyph/examples/basic.yaml <<EOF
 glyphs:
   myglyph:
-    - type: resource
+    test-resource:
+      type: resource
       name: test-resource
       enabled: true
       replicas: 2
@@ -419,13 +425,15 @@ charts/glyphs/myglyph/examples/
 # basic.yaml - Minimal test
 glyphs:
   myglyph:
-    - type: resource
+    basic-test:
+      type: resource
       name: basic-test
 
 # advanced.yaml - Full features
 glyphs:
   myglyph:
-    - type: resource
+    advanced-test:
+      type: resource
       name: advanced-test
       enabled: true
       replicas: 3
@@ -438,11 +446,13 @@ glyphs:
 # edge-cases.yaml - Boundary conditions
 glyphs:
   myglyph:
-    - type: resource
+    edge-case-1:
+      type: resource
       name: edge-case-1
       enabled: false  # Test disabled resource
 
-    - type: resource
+    edge-case-2:
+      type: resource
       name: edge-case-2
       replicas: 0     # Test zero replicas
 ```
@@ -508,7 +518,8 @@ lexicon:
 
 glyphs:
   database:
-    - type: connection
+    app-db-config:
+      type: connection
       name: app-db-config
 EOF
 
@@ -536,7 +547,8 @@ Parameters:
 
 Example:
   database:
-    - type: connection
+    app-db-config:
+      type: connection
       name: app-db-config
       selector:
         environment: production
@@ -598,14 +610,16 @@ lexicon:
 
 glyphs:
   database:
-    - type: connection
+    primary-db-config:
+      type: connection
       name: primary-db-config
       selector:
         environment: production
         tier: primary
       prefix: PRIMARY_
 
-    - type: connection
+    readonly-db-config:
+      type: connection
       name: readonly-db-config
       selector:
         environment: production
@@ -720,7 +734,8 @@ Parameters:
 
 Example:
   myglyph:
-    - type: resource
+    my-resource:
+      type: resource
       name: my-resource
       enabled: true
       replicas: 3
@@ -995,11 +1010,13 @@ make show-glyph-diff GLYPH=myglyph EXAMPLE=basic
 
 ## Related Documentation
 
-- [GLYPHS_REFERENCE.md](GLYPHS_REFERENCE.md) - All available glyphs
-- [LEXICON.md](LEXICON.md) - Runic indexer documentation
-- [TDD_COMMANDS.md](TDD_COMMANDS.md) - Testing commands
-- [docs/glyphs/common.md](glyphs/common.md) - Common glyph templates
-- [CLAUDE.md](../CLAUDE.md) - TDD development philosophy
+- [GLYPHS.md](GLYPHS.md) - Complete glyph system overview and architecture
+- [GLYPHS_REFERENCE.md](GLYPHS_REFERENCE.md) - All available glyphs reference
+- [KASTER.md](KASTER.md) - Glyph orchestration and invocation patterns
+- [LEXICON.md](LEXICON.md) - Runic indexer documentation and lexicon structure
+- [TDD_COMMANDS.md](TDD_COMMANDS.md) - Complete testing command reference
+- [glyphs/common.md](glyphs/common.md) - Common glyph utility templates
+- [../CLAUDE.md](../CLAUDE.md) - TDD development philosophy and workflow
 
 ## Examples
 

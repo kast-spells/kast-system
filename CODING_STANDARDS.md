@@ -2,23 +2,23 @@
 
 This document defines the coding standards and best practices for developing Kast glyphs and trinkets to ensure consistency, maintainability, and quality across the framework.
 
-## 🎯 Overview
+## Overview
 
 Kast uses a standardized approach to Helm template development that ensures predictable patterns across all glyphs and trinkets. These standards have been implemented and validated as of the feature/coding-standards branch.
 
-## 📐 Template Naming Convention
+## Template Naming Convention
 
 ### Glyph Template Names
 Use the pattern: `{glyphName}.{resourceType}`
 
 ```helm
-# ✅ Correct Examples:
+# Correct Examples:
 {{- define "istio.virtualService" }}
 {{- define "vault.secret" }}
 {{- define "summon.persistentVolumeClaim" }}
 {{- define "certManager.certificate" }}
 
-# ❌ Incorrect Examples:
+# Incorrect Examples:
 {{- define "summon.persistanteVolumeClaim" }}  # Typo
 {{- define "summon.pvc" }}                    # Abbreviation
 {{- define "istio.vs" }}                      # Abbreviation
@@ -29,7 +29,7 @@ Use the pattern: `{glyphName}.{resourceType}`
 - Avoid abbreviations: `pvc.tpl` → `persistentVolumeClaim.tpl`
 - Use consistent spelling: `statefulSet` not `statefullSet`
 
-## 📋 Standard Parameter Passing
+## Standard Parameter Passing
 
 ### Glyph Parameter Pattern
 All glyphs must follow this standard parameter pattern:
@@ -53,7 +53,7 @@ Use the common validation helpers:
 {{- $glyphDefinition := $params.glyphDefinition }}
 ```
 
-## 📝 Documentation Standards
+## Documentation Standards
 
 ### Required Header Format
 Every template must include this standardized header:
@@ -136,7 +136,7 @@ Usage: {{- include "istio.virtualService" (list $root $glyph) }}
 */}}
 ```
 
-## 🏗️ Template Structure Standard
+## Template Structure Standard
 
 ### Standard Glyph Template Structure
 ```helm
@@ -174,7 +174,7 @@ spec:
 {{- end }}
 ```
 
-## 🎭 Trinket Architecture Standard
+## Trinket Architecture Standard
 
 ### Trinket Template Structure
 ```helm
@@ -201,7 +201,7 @@ spec:
 {{- end -}}
 ```
 
-## ✅ Validation Patterns
+## Validation Patterns
 
 ### Use Validation Helpers
 ```helm
@@ -221,7 +221,7 @@ spec:
 {{- end -}}
 ```
 
-## 🔍 Best Practices
+## Best Practices
 
 ### 1. Consistency
 - Always use the standard parameter pattern `(list $root $glyphDefinition)`
@@ -243,25 +243,18 @@ spec:
 - Test both basic and complex configurations
 - Verify integration with runicIndexer and lexicon
 
-## 📊 Implementation Status
+## Implementation Status
 
 As of feature/coding-standards branch:
 
-- ✅ **Phase 1**: Fixed naming inconsistencies (`persistante` → `persistent`)
-- ✅ **Phase 2**: Standardized documentation headers across key templates
-- ✅ **Phase 3**: Fixed template naming conventions (`statefullSet` → `statefulSet`)
-- ✅ **Phase 4**: Standardized parameter passing patterns
-- ✅ **Phase 5**: Added validation helpers in `common/templates/validation.tpl`
-- ✅ **Phase 6**: Created comprehensive coding standards documentation
+- **Phase 1**: Fixed naming inconsistencies (`persistante` → `persistent`)
+- **Phase 2**: Standardized documentation headers across key templates
+- **Phase 3**: Fixed template naming conventions (`statefullSet` → `statefulSet`)
+- **Phase 4**: Standardized parameter passing patterns
+- **Phase 5**: Added validation helpers in `common/templates/validation.tpl`
+- **Phase 6**: Created comprehensive coding standards documentation
 
-## 🚀 Future Enhancements
-
-1. **Automated Linting**: Develop pre-commit hooks to enforce standards
-2. **Template Generator**: Create scaffolding tools for new glyphs
-3. **Integration Tests**: Automated testing of glyph interactions
-4. **Performance Optimization**: Template rendering performance improvements
-
-## 📖 References
+## References
 
 - [Helm Template Best Practices](https://helm.sh/docs/chart_best_practices/)
 - [Kubernetes Resource Naming](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)

@@ -24,40 +24,40 @@ namespace: vault-test
 glyphs:
   vault:
     # TEST 1: Path Resolution Variants
-    - type: secret
-      name: book-level-secret
+    book-level-secret:
+      type: secret
       path: "book"
       format: plain
       keys:
         - username
         - password
 
-    - type: secret
-      name: chapter-level-secret
+    chapter-level-secret:
+      type: secret
       path: "chapter"
       format: plain
       keys:
         - api-key
         - token
 
-    - type: secret
-      name: absolute-path-secret
+    absolute-path-secret:
+      type: secret
       path: "/shared/credentials"
       format: plain
       keys:
         - database-url
         - redis-url
 
-    - type: secret
-      name: summon-level-secret
+    summon-level-secret:
+      type: secret
       format: plain
       keys:
         - service-key
         - endpoint
 
     # TEST 2: Format Variants
-    - type: secret
-      name: env-format-secret
+    env-format-secret:
+      type: secret
       format: env
       keys:
         - database-url
@@ -67,23 +67,23 @@ glyphs:
         environment: production
         region: us-east-1
 
-    - type: secret
-      name: json-format-secret
+    json-format-secret:
+      type: secret
       format: json
       key: config-json
 
-    - type: secret
-      name: b64-format-secret
+    b64-format-secret:
+      type: secret
       format: b64
       key: encoded-data
 
-    - type: secret
-      name: yaml-format-secret
+    yaml-format-secret:
+      type: secret
       format: yaml
       key: config-yaml
 
-    - type: secret
-      name: plain-format-secret
+    plain-format-secret:
+      type: secret
       format: plain
       keys:
         - username
@@ -94,8 +94,8 @@ glyphs:
         ssl: "true"
 
     # TEST 3: Random Secrets
-    - type: secret
-      name: basic-random-secret
+    basic-random-secret:
+      type: secret
       format: plain
       random: true
       keys:
@@ -103,8 +103,8 @@ glyphs:
       staticData:
         database: postgres
 
-    - type: secret
-      name: custom-random-key-secret
+    custom-random-key-secret:
+      type: secret
       format: plain
       randomKey: admin-password
       keys:
@@ -112,8 +112,8 @@ glyphs:
       staticData:
         environment: staging
 
-    - type: secret
-      name: random-env-format-secret
+    random-env-format-secret:
+      type: secret
       format: env
       random: true
       keys:
@@ -123,24 +123,24 @@ glyphs:
         ssl-mode: require
 
     # TEST 4: Advanced Options
-    - type: secret
-      name: custom-sa-secret
+    custom-sa-secret:
+      type: secret
       format: plain
       serviceAccount: custom-vault-sa
       keys:
         - token
       refreshPeriod: 5m0s
 
-    - type: secret
-      name: tls-secret
+    tls-secret:
+      type: secret
       format: plain
       secretType: kubernetes.io/tls
       keys:
         - tls.crt
         - tls.key
 
-    - type: secret
-      name: metadata-secret
+    metadata-secret:
+      type: secret
       format: plain
       keys:
         - api-key
@@ -153,8 +153,8 @@ glyphs:
         environment: production
 
     # TEST 5: Edge Cases
-    - type: secret
-      name: special-chars-secret
+    special-chars-secret:
+      type: secret
       format: env
       keys:
         - "api-key"
@@ -163,14 +163,14 @@ glyphs:
       staticData:
         special-value: "with-dashes"
 
-    - type: secret
-      name: static-only-secret
+    static-only-secret:
+      type: secret
       format: env
       staticData:
         database-type: postgres
         connection-pool-size: "20"
         max-connections: "100"
 
-    - type: secret
-      name: minimal-secret
+    minimal-secret:
+      type: secret
       # All other values should use defaults

@@ -7,8 +7,8 @@ Configuration management system for kast. Bookrack organizes deployments using a
 Bookrack provides:
 - Hierarchical configuration (book → chapter → spell)
 - GitOps-ready directory structure
-- Values inheritance and overrides
-- Infrastructure registry (lexicon)
+- Values inheritance and overrides (see [Hierarchy Systems](HIERARCHY_SYSTEMS.md))
+- Infrastructure registry ([Lexicon](LEXICON.md))
 - Deployment sequencing (chapters)
 - Multi-environment management
 
@@ -287,13 +287,16 @@ values:
   config: value
 
 # Trinket triggers (multi-source detection)
-glyphs:                              # Triggers kaster trinket
+glyphs:                              # Triggers kaster trinket (see Glyphs and Kaster docs)
   vault:
-    - type: secret
-      name: app-secret
+    app-secret:                      # Resource name becomes map key
+      type: secret
+      path: secret/data/my-app
   istio:
-    - type: virtualService
-      name: app-vs
+    app-vs:                          # Resource name becomes map key
+      type: virtualService
+      selector:
+        access: external
 
 tarot:                               # Triggers tarot trinket
   reading:
@@ -375,7 +378,7 @@ volumes:
 
 ## Lexicon Directory
 
-**Purpose:** Store infrastructure registry shared across book.
+**Purpose:** Store infrastructure registry shared across book. See [Lexicon](LEXICON.md) for detailed documentation on infrastructure discovery and query patterns.
 
 **Location:** `bookrack/<book-name>/_lexicon/`
 
@@ -427,7 +430,7 @@ lexicon:
 ```yaml
 # bookrack/my-book/_lexicon/infrastructure.yaml
 lexicon:
-  # Vault servers
+  # Vault servers (see Vault Integration docs)
   - name: production-vault
     type: vault
     url: https://vault.prod.svc:8200
@@ -503,11 +506,11 @@ lexicon:
       default: book
 ```
 
-**Lexicon Merge:** `_lexicon/*.yaml` files merged into book `appendix.lexicon` and propagated to all spells.
+**Lexicon Merge:** `_lexicon/*.yaml` files merged into book `appendix.lexicon` and propagated to all spells. [Glyphs](GLYPHS.md) can then query this infrastructure registry dynamically using label selectors.
 
 ## Values Hierarchy
 
-Values merge from book → chapter → spell with most specific winning.
+Values merge from book → chapter → spell with most specific winning. See [Hierarchy Systems](HIERARCHY_SYSTEMS.md) for detailed merge behavior and precedence rules.
 
 ### Merge Order
 
@@ -772,7 +775,7 @@ chapters:
 
 ### Lexicon Management
 
-**Organize by Type:**
+**Organize by Type:** The [Lexicon](LEXICON.md) infrastructure registry should be organized logically to support dynamic resource discovery.
 
 ```
 _lexicon/
@@ -1075,7 +1078,7 @@ helm template my-book librarian --set name=my-book --debug \
 
 **Common Causes:**
 - Field path mismatch (e.g., `image` vs `images`)
-- Arrays replace instead of merge
+- Arrays replace instead of merge (see [Hierarchy Systems](HIERARCHY_SYSTEMS.md))
 - Typo in field name
 
 ### Lexicon Not Available
@@ -1100,7 +1103,7 @@ helm template my-book librarian --set name=my-book --debug \
 **Common Causes:**
 - Typo in `_lexicon` directory name (must start with underscore)
 - Invalid YAML in lexicon files
-- Selector doesn't match lexicon labels
+- Selector doesn't match lexicon labels (see [Lexicon](LEXICON.md) query documentation)
 
 ### Chapter Override Not Working
 
@@ -1132,6 +1135,9 @@ yq '.defaultTrinket.values.replicas' bookrack/my-book/<chapter>/index.yaml
 - [LIBRARIAN.md](LIBRARIAN.md) - ArgoCD orchestration
 - [HIERARCHY_SYSTEMS.md](HIERARCHY_SYSTEMS.md) - Values merging details
 - [LEXICON.md](LEXICON.md) - Infrastructure registry
+- [GLYPHS.md](GLYPHS.md) - Reusable template library system
+- [KASTER.md](KASTER.md) - Glyph orchestrator
+- [VAULT.md](VAULT.md) - Vault integration
 - [README.md](../README.md) - Architecture overview
 
 ## Examples

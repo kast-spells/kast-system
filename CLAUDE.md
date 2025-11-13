@@ -72,9 +72,9 @@ Need to orchestrate multiple charts? → librarian + bookrack
 
 **kast-system is built TDD-first.** Every feature, template, and glyph follows the Red-Green-Refactor cycle:
 
-1. **🔴 RED**: Write failing tests/examples first - define expected behavior
-2. **🟢 GREEN**: Implement minimal code to make tests pass  
-3. **🔵 REFACTOR**: Improve code while maintaining test coverage
+1. **RED**: Write failing tests/examples first - define expected behavior
+2. **GREEN**: Implement minimal code to make tests pass
+3. **REFACTOR**: Improve code while maintaining test coverage
 
 ### Core TDD Commands
 
@@ -197,32 +197,29 @@ Run `make test-status` to see automatic discovery of all tests:
 
 ```bash
 $ make test-status
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Testing Status Report
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing Status Report
 
-📦 Main Charts:
-  ✅ summon: 17 examples (17 snapshots)
-  ⚠️  kaster: 1 examples (no snapshots)
-  ❌ librarian: NO examples/
+Main Charts:
+  [COMPLETE] summon: 17 examples (17 snapshots)
+  [PARTIAL]  kaster: 1 examples (no snapshots)
+  [MISSING]  librarian: NO examples/
 
-🎭 Glyphs:
-  ✅ argo-events: 5 examples (5 snapshots)
-  ✅ vault: 11 examples (11 snapshots)
-  ✅ istio: 2 examples (2 snapshots)
-  ⚠️  certManager: 2 examples (no snapshots)
-  ❌ keycloak: NO examples/
+Glyphs:
+  [COMPLETE] argo-events: 5 examples (5 snapshots)
+  [COMPLETE] vault: 11 examples (11 snapshots)
+  [COMPLETE] istio: 2 examples (2 snapshots)
+  [PARTIAL]  certManager: 2 examples (no snapshots)
+  [MISSING]  keycloak: NO examples/
   ...
 
-🔮 Trinkets:
-  ⚠️  microspell: 8 examples (no snapshots)
-  ⚠️  tarot: 14 examples (no snapshots)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Trinkets:
+  [PARTIAL]  microspell: 8 examples (no snapshots)
+  [PARTIAL]  tarot: 14 examples (no snapshots)
 
 Legend:
-  ✅ = Examples + Snapshots complete
-  ⚠️  = Examples exist, snapshots needed
-  ❌ = No examples (needs TDD work)
+  [COMPLETE] = Examples + Snapshots complete
+  [PARTIAL]  = Examples exist, snapshots needed
+  [MISSING]  = No examples (needs TDD work)
 ```
 
 ## TDD Development Workflow
@@ -312,8 +309,8 @@ EOF
 
 # Confirm test fails (feature doesn't exist yet)
 make tdd-red
-# Output: ❌ summon-test-pod-disruption (expectations failed)
-#         ✅ Good! Tests are failing - now implement
+# Output: summon-test-pod-disruption (expectations failed)
+#         Good! Tests are failing - now implement
 
 # GREEN PHASE - Implement feature
 # Edit charts/summon/templates/pod-disruption-budget.yaml
@@ -321,7 +318,7 @@ make tdd-red
 
 # Verify test passes
 make tdd-green
-# Output: ✅ summon-test-pod-disruption
+# Output: summon-test-pod-disruption (PASS)
 
 # REFACTOR PHASE - Improve implementation
 # Clean up code, add comments, optimize
@@ -340,7 +337,7 @@ make create-example CHART=summon EXAMPLE=my-new-feature
 
 # 2. Confirm test fails (should fail because feature doesn't exist yet)
 make tdd-red
-# Should show: ❌ summon-my-new-feature (expectations failed)
+# Should show: summon-my-new-feature (expectations failed)
 
 # 3. GREEN PHASE - Implement minimal code to make test pass
 # Edit summon templates to support the new feature
@@ -348,12 +345,12 @@ make tdd-red
 
 # 4. Verify test passes
 make tdd-green
-# Should show: ✅ summon-my-new-feature
+# Should show: summon-my-new-feature (PASS)
 
 # 5. REFACTOR PHASE - Clean up implementation
 # Improve code quality, add documentation, optimize
 make tdd-refactor
-# Should still show: ✅ summon-my-new-feature
+# Should still show: summon-my-new-feature (PASS)
 
 # 6. SNAPSHOT PHASE - Lock in the expected output
 make generate-snapshots CHART=summon
@@ -370,21 +367,21 @@ make generate-snapshots CHART=summon
 
 # 2. Test to see failure (Red)
 make glyphs vault
-# Should show: ❌ vault-new-feature (rendering failed)
+# Should show: vault-new-feature (rendering failed)
 
 # 3. GREEN PHASE - Implement glyph feature
 # Edit glyph templates in charts/glyphs/vault/templates/
 
 # 4. Test to see success (Green)
 make glyphs vault
-# Should show: ✅ vault-new-feature (rendered successfully)
+# Should show: vault-new-feature (rendered successfully)
 
 # 5. Generate expected output for diff validation
 make generate-expected GLYPH=vault
 
 # 6. REFACTOR PHASE - Verify diff validation works
 make glyphs vault
-# Should show: ✅ vault-new-feature (output matches expected)
+# Should show: vault-new-feature (output matches expected)
 ```
 
 ### 3. Glyph Output Validation System
@@ -541,12 +538,12 @@ The project uses a unique "glyphs" pattern where reusable Helm templates are org
 # In a spell or values file
 glyphs:
   vault:
-    - type: secret
-      name: my-secret
+    my-secret:
+      type: secret
       path: secret/data/my-app
   istio:
-    - type: virtualService
-      name: my-service
+    my-service:
+      type: virtualService
       selector:
         access: external
 ```
@@ -804,20 +801,20 @@ The validation script (`tests/scripts/validate-resource-completeness.sh`) checks
 
 ### Example Validation Output:
 ```
-🧪 TDD: Comprehensive validation...
+TDD: Comprehensive validation...
 Testing chart: summon
   Validating basic-deployment...
-    ✅ Workload resource present (deployment)
-    ✅ Service resource present  
-    ✅ ServiceAccount resource present
-  ✅ summon-basic-deployment
+    Workload resource present (deployment)
+    Service resource present
+    ServiceAccount resource present
+  summon-basic-deployment: PASS
 
   Validating complex-production...
-    ✅ Workload resource present (deployment)
-    ✅ Service resource present
-    ✅ All 2 PVC resources present
-    ✅ HorizontalPodAutoscaler resource present  
-  ✅ summon-complex-production
+    Workload resource present (deployment)
+    Service resource present
+    All 2 PVC resources present
+    HorizontalPodAutoscaler resource present
+  summon-complex-production: PASS
 ```
 
 ## Important TDD Rules
@@ -839,20 +836,20 @@ Testing chart: summon
 
 ## Testing Anti-Patterns to Avoid
 
-❌ **Writing implementation first, then tests**
-✅ **Write failing tests first, then implement**
+**Avoid:** Writing implementation first, then tests
+**Do:** Write failing tests first, then implement
 
-❌ **Testing only syntax/rendering**  
-✅ **Test resource completeness and expected behavior**
+**Avoid:** Testing only syntax/rendering
+**Do:** Test resource completeness and expected behavior
 
-❌ **Single example per chart**
-✅ **Multiple examples covering different scenarios**
+**Avoid:** Single example per chart
+**Do:** Multiple examples covering different scenarios
 
-❌ **Manual testing only**
-✅ **Automated TDD testing with make commands**
+**Avoid:** Manual testing only
+**Do:** Automated TDD testing with make commands
 
-❌ **Ignoring test failures**
-✅ **Fix all failures before proceeding**
+**Avoid:** Ignoring test failures
+**Do:** Fix all failures before proceeding
 
 ## Important Notes
 
@@ -1055,12 +1052,12 @@ service:
 # Glyphs configuration (kaster source)
 glyphs:
   vault:
-    - type: secret
-      name: database-credentials
+    database-credentials:
+      type: secret
       path: secret/data/production/db
   istio:
-    - type: virtualService
-      name: api-service
+    api-service:
+      type: virtualService
       selector:
         access: external
         environment: production

@@ -266,7 +266,7 @@ tarot:
 
 ### 6. Glyph Definition Hierarchy (Kaster)
 
-When using multiple glyph sources, definitions can come from different scopes:
+When using multiple glyph sources, definitions can come from different scopes. See [GLYPHS.md](GLYPHS.md) for glyph structure and [KASTER.md](KASTER.md) for glyph orchestration details.
 
 ```
 Global card registry (cards[])
@@ -447,22 +447,22 @@ resources:
 # Book vault path: shared database credentials
 glyphs:
   vault:
-    - type: secret
+    database-readonly:
+      type: secret
       path: book
-      name: database-readonly
 
 # Chapter vault path: chapter-specific credentials
 glyphs:
   vault:
-    - type: secret
+    database-readwrite:
+      type: secret
       path: chapter
-      name: database-readwrite
 
 # Namespace vault path: app-specific credentials
 glyphs:
   vault:
-    - type: secret
-      name: app-private-key
+    app-private-key:
+      type: secret
       # Default path (namespace-specific)
 ```
 
@@ -577,6 +577,6 @@ Hierarchy systems in kast enable:
 
 **Pattern:** General → Specific, Most Specific Wins
 
-**Application:** Values, Vault paths, Lexicon, Trinkets, Secrets, Glyphs
+**Application:** Values, Vault paths, Lexicon, Trinkets, Secrets, [Glyphs](GLYPHS.md)
 
-**Documentation:** See component-specific docs for detailed hierarchy behavior.
+**Documentation:** See [BOOKRACK.md](BOOKRACK.md), [VAULT.md](VAULT.md), [LEXICON.md](LEXICON.md), [TAROT.md](TAROT.md), [GLYPHS.md](GLYPHS.md), and [KASTER.md](KASTER.md) for detailed hierarchy behavior.
