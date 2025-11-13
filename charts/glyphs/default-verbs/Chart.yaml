@@ -1,7 +1,7 @@
 apiVersion: v2
-name: runicSystem
+name: default-verbs
 version: 1.0.0
-description: indexer of glyphs lexicon based
+description: free form glyph
 home: https://github.com/kast-spells
 sources:
   - https://github.com/kast-spells/kast-system

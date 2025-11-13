@@ -2,6 +2,8 @@ name: glyphs-sync
 
 on:
   push:
+    branches:
+      - master
     tags:
       - "glyphs-*"
 
@@ -21,11 +23,7 @@ jobs:
             echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           else
             echo "is_tag=false" >> $GITHUB_OUTPUT
-            {
-              echo "COMMIT_MSG<<EOF"
-              echo "${{ github.event.head_commit.message }}"
-              echo "EOF"
-            } >> $GITHUB_ENV
+            echo "COMMIT_MSG=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
           fi
 
       - name: Clone destination repository
