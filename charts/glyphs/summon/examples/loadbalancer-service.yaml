@@ -1,0 +1,16 @@
+# LoadBalancer Service Example  
+# Tests summon glyph LoadBalancer service configuration
+
+name: public-api
+
+service:
+  enabled: true
+  type: LoadBalancerSpecial
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+    - port: 443
+      protocol: TCP  
+      name: https
+      nodePort: 30443

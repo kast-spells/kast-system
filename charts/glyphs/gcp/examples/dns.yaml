@@ -2,7 +2,7 @@ glyphs:
   gcp:
     - type: dnsManagedZone
       dnsec: on #default on options off import
-      name: int-cp-yaml #defau para url cambia - por .
+      name: int-the-yaml-life
       visbility: public #default public option internal
       description: a nice long string
     - type: dnsRecordSet
@@ -17,3 +17,4 @@ glyphs:
       compueAddresses:
         - name: la-ip
           namespace: optional
+

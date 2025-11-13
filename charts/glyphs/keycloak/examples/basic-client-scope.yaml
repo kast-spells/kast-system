@@ -1,0 +1,21 @@
+name: keycloak-basic-client-scope
+
+glyphs:
+  keycloak:
+    - type: clientScope
+      name: test-client-scope-roles
+      scopeName: roles
+      realmRef: test-realm
+      description: "Client roles scope for role mapping"
+      protocol: openid-connect
+      default: true
+      protocolMappers:
+        - name: client-roles-mapper
+          protocol: openid-connect
+          protocolMapper: oidc-usermodel-client-role-mapper
+          config:
+            multivalued: "true"
+            access.token.claim: "true"
+            id.token.claim: "true"
+            userinfo.token.claim: "true"
+            claim.name: roles

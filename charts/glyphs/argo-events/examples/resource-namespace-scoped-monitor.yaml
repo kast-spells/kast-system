@@ -1,0 +1,129 @@
+name: resource-namespace-scoped-monitor
+
+spellbook:
+  name: example-book
+chapter:
+  name: monitoring
+
+# Lexicon defines available EventBus instances
+lexicon:
+  - name: monitoring-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: production
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+# Test Resource EventSource with namespace-scoped monitoring
+glyphs:
+  argo-events:
+    # EventSource: Monitor Pods in specific namespace
+    namespace-pod-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: production
+      resource:
+        namespace-pod-monitoring:
+          namespace: production-apps
+          group: ""
+          version: v1
+          resource: pods
+          eventTypes:
+            - ADD
+            - DELETE
+          filter:
+            labels:
+              - key: app.kubernetes.io/name
+                operation: "="
+                value: critical-app
+            expression: |
+              has(body.metadata.annotations) &&
+              has(body.metadata.annotations['prometheus.io/scrape']) &&
+              body.metadata.annotations['prometheus.io/scrape'] == 'true'
+
+    # EventSource: Monitor Jobs for completion
+    job-completion-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: production
+      resource:
+        job-monitoring:
+          namespace: batch-jobs
+          group: batch
+          version: v1
+          resource: jobs
+          eventTypes:
+            - UPDATE
+          filter:
+            expression: |
+              has(body.status.conditions) &&
+              (body.status.conditions.exists(c, c.type == 'Complete' && c.status == 'True') ||
+               body.status.conditions.exists(c, c.type == 'Failed' && c.status == 'True'))
+
+    # Sensor: Alert on pod lifecycle events
+    pod-lifecycle-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      template:
+        serviceAccountName: monitoring-agent
+      dependencies:
+        - name: pod-add-event
+          eventSourceName: namespace-pod-source
+          eventName: namespace-pod-monitoring
+          filters:
+            context:
+              type: ADD
+        - name: pod-delete-event
+          eventSourceName: namespace-pod-source
+          eventName: namespace-pod-monitoring
+          filters:
+            context:
+              type: DELETE
+      triggers:
+        - name: send-alert
+          type: http
+          http:
+            url: http://alertmanager.monitoring.svc:9093/api/v1/alerts
+            method: POST
+            payload:
+              - src:
+                  dependencyName: pod-add-event
+                  dataKey: body.metadata.name
+                dest: pod_name
+              - src:
+                  dependencyName: pod-add-event
+                  dataKey: body.metadata.namespace
+                dest: namespace
+          conditions: "pod-add-event || pod-delete-event"
+
+    # Sensor: Handle job completion
+    job-completion-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      template:
+        serviceAccountName: job-handler
+      dependencies:
+        - name: job-complete-event
+          eventSourceName: job-completion-source
+          eventName: job-monitoring
+          filters:
+            expression: |
+              body.status.conditions.exists(c, c.type == 'Complete' && c.status == 'True')
+      triggers:
+        - name: cleanup-job
+          type: k8s
+          k8s:
+            group: batch
+            version: v1
+            resource: jobs
+            operation: delete
+            liveObject: false

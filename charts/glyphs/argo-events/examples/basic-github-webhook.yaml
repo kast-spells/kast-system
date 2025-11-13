@@ -1,0 +1,66 @@
+name: argo-events-basic-github
+
+spellbook:
+  name: example-book
+chapter:
+  name: development
+
+# Lexicon defines available EventBus instances
+lexicon:
+  - name: github-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: development
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+# Test basic GitHub webhook with EventBus selection via runic indexer
+argo-events:
+  github-source:
+    type: eventSource
+    selector:
+      type: jetstream
+      environment: development
+    github:
+      my-repo:
+        owner: kast-spells
+        repository: example-repo
+        webhook:
+          endpoint: /github
+          port: "12000"
+        events: 
+          - push
+          - pull_request
+        auth:
+          token:
+            secretRef:
+              name: github-access
+              key: token
+        webhookSecret:
+          secretRef:
+            name: github-access
+            key: secret
+
+  github-sensor:
+    type: sensor
+    selector:
+      type: jetstream
+      environment: development
+    dependencies:
+      - name: github-push
+        eventSourceName: github-source
+        eventName: my-repo
+        filters:
+          exprs:
+            - expr: revision == "refs/heads/main"
+              fields:
+                - name: revision
+                  path: body.ref
+    triggers:
+      - name: log-trigger
+        type: log
+        log:
+          intervalSeconds: 1

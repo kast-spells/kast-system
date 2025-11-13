@@ -1,0 +1,31 @@
+# Basic Istio VirtualService Example
+# Shows how to route external traffic to a service
+
+spellbook:
+  name: my-app
+chapter:
+  name: production
+
+lexicon:
+  istio-gw:
+    external-gateway:
+      name: external-gateway
+      gateway: istio-system/external-gateway
+      baseURL: myapp.com
+      selector:
+        access: external
+
+glyphs:
+  istio:
+    # Route traffic to main application
+    main-app:
+      type: virtualService
+      enabled: true
+      subdomain: app           # Creates app.myapp.com
+      httpRules:
+        - prefix: /api         # Routes /api/* to port 8080
+          port: 8080
+        - prefix: /           # Routes everything else to port 80
+          port: 80
+      selector:
+        access: external

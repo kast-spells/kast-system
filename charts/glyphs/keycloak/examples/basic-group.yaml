@@ -1,0 +1,16 @@
+name: keycloak-basic-group
+
+glyphs:
+  keycloak:
+    - type: group
+      name: test-group-engineering
+      scopeName: engineering
+      realmRef: test-realm
+      realmRoles:
+        - developer
+        - user
+      clientRoles:
+        - clientId: vault
+          roles:
+            - admin
+            - editor

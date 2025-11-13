@@ -1,0 +1,71 @@
+name: resource-service-annotation-monitor
+
+spellbook:
+  name: example-book
+chapter:
+  name: monitoring
+
+# Lexicon defines available EventBus instances
+lexicon:
+  - name: monitoring-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: production
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+# Test Resource EventSource monitoring Service annotations
+glyphs:
+  argo-events:
+    # EventSource: Monitor services for load balancer configuration changes
+    service-annotation-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: production
+      resource:
+        service-monitoring:
+          namespace: default
+          group: ""
+          version: v1
+          resource: services
+          eventTypes:
+            - ADD
+            - UPDATE
+          filter:
+            labels:
+              - key: app.kubernetes.io/component
+                operation: "="
+                value: frontend
+            # Expression to filter by annotation
+            expression: |
+              has(body.metadata.annotations) &&
+              has(body.metadata.annotations['service.beta.kubernetes.io/aws-load-balancer-type'])
+
+    # Sensor: Trigger configuration validation
+    service-config-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      template:
+        serviceAccountName: service-validator
+      dependencies:
+        - name: service-config-event
+          eventSourceName: service-annotation-source
+          eventName: service-monitoring
+          filters:
+            data:
+              - path: body.metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
+                type: string
+                value:
+                  - "nlb"
+                  - "alb"
+      triggers:
+        - name: validate-service-config
+          type: log
+          log:
+            intervalSeconds: 1

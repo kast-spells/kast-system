@@ -1,0 +1,93 @@
+name: argo-events-github-external
+
+spellbook:
+  name: example-book
+  subdomain: webhooks
+chapter:
+  name: production
+
+# Lexicon defines available EventBus instances and Istio Gateway
+lexicon:
+  - name: production-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: production
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+  # Istio Gateway for webhook ingress
+  - name: webhook-gateway
+    type: istio-gw
+    labels:
+      environment: production
+      default: book
+    gateway: istio-system/public-gateway
+    baseURL: the.yaml.life
+
+# GitHub EventSource with external webhook exposure
+# Service + VirtualService are generated automatically from simplified config
+glyphs:
+  argo-events:
+    - name: github-external-source
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: production
+
+      # Simplified service configuration
+      # - enabled: true → generates K8s Service (port 12000)
+      # - subdomain/prefix present → generates VirtualService automatically
+      service:
+        enabled: true
+        type: ClusterIP
+        selector:
+          environment: production
+        subdomain: webhooks
+        prefix: /github
+
+      # GitHub webhook configuration
+      github:
+        kast-repo:
+          owner: kast-spells
+          repository: kast-system
+          webhook:
+            endpoint: /github
+            port: "12000"
+          events:
+            - push
+            - pull_request
+            - release
+          auth:
+            token:
+              secretRef:
+                name: github-access
+                key: token
+          webhookSecret:
+            secretRef:
+              name: github-access
+              key: secret
+
+    # Sensor: Trigger workflow on push to main
+    - name: github-workflow-sensor
+      type: sensor
+      selector:
+        type: jetstream
+        environment: production
+      dependencies:
+        - name: github-push-main
+          eventSourceName: github-external-source
+          eventName: kast-repo
+          filters:
+            exprs:
+              - expr: revision == "refs/heads/main"
+                fields:
+                  - name: revision
+                    path: body.ref
+      triggers:
+        - name: trigger-ci-workflow
+          type: log
+          log:
+            intervalSeconds: 1

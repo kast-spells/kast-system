@@ -1,0 +1,14 @@
+# S3 Glyph default values
+# This glyph provides seamless S3 integration with automatic credential management
+
+# Default S3 provider selector (uses runicIndexer with default: book fallback)
+# selector:
+#   provider: seaweedfs
+
+# Default permissions for bucket access
+# permissions:
+#   - Read
+#   - Write
+
+# Default bucket naming pattern
+# Uses: <spellbook>-<chapter>-<name> if not overridden

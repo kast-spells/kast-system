@@ -24,13 +24,36 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- define "summon.getImage" -}}
 {{- $root := index . 0 -}}
 {{- $container := index . 1 -}}
-{{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
-{{- $imageName := default "nginx" (default (include "common.name" $root) ($container.image).name) -}}
-{{- $imageTag := default "latest" ($container.image).tag -}}
-{{- if eq $repository "" }}
-{{- printf "%s:%s" $imageName $imageTag -}}
-{{- else }}
-{{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+{{- if typeIs "string" $container.image -}}
+  {{/* Simple string format: "nginx:latest" - used by tarot and other systems */}}
+  {{- print $container.image -}}
+{{- else if and $container.container $container.container.image -}}
+  {{/* Handle nested container.container.image structure */}}
+  {{- if typeIs "string" $container.container.image -}}
+    {{- printf $container.container.image -}}
+  {{- else -}}
+    {{- $repository := default "" (default ($root.Values.image).repository ($container.container.image).repository) -}}
+    {{- $imageName := default "nginx" (default (include "common.name" $root) ($container.container.image).name) -}}
+    {{- $imageTag := default "latest" ($container.container.image).tag -}}
+    {{- if eq $repository "" -}}
+      {{- printf "%s:%s" $imageName $imageTag -}}
+    {{- else -}}
+      {{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if $container.image -}}
+  {{/* Structured format: {repository: "", name: "", tag: ""} */}}
+  {{- $repository := default "" (default ($root.Values.image).repository ($container.image).repository) -}}
+  {{- $imageName := default "nginx" (default (include "common.name" $root) ($container.image).name) -}}
+  {{- $imageTag := default "latest" ($container.image).tag -}}
+  {{- if eq $repository "" -}}
+    {{- printf "%s:%s" $imageName $imageTag -}}
+  {{- else -}}
+    {{- printf "%s/%s:%s" $repository $imageName $imageTag -}}
+  {{- end -}}
+{{- else -}}
+  {{/* Fallback to default */}}
+  {{- printf "%s:latest" (include "common.name" $root) -}}
 {{- end -}}
 {{- end -}}
 
@@ -40,7 +63,16 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- range $containerName, $container := $containers }}
 - name: {{ include "summon.common.containerName" (list $root $container $containerName )}}
   image: {{ include "summon.getImage" (list $root $container ) }}
-  imagePullPolicy: {{ default "IfNotPresent" (default ($root.Values.image).pullPolicy ($container.image).pullPolicy ) }}
+  {{- $pullPolicy := "IfNotPresent" }}
+  {{- if $root.Values.image.pullPolicy }}
+    {{- $pullPolicy = $root.Values.image.pullPolicy }}
+  {{- end }}
+  {{- if and $container.image (not (kindIs "string" $container.image)) }}
+    {{- if $container.image.pullPolicy }}
+      {{- $pullPolicy = $container.image.pullPolicy }}
+    {{- end }}
+  {{- end }}
+  imagePullPolicy: {{ $pullPolicy }}
   {{- if $container.command }}
   {{- if eq ( kindOf $container.command ) "string" }}
   command: 
@@ -54,8 +86,31 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- end }}
   {{- if $container.args }}
   args:
-    {{- range $container.args }}
-    - {{ . }}
+    {{- toYaml $container.args | nindent 4 }}
+  {{- end }}
+  {{- if $container.lifecycle }}
+  lifecycle:
+    {{- if $container.lifecycle.postStart }}
+    postStart:
+      {{- if $container.lifecycle.postStart.exec }}
+      exec:
+        command:
+          {{- toYaml $container.lifecycle.postStart.exec.command | nindent 10 }}
+      {{- else if $container.lifecycle.postStart.httpGet }}
+      httpGet:
+        {{- toYaml $container.lifecycle.postStart.httpGet | nindent 8 }}
+      {{- end }}
+    {{- end }}
+    {{- if $container.lifecycle.preStop }}
+    preStop:
+      {{- if $container.lifecycle.preStop.exec }}
+      exec:
+        command:
+          {{- toYaml $container.lifecycle.preStop.exec.command | nindent 10 }}
+      {{- else if $container.lifecycle.preStop.httpGet }}
+      httpGet:
+        {{- toYaml $container.lifecycle.preStop.httpGet | nindent 8 }}
+      {{- end }}
     {{- end }}
   {{- end }}
   {{- include "summon.common.workload.probes" ( default dict $container.probes ) | nindent 2 }}
