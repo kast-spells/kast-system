@@ -1,0 +1,136 @@
+name: argo-events-advanced-webhooks
+
+# Test multiple webhook sources with advanced trigger configurations
+argo-events:
+  production-eventbus:
+    type: eventBus
+    jetstream:
+      version: "2.10.10"
+      replicas: 5
+      persistence:
+        storageClassName: fast-ssd
+        accessMode: ReadWriteOnce
+        volumeSize: 50Gi
+      streamConfig: |
+        maxAge: 72h
+        retention: limits
+      settings: |
+        max_file_store: 10GB
+
+  github-source:
+    type: eventSource
+    selector:
+      type: jetstream
+      environment: production
+    github:
+      main-repo:
+        owner: kast-spells
+        repository: kast-system
+        webhook:
+          endpoint: /github-main
+          port: "12000"
+        events: 
+          - push
+          - release
+        auth:
+          token:
+            secretRef:
+              name: github-prod-access
+              key: token
+
+  gitlab-source:
+    type: eventSource
+    selector:
+      type: jetstream
+      environment: production
+    gitlab:
+      secondary-repo:
+        projectID: "12345"
+        gitlabBaseURL: https://gitlab.com
+        webhook:
+          endpoint: /gitlab-secondary
+          port: "12001"
+        events:
+          - push
+          - merge_request
+        auth:
+          token:
+            secretRef:
+              name: gitlab-access
+              key: token
+        secretToken:
+          secretRef:
+            name: gitlab-access
+            key: webhook-secret
+
+  multi-trigger-sensor:
+    type: sensor
+    selector:
+      type: jetstream
+      environment: production
+    template:
+      serviceAccountName: argo-events-sa
+      container:
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+    dependencies:
+      - name: github-main-push
+        eventSourceName: github-source
+        eventName: main-repo
+        filters:
+          exprs:
+            - expr: revision == "refs/heads/main"
+              fields:
+                - name: revision
+                  path: body.ref
+      - name: gitlab-mr
+        eventSourceName: gitlab-source
+        eventName: secondary-repo
+        filters:
+          data:
+            - path: body.object_attributes.state
+              type: string
+              value: "opened"
+              comparator: "="
+    triggers:
+      - name: http-notification
+        type: http
+        http:
+          url: https://hooks.slack.com/services/XXX/YYY/ZZZ
+          method: POST
+          payload:
+            - src:
+                dependencyName: github-main-push
+                dataKey: body.head_commit.message
+              dest: text
+          headers:
+            Content-Type: application/json
+      - name: k8s-deployment
+        type: k8s
+        k8s:
+          group: apps
+          version: v1
+          resource: deployments
+          operation: patch
+          source:
+            resource:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: example-app
+                namespace: default
+              spec:
+                template:
+                  metadata:
+                    labels:
+                      version: updated
+        parameters:
+          - src:
+              dependencyName: github-main-push
+              dataKey: body.head_commit.id
+            dest: spec.template.metadata.labels.commit

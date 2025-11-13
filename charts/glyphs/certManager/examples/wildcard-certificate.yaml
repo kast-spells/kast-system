@@ -1,0 +1,49 @@
+# Wildcard Certificate Example  
+# Shows how to create wildcard certificates for multiple subdomains
+
+spellbook:
+  name: my-platform
+chapter:
+  name: production
+
+lexicon:
+  letsencrypt-prod:
+    type: cert-issuer
+    name: letsencrypt-production
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@platform.com
+    labels:
+      environment: production
+  letsencrypt-staging:
+    type: cert-issuer
+    name: letsencrypt-staging
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@platform.com
+    labels:
+      environment: staging
+
+glyphs:
+  certManager:
+    # Wildcard certificate for all subdomains
+    wildcard-certificate:
+      type: certificate
+      enabled: true
+      name: wildcard-tls
+      dnsNames:
+        - platform.com
+        - "*.platform.com"
+        - api.platform.com     # Explicit subdomain
+        - admin.platform.com
+      selector:
+        environment: production
+
+    # Staging certificate for testing
+    staging-certificate:
+      type: certificate
+      enabled: true
+      name: staging-tls
+      dnsNames:
+        - staging.platform.com
+        - "*.staging.platform.com"
+      selector:
+        environment: staging

@@ -1,0 +1,52 @@
+# Test example for vault cryptoKey generation
+# This validates Ed25519 and RSA keypair generation and storage in Vault
+
+spellbook:
+  name: crypto-test
+chapter:
+  name: test
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Test basic Ed25519 keypair (default algorithm)
+    - type: cryptoKey
+      name: test-ed25519-key
+      comment: "Test Ed25519 key"
+
+    # Test Ed25519 keypair with domain (for DKIM)
+    - type: cryptoKey
+      name: test-dkim-key
+      algorithm: ed25519
+      domain: test.example.com
+      comment: "DKIM signing key for test.example.com"
+
+    # Test RSA keypair with default size (4096)
+    - type: cryptoKey
+      name: test-rsa-key
+      algorithm: rsa
+      comment: "Test RSA 4096 key"
+
+    # Test RSA keypair with custom size (2048)
+    - type: cryptoKey
+      name: test-rsa-2048-key
+      algorithm: rsa
+      bits: 2048
+      comment: "Test RSA 2048 key"
+
+    # Test key for SSH usage
+    - type: cryptoKey
+      name: test-ssh-key
+      algorithm: ed25519
+      comment: "deploy@automation"

@@ -1,0 +1,87 @@
+# Test example for vault secret edge cases and special scenarios
+# This validates handling of special characters, empty values, and boundary conditions
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Test keys with special characters (should be converted for env format)
+    - type: secret
+      name: special-chars-secret
+      format: env
+      keys:
+        - "api-key"          # Should become API_KEY
+        - "database.host"    # Should become DATABASE_HOST
+        - "service-port"     # Should become SERVICE_PORT
+        - "jwt_token"        # Should become JWT_TOKEN
+      staticData:
+        special-value: "with-dashes"
+
+    # Test empty keys array
+    - type: secret
+      name: no-keys-secret
+      format: plain
+      keys: []
+      staticData:
+        only-static: "data"
+      random: true
+
+    # Test only static data (no vault keys)
+    - type: secret
+      name: static-only-secret
+      format: env
+      staticData:
+        database-type: postgres
+        connection-pool-size: "20"
+        max-connections: "100"
+
+    # Test complex path with special characters
+    - type: secret
+      name: complex-path-secret
+      path: "/applications/web-app/prod"
+      format: plain
+      keys:
+        - config
+
+    # Test minimal configuration (only name)
+    - type: secret
+      name: minimal-secret
+      # All other values should use defaults
+
+    # Test randomKey with special characters
+    - type: secret
+      name: random-special-chars
+      format: env
+      randomKey: "master.password"  # Should become MASTER_PASSWORD
+      keys:
+        - "client-id"
+      staticData:
+        auth-type: oauth2
+
+    # Test format variants with no keys (only static data and random)
+    - type: secret
+      name: format-no-keys-json
+      format: json
+      key: full-config
+      staticData:
+        type: configuration
+      random: true
+
+    - type: secret
+      name: format-no-keys-yaml
+      format: yaml
+      key: settings
+      staticData:
+        enabled: true
+        timeout: 30
+      randomKey: secure-token

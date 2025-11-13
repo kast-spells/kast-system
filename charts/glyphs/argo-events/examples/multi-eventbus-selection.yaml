@@ -1,0 +1,103 @@
+name: argo-events-multi-eventbus
+
+spellbook:
+  name: example-book
+chapter:
+  name: development
+
+# Lexicon defines multiple EventBus instances with different characteristics
+lexicon:
+  # Production EventBus - high availability
+  - name: production-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: production
+      tier: high-availability
+    jetstream:
+      version: "2.10.10"
+      replicas: 5
+      persistence:
+        storageClassName: fast-ssd
+        volumeSize: 50Gi
+
+  # Development EventBus - minimal resources
+  - name: dev-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: development
+      tier: lightweight
+    jetstream:
+      version: "2.10.10"
+      replicas: 1
+      persistence:
+        storageClassName: standard
+        volumeSize: 10Gi
+
+  # Staging EventBus - medium resources
+  - name: staging-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: staging
+      tier: medium
+      default: book  # This will be used as fallback if no selector matches
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+      persistence:
+        storageClassName: standard
+        volumeSize: 20Gi
+
+# Examples of EventSource selection based on different criteria
+argo-events:
+  # This will select production-eventbus (high-availability tier)
+  critical-webhook:
+    type: eventSource
+    selector:
+      type: jetstream
+      tier: high-availability
+    webhook:
+      critical-endpoint:
+        endpoint: /critical
+        port: "12000"
+
+  # This will select dev-eventbus (development environment)
+  dev-webhook:
+    type: eventSource
+    selector:
+      type: jetstream
+      environment: development
+    webhook:
+      dev-endpoint:
+        endpoint: /dev
+        port: "12001"
+
+  # This will select staging-eventbus via default fallback
+  # (no matching selector, so uses the one with default: book)
+  fallback-webhook:
+    type: eventSource
+    selector:
+      type: jetstream
+      nonexistent: selector  # This won't match anything
+    webhook:
+      fallback-endpoint:
+        endpoint: /fallback
+        port: "12002"
+
+  # Sensor that will use the same selection logic
+  production-sensor:
+    type: sensor
+    selector:
+      type: jetstream
+      tier: high-availability
+    dependencies:
+      - name: critical-event
+        eventSourceName: critical-webhook
+        eventName: critical-endpoint
+    triggers:
+      - name: alert-trigger
+        type: log
+        log:
+          intervalSeconds: 1

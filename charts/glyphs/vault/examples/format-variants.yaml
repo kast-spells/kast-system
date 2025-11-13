@@ -1,0 +1,58 @@
+# Test example for all vault secret format variants
+# This validates the 5 different output format options in vault-secret.yaml
+
+lexicon:
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+glyphs:
+  vault:
+    # Test format: "env" - Environment variable format with uppercase keys
+    - type: secret
+      name: env-format-secret
+      format: env
+      keys:
+        - database-url
+        - api-key
+        - service-port
+      staticData:
+        environment: production
+        region: us-east-1
+
+    # Test format: "json" - JSON string format
+    - type: secret
+      name: json-format-secret
+      format: json
+      key: config-json
+
+    # Test format: "b64" - Base64 encoded format
+    - type: secret
+      name: b64-format-secret
+      format: b64
+      key: encoded-data
+
+    # Test format: "yaml" - YAML string format
+    - type: secret
+      name: yaml-format-secret
+      format: yaml
+      key: config-yaml
+
+    # Test format: "plain" - Plain key-value format (default)
+    - type: secret
+      name: plain-format-secret
+      format: plain
+      keys:
+        - username
+        - password
+        - host
+      staticData:
+        port: "5432"
+        ssl: "true"

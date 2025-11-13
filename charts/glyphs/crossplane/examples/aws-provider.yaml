@@ -1,0 +1,26 @@
+# AWS Provider Example
+# Shows how to install and configure Crossplane AWS provider
+
+spellbook:
+  name: infrastructure
+chapter:
+  name: cloud-providers
+
+lexicon:
+  crossplane-provider:
+    aws-provider:
+      name: provider-aws
+      package: crossplane/provider-aws:v0.39.0
+      selector:
+        cloud: aws
+
+glyphs:
+  crossplane:
+    # Install AWS provider
+    aws-infrastructure:
+      type: provider
+      enabled: true
+      name: provider-aws
+      package: crossplane/provider-aws:v0.39.0
+      selector:
+        cloud: aws

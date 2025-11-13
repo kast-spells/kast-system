@@ -1,0 +1,28 @@
+# Basic Certificate Example
+# Shows how to create TLS certificates using cert-manager
+
+spellbook:
+  name: my-app
+chapter:
+  name: production
+
+lexicon:
+  letsencrypt-prod:
+    type: cert-issuer
+    name: letsencrypt-production
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@myapp.com
+    labels:
+      environment: production
+
+glyphs:
+  certManager:
+    # Basic certificate for single domain
+    app-certificate:
+      type: certificate
+      enabled: true
+      name: app-tls
+      dnsNames:
+        - myapp.com
+      selector:
+        environment: production

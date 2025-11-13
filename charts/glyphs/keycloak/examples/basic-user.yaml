@@ -1,0 +1,16 @@
+name: keycloak-basic-user
+
+glyphs:
+  keycloak:
+    - type: user
+      name: test-user-john
+      email: john.doe@test.local
+      username: john.doe
+      firstName: John
+      lastName: Doe
+      realmRef: test-realm
+      enabled: true
+      emailVerified: true
+      groups:
+        - engineering
+        - developers

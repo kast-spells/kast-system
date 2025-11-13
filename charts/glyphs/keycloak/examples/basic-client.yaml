@@ -1,0 +1,28 @@
+name: keycloak-basic-client
+
+glyphs:
+  keycloak:
+    - type: client
+      name: test-client-vault
+      clientId: vault
+      realmRef: test-realm
+      webUrl: https://vault.test.local
+      protocol: openid-connect
+      public: false
+      directAccess: true
+      stdFlow: true
+      redirectUris:
+        - https://vault.test.local/ui/vault/auth/oidc/oidc/callback
+        - https://vault.test.local/oidc/callback
+      webOrigins:
+        - https://vault.test.local
+      defaultClientScopes:
+        - profile
+        - email
+        - roles
+      optionalClientScopes:
+        - address
+        - phone
+      attributes:
+        logoutURL: https://vault.test.local/ui/logout
+        oauth2Grant: true

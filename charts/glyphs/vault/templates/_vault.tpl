@@ -12,14 +12,20 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- if gt (len $context ) 3 }}
     {{- $serviceAccount = index $context 3 }}
   {{- end }}
+  {{- $customRole := "" -}}
+  {{- if gt (len $context ) 4 }}
+    {{- $customRole = index $context 4 }}
+  {{- end }}
   {{- $url := $vaultConf.url -}}
   {{- $skipVerify := $vaultConf.skipVerify -}}
-  {{- $role := "" -}}
+  {{- $role := $customRole -}}
   {{- if $forceVault -}}
     {{- $role = default "vault" $vaultConf.role -}}
     {{- $serviceAccount =  default "vault" $vaultConf.serviceAccount -}}
+  {{- else if and (not $customRole) $serviceAccount -}}
+    {{- $role = $serviceAccount -}}
   {{- end -}}
-authentication: 
+authentication:
   path: {{ default $root.Values.spellbook.name $vaultConf.authPath }}
   role: {{ default (include "common.name" $root) $role }}
   serviceAccount:
@@ -36,36 +42,56 @@ connection:
   {{- $glyph := index . 1 }}
   {{- $vaultConf := index . 2 }}
   {{- $create := index . 3 }}
+  {{- $engineType := "kv" }}
+  {{- if gt (len .) 4 }}
+    {{- $engineType = index . 4 }}
+  {{- end }}
   {{- $internalPath := default "publics" $glyph.private }}
   {{- $path := default "" $glyph.path }}
   {{- $name := $glyph.name}}
   {{- if $create }}
   {{- $name = "" }}
   {{- end }}
+  {{- $dataPrefix := "/data" }}
+  {{- if eq $engineType "database" }}
+    {{- $dataPrefix = "" }}
+  {{- end }}
   {{- if eq $path "book" }}
-    {{- printf "%s/data/%s/%s/%s" 
+    {{- printf "%s%s/%s/%s/%s"
               $vaultConf.secretPath
-              $root.Values.spellbook.name 
+              $dataPrefix
+              $root.Values.spellbook.name
               $internalPath
               $name }}
   {{- else if eq $path "chapter" }}
-    {{- printf "%s/data/%s/%s/%s/%s"
+    {{- printf "%s%s/%s/%s/%s/%s"
                 $vaultConf.secretPath
+                $dataPrefix
                 $root.Values.spellbook.name
                 $root.Values.chapter.name
-                $internalPath 
+                $internalPath
                 $name  }}
   {{- else if hasPrefix "/" $path }}
-    {{- printf "%s/data%s" 
-                $vaultConf.secretPath
-                $path }}
+    {{- if hasSuffix "/" $path }}
+      {{- printf "%s%s%s%s"
+                  $vaultConf.secretPath
+                  $dataPrefix
+                  $path
+                  $name }}
+    {{- else }}
+      {{- printf "%s%s%s"
+                  $vaultConf.secretPath
+                  $dataPrefix
+                  $path }}
+    {{- end }}
   {{- else }}
-    {{- printf "%s/data/%s/%s/%s/%s/%s" 
+    {{- printf "%s%s/%s/%s/%s/%s/%s"
           $vaultConf.secretPath
-          $root.Values.spellbook.name 
-          $root.Values.chapter.name 
+          $dataPrefix
+          $root.Values.spellbook.name
+          $root.Values.chapter.name
           $root.Release.Namespace
-          $internalPath 
+          $internalPath
           $name  }}
   {{- end }}
 {{- end }}

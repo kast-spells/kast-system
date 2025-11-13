@@ -1,0 +1,74 @@
+name: argo-events-workflow-trigger
+
+# Test Argo Workflow trigger integration
+argo-events:
+  workflow-eventbus:
+    type: eventBus
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+  webhook-source:
+    type: eventSource
+    selector:
+      type: jetstream
+      default: chapter
+    webhook:
+      generic-hook:
+        endpoint: /webhook
+        port: "12000"
+        method: POST
+
+  workflow-sensor:
+    type: sensor
+    selector:
+      type: jetstream
+      default: chapter
+    template:
+      serviceAccountName: argo-workflow-trigger
+    dependencies:
+      - name: webhook-event
+        eventSourceName: webhook-source
+        eventName: generic-hook
+        filters:
+          data:
+            - path: body.action
+              type: string
+              value: "deploy"
+              comparator: "="
+    triggers:
+      - name: deploy-workflow
+        type: argoWorkflow
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: deploy-
+                namespace: default
+              spec:
+                entrypoint: deploy-app
+                serviceAccountName: deployment-sa
+                arguments:
+                  parameters:
+                    - name: app-name
+                      value: "default-app"
+                    - name: environment
+                      value: "staging"
+                templates:
+                  - name: deploy-app
+                    container:
+                      image: alpine:latest
+                      command: [sh, -c]
+                      args: ["echo Deploying {{workflow.parameters.app-name}} to {{workflow.parameters.environment}}"]
+        parameters:
+          - src:
+              dependencyName: webhook-event
+              dataKey: body.app_name
+            dest: spec.arguments.parameters.0.value
+          - src:
+              dependencyName: webhook-event
+              dataKey: body.environment
+            dest: spec.arguments.parameters.1.value

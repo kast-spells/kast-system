@@ -1,0 +1,69 @@
+name: resource-pod-label-monitor
+
+spellbook:
+  name: example-book
+chapter:
+  name: monitoring
+
+# Lexicon defines available EventBus instances
+lexicon:
+  - name: monitoring-eventbus
+    type: eventbus
+    labels:
+      type: jetstream
+      environment: development
+      default: book
+    jetstream:
+      version: "2.10.10"
+      replicas: 3
+
+# Test Resource EventSource monitoring Pod labels
+glyphs:
+  argo-events:
+    # EventSource: Monitor pods with specific label
+    pod-label-source:
+      type: eventSource
+      selector:
+        type: jetstream
+        environment: development
+      resource:
+        pod-monitoring:
+          namespace: default
+          group: ""
+          version: v1
+          resource: pods
+          eventTypes:
+            - ADD
+            - UPDATE
+          filter:
+            labels:
+              - key: app
+                operation: "="
+                value: critical-service
+              - key: environment
+                operation: "="
+                value: production
+
+    # Sensor: Trigger on label changes
+    pod-label-sensor:
+      type: sensor
+      selector:
+        type: jetstream
+        environment: development
+      template:
+        serviceAccountName: resource-monitor
+      dependencies:
+        - name: pod-event
+          eventSourceName: pod-label-source
+          eventName: pod-monitoring
+          filters:
+            data:
+              - path: body.metadata.labels.app
+                type: string
+                value:
+                  - "critical-service"
+      triggers:
+        - name: log-pod-change
+          type: log
+          log:
+            intervalSeconds: 1

@@ -1,0 +1,40 @@
+# SeaweedFS S3 infrastructure setup example
+# Shows s3.type:seaweed for infrastructure
+
+name: seaweedfs-s3-infrastructure
+
+spellbook:
+  name: the-yaml-life
+chapter:
+  name: intro
+
+# Lexicon with EventBus (normally in global appendix)
+lexicon:
+  - type: eventbus
+    name: default-eventbus
+    labels:
+      default: book
+  - type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: the-yaml-life
+    secretPath: kv
+    skipVerify: true
+    labels:
+      default: book
+
+# Setup S3 infrastructure (EventSource, Sensor, Aggregator)
+glyphs:
+  s3:
+    seaweedfs:
+      type: seaweed
+      # Automatically creates:
+      # - EventSource watching secrets
+      # - Sensor triggering aggregator
+      # - Aggregator script in ConfigMap
+      # - ServiceAccount + RBAC
+      # - Vault prolicy
+
+# This spell is typically included in seaweedfs deployment
+# See: bookrack/the-yaml-life/intro/seaweedfs.yaml
