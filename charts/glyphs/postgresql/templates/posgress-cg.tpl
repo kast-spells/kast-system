@@ -3,7 +3,7 @@ Copyright (C) 2025 laaledesiempre@disroot.org
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
 
-{{- define "postgre.cluster" }}
+{{- define "postgresql.cluster" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 
