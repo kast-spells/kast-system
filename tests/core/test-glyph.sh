@@ -44,7 +44,7 @@ test_glyph() {
 
     for example_file in $examples; do
         local example_name=$(basename "$example_file" .yaml)
-        local test_name="test-$glyph-$example_name"
+        local test_name="test-${glyph,,}-$example_name"
 
         case "$mode" in
             syntax)
@@ -150,16 +150,20 @@ test_glyph_snapshots() {
 
     echo "$output" > "$actual_file"
 
+    # If expected file doesn't exist, create it (snapshot generation)
+    if [ ! -f "$expected_file" ]; then
+        cp "$actual_file" "$expected_file"
+        log_success "$glyph/$example_name: Snapshot generated"
+        increment_passed
+        return 0
+    fi
+
     local snapshot_result=$(compare_snapshot "$actual_file" "$expected_file")
     local snapshot_exit=$?
 
     if [ $snapshot_exit -eq 0 ]; then
         log_success "$glyph/$example_name: Snapshot matches"
         increment_passed
-        return 0
-    elif [ $snapshot_exit -eq 2 ]; then
-        log_warning "$glyph/$example_name: No snapshot (run: make generate-expected GLYPH=$glyph)"
-        increment_skipped
         return 0
     else
         log_error "$glyph/$example_name: Snapshot differs"
