@@ -36,7 +36,7 @@ jobs:
       - name: Copy files to destination repository (branch)
         run: |
           rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' librarian/ librarian-repo/
-          rsync -av --exclude='Chart.yaml' librarian/ librarian-repo/
+          rsync -av --exclude='Chart.yaml' --exclude='charts/' librarian/ librarian-repo/
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'

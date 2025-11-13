@@ -1,7 +1,7 @@
 apiVersion: v2
 name: librarian
 description: librarian Argo CD Apps of Apps for kast
-version: "1.0.0"
+version: "1.2.0"
 home: https://github.com/kast-spells
 sources:
   - https://github.com/kast-spells/kast-system
