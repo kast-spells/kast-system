@@ -28,12 +28,25 @@ make tdd-red          # Write test, expect failure
 make tdd-green        # Implement, expect success
 make tdd-refactor     # Improve code, still passing
 
-# Testing
-make test             # Comprehensive TDD tests
-make test-all         # All tests (comprehensive + snapshots + glyphs)
-make test-status      # Show testing coverage
-make glyphs vault     # Test specific glyph
-make test-covenant    # Test covenant books
+# Testing (Kubernetes-style semantic commands)
+make test syntax glyph vault                  # Test syntax for vault glyph
+make test comprehensive trinket tarot         # Comprehensive test for tarot
+make test all glyph                           # All tests for all glyphs
+make test snapshots glyph vault istio         # Snapshots for multiple glyphs
+
+# Auto-discovery
+make test all                                 # Test everything
+make test glyphs                              # All glyphs (auto-discover)
+make test trinkets                            # All trinkets
+make test glyph vault istio postgresql        # Multiple components
+
+# Context-based
+make test spell example-api BOOK=example-tdd-book
+make test-covenant                            # Test covenant books
+
+# Legacy (still work)
+make test                                     # Default comprehensive suite
+make glyphs vault                             # Test specific glyph
 
 # Development
 make create-example CHART=summon EXAMPLE=my-test
