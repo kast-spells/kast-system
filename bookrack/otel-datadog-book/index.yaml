@@ -1,0 +1,135 @@
+# OpenTelemetry → Datadog Book
+# Complete implementation guide for observability stack
+
+name: otel-datadog-book
+description: "Complete OpenTelemetry Collector setup with Datadog integration, including migration strategies"
+
+# Deployment order
+chapters:
+  - addons                  # First: Install required operators/CRDs
+  - infrastructure          # Second: Deploy collectors (gateway + agents)
+  - applications            # Third: Deploy instrumented applications
+  - migration-dual-write    # Fourth: Migration examples (dual-write pattern)
+
+# Project metadata
+projectName: otel-datadog-observability
+targetCluster:
+  name: production-cluster
+  server: https://kubernetes.default.svc
+
+# Default trinket for spells (summon for workloads)
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: feature/coding-standards
+  targetRevision: feature/coding-standards
+
+# Trinket registry (chart detection)
+trinkets:
+  # Kaster for infrastructure glyphs
+  kaster:
+    key: glyphs
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/kaster
+    revision: feature/coding-standards
+
+  # Tarot for event-driven workflows (if needed)
+  tarot:
+    key: tarot
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/trinkets/tarot
+    revision: feature/coding-standards
+
+# Global defaults for all spells
+defaults:
+  # Namespace defaults
+  namespace: observability
+
+  # ArgoCD sync policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  # Common labels
+  labels:
+    project: otel-datadog-observability
+    managed-by: kast-system
+    book: otel-datadog-book
+
+  # Resource defaults
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+# Global appendix (shared across all spells)
+appendix:
+  # Lexicon: Infrastructure registry
+  lexicon:
+    # Datadog configuration
+    - type: datadog
+      name: datadog-prod
+      site: datadoghq.com
+      vaultSecretPath: "chapter"
+      apiKeySecret:
+        vaultPath: "/observability/datadog/api-key"
+        vaultKey: apiKey
+      appKeySecret:
+        vaultPath: "/observability/datadog/app-key"
+        vaultKey: appKey
+      labels:
+        environment: production
+        team: platform
+        stack: kubernetes
+        default: book
+
+    # Datadog staging (for testing)
+    - type: datadog
+      name: datadog-staging
+      site: datadoghq.com
+      vaultSecretPath: "chapter"
+      apiKeySecret:
+        vaultPath: "/observability/datadog/staging-api-key"
+        vaultKey: apiKey
+      labels:
+        environment: staging
+        team: platform
+
+    # Vault configuration
+    - type: vault
+      name: vault-main
+      url: http://vault.vault.svc:8200
+      namespace: vault
+      serviceAccount: vault
+      authPath: otel-datadog-book
+      secretPath: secret
+      labels:
+        default: book
+
+  # Common environment variables for instrumented apps
+  commonEnv:
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: "grpc"
+    - name: OTEL_EXPORTER_OTLP_COMPRESSION
+      value: "gzip"
+    - name: OTEL_METRICS_EXPORTER
+      value: "otlp"
+    - name: OTEL_TRACES_EXPORTER
+      value: "otlp"
+    - name: OTEL_LOGS_EXPORTER
+      value: "otlp"
+    - name: OTEL_PROPAGATORS
+      value: "tracecontext,baggage"
+
+  # Common annotations
+  commonAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8888"
+    prometheus.io/path: "/metrics"

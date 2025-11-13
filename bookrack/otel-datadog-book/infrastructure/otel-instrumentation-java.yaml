@@ -1,0 +1,60 @@
+# OpenTelemetry Auto-Instrumentation for Java
+# Enables automatic instrumentation for Java applications
+
+name: otel-instrumentation-java
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+# This spell uses kaster to create Instrumentation CRs
+glyphs:
+  opentelemetry:
+    - type: instrumentation
+      name: java-auto
+      language: java
+
+      # Endpoint to send telemetry (local agent)
+      endpoint: http://otel-collector-agent.observability.svc.cluster.local:4317
+
+      # Propagators for distributed tracing
+      propagators:
+        - tracecontext
+        - baggage
+        - b3
+
+      # Image for auto-instrumentation
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+
+      # Sampling configuration
+      sampler:
+        type: parentbased_traceidratio
+        argument: "1.0"  # Sample 100% (adjust for production)
+
+      # Environment variables for instrumentation
+      env:
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_KAFKA_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_WEB_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MONGO_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_HTTP_CLIENT_ENABLED
+          value: "true"
+
+      # Resource limits for instrumentation
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi

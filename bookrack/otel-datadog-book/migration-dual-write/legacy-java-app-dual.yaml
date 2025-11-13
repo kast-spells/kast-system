@@ -1,0 +1,175 @@
+# Legacy Java App with Dual-Write
+# Sends telemetry to BOTH Datadog Agent (legacy) AND OpenTelemetry Collector (new)
+# Use this pattern during migration to validate before fully switching
+
+name: legacy-java-app-dual
+namespace: applications
+
+chapter:
+  name: migration-dual-write
+
+# Workload configuration
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: your-registry/legacy-java-app
+  tag: v2.5.0
+  pullPolicy: IfNotPresent
+
+# Service
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+# Environment variables - DUAL WRITE configuration
+env:
+  # ========================================
+  # LEGACY: Datadog Agent (APM)
+  # ========================================
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  - name: DD_TRACE_AGENT_PORT
+    value: "8126"
+  - name: DD_SERVICE
+    value: "legacy-java-app"
+  - name: DD_ENV
+    value: "production"
+  - name: DD_VERSION
+    value: "v2.5.0"
+  - name: DD_TAGS
+    value: "team:backend,migration:dual-write"
+
+  # Datadog Java Agent (via -javaagent)
+  - name: JAVA_TOOL_OPTIONS
+    value: >-
+      -javaagent:/dd-java-agent/dd-java-agent.jar
+      -Ddd.profiling.enabled=true
+      -Ddd.logs.injection=true
+
+  # ========================================
+  # NEW: OpenTelemetry (via auto-instrumentation)
+  # ========================================
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector-agent.observability.svc.cluster.local:4317"
+  - name: OTEL_SERVICE_NAME
+    value: "legacy-java-app"
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=production,service.version=v2.5.0,migration=dual-write,team=backend"
+  - name: OTEL_METRICS_EXPORTER
+    value: "otlp"
+  - name: OTEL_TRACES_EXPORTER
+    value: "otlp"
+  - name: OTEL_LOGS_EXPORTER
+    value: "otlp"
+
+  # Application env vars
+  - name: SPRING_PROFILES_ACTIVE
+    value: "production"
+  - name: SERVER_PORT
+    value: "8080"
+
+# Resources (might need more due to dual instrumentation)
+resources:
+  limits:
+    cpu: 2000m      # Increased for dual agents
+    memory: 2Gi     # Increased for dual agents
+  requests:
+    cpu: 400m       # Increased baseline
+    memory: 768Mi   # Increased baseline
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60  # Lower threshold due to overhead
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  initialDelaySeconds: 90  # Increased due to dual instrumentation
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  initialDelaySeconds: 45  # Increased
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Volumes for Datadog agent
+volumes:
+  - name: dd-agent
+    emptyDir: {}
+
+# Volume mounts
+volumeMounts:
+  - name: dd-agent
+    mountPath: /dd-java-agent
+
+# Init container to download Datadog agent
+initContainers:
+  - name: datadog-agent-downloader
+    image: curlimages/curl:latest
+    command:
+      - sh
+      - -c
+      - >
+        curl -Lo /dd-java-agent/dd-java-agent.jar
+        https://dtdg.co/latest-java-tracer
+    volumeMounts:
+      - name: dd-agent
+        mountPath: /dd-java-agent
+    resources:
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+# Pod annotations
+podAnnotations:
+  # OpenTelemetry auto-instrumentation
+  instrumentation.opentelemetry.io/inject-java: "java-auto"
+
+  # Note: Running dual instrumentation for migration validation
+  migration.observability.io/strategy: "dual-write"
+  migration.observability.io/target-date: "2024-12-31"
+
+  # Prometheus
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/actuator/prometheus"
+
+# Service Account
+serviceAccount:
+  enabled: true
+  name: legacy-java-app-dual
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Labels
+labels:
+  app: legacy-java-app
+  migration-status: dual-write
+  datadog-enabled: "true"
+  opentelemetry-enabled: "true"
+  language: java
+  framework: spring-boot

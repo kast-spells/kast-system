@@ -1,0 +1,81 @@
+# OpenTelemetry Operator
+# Required for auto-instrumentation functionality
+# Installs CRDs: Instrumentation, OpenTelemetryCollector
+
+name: otel-operator
+namespace: opentelemetry-operator-system
+
+# Use external Helm chart
+chart:
+  name: opentelemetry-operator
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: "0.45.0"
+
+# Operator configuration
+manager:
+  replicas: 1
+
+  image:
+    repository: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    tag: "v0.91.0"
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Enable auto-instrumentation
+  autoInstrumentationImage:
+    java: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+    nodejs: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+    python: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+    dotnet: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest
+    go: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:latest
+
+  # Webhook configuration
+  webhook:
+    enabled: true
+    port: 9443
+
+  # Admission webhooks
+  admissionWebhooks:
+    create: true
+    certManager:
+      enabled: false
+    autoGenerateCert: true
+
+# RBAC
+rbac:
+  create: true
+
+# Service Account
+serviceAccount:
+  create: true
+  name: opentelemetry-operator
+
+# Monitoring
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+# Security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Labels
+labels:
+  app.kubernetes.io/component: operator
+  app.kubernetes.io/part-of: opentelemetry

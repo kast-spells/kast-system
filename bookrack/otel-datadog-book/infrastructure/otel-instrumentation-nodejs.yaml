@@ -1,0 +1,52 @@
+# OpenTelemetry Auto-Instrumentation for Node.js
+# Enables automatic instrumentation for Node.js applications
+
+name: otel-instrumentation-nodejs
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+glyphs:
+  opentelemetry:
+    - type: instrumentation
+      name: nodejs-auto
+      language: nodejs
+
+      endpoint: http://otel-collector-agent.observability.svc.cluster.local:4317
+
+      propagators:
+        - tracecontext
+        - baggage
+
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+
+      sampler:
+        type: parentbased_traceidratio
+        argument: "1.0"
+
+      env:
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_NODEJS_DEBUG
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_HTTP_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_EXPRESS_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MONGODB_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MYSQL_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_KAFKA_ENABLED
+          value: "true"
+
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi

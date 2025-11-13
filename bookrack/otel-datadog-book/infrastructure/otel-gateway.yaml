@@ -1,0 +1,255 @@
+# OpenTelemetry Collector Gateway
+# Centralized collector that receives telemetry from agents and exports to Datadog
+
+name: otel-collector-gateway
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+# Workload configuration (using summon)
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.91.0"
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+    - name: metrics
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: health
+      port: 13133
+      targetPort: 13133
+      protocol: TCP
+    - name: pprof
+      port: 1777
+      targetPort: 1777
+      protocol: TCP
+    - name: zpages
+      port: 55679
+      targetPort: 55679
+      protocol: TCP
+
+# Resources
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# High Availability - Anti-affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - otel-collector-gateway
+          topologyKey: kubernetes.io/hostname
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /
+    port: 13133
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 13133
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: "/metrics"
+
+# Service Account
+serviceAccount:
+  enabled: true
+  name: otel-collector-gateway
+
+# Security Context
+securityContext:
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+  runAsNonRoot: true
+
+# Glyphs configuration
+glyphs:
+  # Vault secret for Datadog API key
+  vault:
+    - type: secret
+      name: datadog-api-key
+      path: "chapter"
+      keys:
+        - apiKey
+        - appKey
+      serviceAccount: otel-collector-gateway
+      format: env
+
+  # OpenTelemetry Gateway configuration
+  opentelemetry:
+    - type: collectorGateway
+      name: gateway
+      replicas: 3
+
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.91.0"
+
+      # Receivers - what telemetry we accept
+      receivers:
+        - otlp          # OTLP gRPC/HTTP (primary)
+        - prometheus    # Prometheus metrics
+        - jaeger        # Jaeger traces (for migration)
+
+      # Processors - how we process telemetry
+      processors:
+        - batch                # Batch for efficiency
+        - memory_limiter       # Prevent OOM
+        - resourcedetection    # Add infrastructure metadata
+        - k8sattributes        # Add Kubernetes metadata
+        - spanmetrics          # Generate metrics from traces
+
+      # Exporters - where we send telemetry
+      exporters:
+        - datadog       # Primary: Datadog
+        - prometheus    # Secondary: Prometheus endpoint
+        - logging       # Debug: Console logs (disable in prod)
+
+      # Datadog configuration from lexicon
+      datadogSelector:
+        name: datadog-prod
+
+      # Secret configuration
+      datadogSecretName: datadog-api-key
+      datadogApiKeyKey: apiKey
+      datadogAppKeyKey: appKey
+
+      # Pipeline configuration
+      metricsPath:
+        receivers:
+          - otlp
+          - prometheus
+        processors:
+          - batch
+          - memory_limiter
+          - resourcedetection
+          - k8sattributes
+        exporters:
+          - datadog
+          - prometheus
+
+      tracesPath:
+        receivers:
+          - otlp
+          - jaeger
+        processors:
+          - batch
+          - memory_limiter
+          - resourcedetection
+          - k8sattributes
+          - spanmetrics
+        exporters:
+          - datadog
+
+      logsPath:
+        receivers:
+          - otlp
+        processors:
+          - batch
+          - memory_limiter
+          - resourcedetection
+        exporters:
+          - datadog
+
+      # Performance tuning
+      batchTimeout: "10s"
+      batchSize: 2048
+      batchMaxSize: 4096
+      traceBuffer: 1000
+      histogramMode: "distributions"
+      sendAggregationMetrics: true
+
+      # Resources
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+        requests:
+          cpu: 500m
+          memory: 1Gi
+
+      # Service configuration
+      serviceType: ClusterIP
+      service:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8888"
+
+      # Pod configuration
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"
+        prometheus.io/path: "/metrics"
+
+      # High availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                        - opentelemetry-collector
+                topologyKey: kubernetes.io/hostname

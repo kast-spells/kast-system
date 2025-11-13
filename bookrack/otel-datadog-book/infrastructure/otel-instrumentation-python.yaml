@@ -1,0 +1,54 @@
+# OpenTelemetry Auto-Instrumentation for Python
+# Enables automatic instrumentation for Python applications
+
+name: otel-instrumentation-python
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+glyphs:
+  opentelemetry:
+    - type: instrumentation
+      name: python-auto
+      language: python
+
+      endpoint: http://otel-collector-agent.observability.svc.cluster.local:4317
+
+      propagators:
+        - tracecontext
+        - baggage
+
+      image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+
+      sampler:
+        type: parentbased_traceidratio
+        argument: "1.0"
+
+      env:
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_FLASK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_DJANGO_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_FASTAPI_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_REQUESTS_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_PSYCOPG2_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_REDIS_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLED
+          value: "true"
+
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi

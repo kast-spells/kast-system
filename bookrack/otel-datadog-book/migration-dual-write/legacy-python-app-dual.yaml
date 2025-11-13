@@ -1,0 +1,148 @@
+# Legacy Python App with Dual-Write
+# Sends telemetry to BOTH Datadog (via ddtrace) AND OpenTelemetry
+
+name: legacy-python-app-dual
+namespace: applications
+
+chapter:
+  name: migration-dual-write
+
+# Workload configuration
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: your-registry/legacy-python-app
+  tag: v1.8.0
+  pullPolicy: IfNotPresent
+
+# Service
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+
+# Environment variables - DUAL WRITE
+env:
+  # ========================================
+  # LEGACY: Datadog APM (ddtrace)
+  # ========================================
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  - name: DD_TRACE_AGENT_PORT
+    value: "8126"
+  - name: DD_SERVICE
+    value: "legacy-python-app"
+  - name: DD_ENV
+    value: "production"
+  - name: DD_VERSION
+    value: "v1.8.0"
+  - name: DD_TAGS
+    value: "team:backend,migration:dual-write"
+
+  # Enable ddtrace instrumentation
+  - name: DD_TRACE_ENABLED
+    value: "true"
+  - name: DD_PROFILING_ENABLED
+    value: "true"
+  - name: DD_LOGS_INJECTION
+    value: "true"
+
+  # ========================================
+  # NEW: OpenTelemetry
+  # ========================================
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector-agent.observability.svc.cluster.local:4317"
+  - name: OTEL_SERVICE_NAME
+    value: "legacy-python-app"
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=production,service.version=v1.8.0,migration=dual-write"
+  - name: OTEL_METRICS_EXPORTER
+    value: "otlp"
+  - name: OTEL_TRACES_EXPORTER
+    value: "otlp"
+  - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+    value: "true"
+
+  # Application env vars
+  - name: PORT
+    value: "8000"
+  - name: ENVIRONMENT
+    value: "production"
+
+# Command to run with both tracers
+# NOTE: This requires both ddtrace and opentelemetry packages in image
+command:
+  - sh
+  - -c
+  - |
+    # Start with ddtrace wrapper and OTel auto-instrumentation
+    exec ddtrace-run opentelemetry-instrument python app.py
+
+# Resources (increased for dual instrumentation)
+resources:
+  limits:
+    cpu: 1500m
+    memory: 1Gi
+  requests:
+    cpu: 300m
+    memory: 512Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8000
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod annotations
+podAnnotations:
+  # OpenTelemetry auto-instrumentation (optional if using opentelemetry-instrument directly)
+  # instrumentation.opentelemetry.io/inject-python: "python-auto"
+
+  migration.observability.io/strategy: "dual-write"
+  migration.observability.io/datadog-enabled: "true"
+  migration.observability.io/opentelemetry-enabled: "true"
+
+# Service Account
+serviceAccount:
+  enabled: true
+  name: legacy-python-app-dual
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Labels
+labels:
+  app: legacy-python-app
+  migration-status: dual-write
+  language: python

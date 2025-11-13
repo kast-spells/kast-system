@@ -1,0 +1,138 @@
+# Example Java API with Auto-Instrumentation
+# Spring Boot application automatically instrumented with OpenTelemetry
+
+name: example-java-api
+namespace: applications
+
+chapter:
+  name: applications
+
+# Workload configuration
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: your-registry/example-java-api
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+
+# Service
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+# Environment variables for OpenTelemetry
+env:
+  # OTLP endpoint (local agent on same node)
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector-agent.observability.svc.cluster.local:4317"
+
+  # Service name (will appear in Datadog)
+  - name: OTEL_SERVICE_NAME
+    value: "example-java-api"
+
+  # Resource attributes (tags in Datadog)
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=production,service.version=v1.0.0,service.namespace=applications,team=backend"
+
+  # Telemetry exporters
+  - name: OTEL_METRICS_EXPORTER
+    value: "otlp"
+  - name: OTEL_TRACES_EXPORTER
+    value: "otlp"
+  - name: OTEL_LOGS_EXPORTER
+    value: "otlp"
+
+  # Protocol
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+
+  # Compression
+  - name: OTEL_EXPORTER_OTLP_COMPRESSION
+    value: "gzip"
+
+  # Propagators
+  - name: OTEL_PROPAGATORS
+    value: "tracecontext,baggage,b3"
+
+  # Sampling (100% for this example)
+  - name: OTEL_TRACES_SAMPLER
+    value: "always_on"
+
+  # Application-specific env vars
+  - name: SPRING_PROFILES_ACTIVE
+    value: "production"
+  - name: SERVER_PORT
+    value: "8080"
+
+# Resources
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod annotations for auto-instrumentation
+podAnnotations:
+  # CRITICAL: This enables auto-instrumentation via OpenTelemetry Operator
+  instrumentation.opentelemetry.io/inject-java: "java-auto"
+
+  # Prometheus scraping (if needed)
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/actuator/prometheus"
+
+# Service Account
+serviceAccount:
+  enabled: true
+  name: example-java-api
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  capabilities:
+    drop:
+      - ALL
+
+# Labels
+labels:
+  app: example-java-api
+  language: java
+  framework: spring-boot
+  tier: backend

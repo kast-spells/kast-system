@@ -1,0 +1,71 @@
+# Lexicon: Datadog Infrastructure Registry
+# Defines Datadog backends and OpenTelemetry endpoints
+
+lexicon:
+  # Production Datadog
+  - type: datadog
+    name: datadog-prod
+    site: datadoghq.com
+    region: us1
+    vaultSecretPath: "chapter"
+    apiKeySecret:
+      vaultPath: "/observability/datadog/api-key"
+      vaultKey: apiKey
+    appKeySecret:
+      vaultPath: "/observability/datadog/app-key"
+      vaultKey: appKey
+    tags:
+      - environment:production
+      - team:platform
+      - managed-by:kast-system
+      - book:otel-datadog-book
+    labels:
+      environment: production
+      team: platform
+      stack: kubernetes
+      default: book
+
+  # Staging Datadog (for testing)
+  - type: datadog
+    name: datadog-staging
+    site: datadoghq.com
+    region: us1
+    vaultSecretPath: "chapter"
+    apiKeySecret:
+      vaultPath: "/observability/datadog/staging-api-key"
+      vaultKey: apiKey
+    tags:
+      - environment:staging
+      - team:platform
+    labels:
+      environment: staging
+      team: platform
+
+  # OpenTelemetry Gateway endpoint
+  - type: otel-gateway
+    name: otel-gateway-prod
+    endpoint: otel-collector-gateway.observability.svc.cluster.local:4317
+    protocol: grpc
+    labels:
+      environment: production
+      default: book
+
+  # OpenTelemetry Agent endpoint (local)
+  - type: otel-agent
+    name: otel-agent-local
+    endpoint: otel-collector-agent.observability.svc.cluster.local:4317
+    protocol: grpc
+    labels:
+      environment: production
+      default: book
+
+  # Vault for secrets
+  - type: vault
+    name: vault-main
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: otel-datadog-book
+    secretPath: secret
+    labels:
+      default: book

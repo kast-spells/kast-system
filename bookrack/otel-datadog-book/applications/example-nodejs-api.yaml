@@ -1,0 +1,128 @@
+# Example Node.js API with Auto-Instrumentation
+# Express application automatically instrumented with OpenTelemetry
+
+name: example-nodejs-api
+namespace: applications
+
+chapter:
+  name: applications
+
+# Workload configuration
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: your-registry/example-nodejs-api
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+
+# Service
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+
+# Environment variables for OpenTelemetry
+env:
+  # OTLP endpoint
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://otel-collector-agent.observability.svc.cluster.local:4317"
+
+  # Service name
+  - name: OTEL_SERVICE_NAME
+    value: "example-nodejs-api"
+
+  # Resource attributes
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=production,service.version=v1.0.0,service.namespace=applications,team=frontend,language=nodejs"
+
+  # Telemetry exporters
+  - name: OTEL_METRICS_EXPORTER
+    value: "otlp"
+  - name: OTEL_TRACES_EXPORTER
+    value: "otlp"
+  - name: OTEL_LOGS_EXPORTER
+    value: "otlp"
+
+  # Protocol
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+
+  # Node.js specific
+  - name: OTEL_NODEJS_DEBUG
+    value: "false"
+  - name: NODE_OPTIONS
+    value: "--require /otel-auto-instrumentation/autoinstrumentation.js"
+
+  # Sampling
+  - name: OTEL_TRACES_SAMPLER
+    value: "always_on"
+
+  # Application env vars
+  - name: PORT
+    value: "3000"
+  - name: NODE_ENV
+    value: "production"
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod annotations for auto-instrumentation
+podAnnotations:
+  # CRITICAL: This enables auto-instrumentation
+  instrumentation.opentelemetry.io/inject-nodejs: "nodejs-auto"
+
+# Service Account
+serviceAccount:
+  enabled: true
+  name: example-nodejs-api
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Labels
+labels:
+  app: example-nodejs-api
+  language: nodejs
+  framework: express
+  tier: frontend

@@ -1,0 +1,157 @@
+# OpenTelemetry Collector Agent
+# Per-node DaemonSet that collects local telemetry and forwards to gateway
+
+name: otel-collector-agent
+namespace: observability
+
+chapter:
+  name: infrastructure
+
+# Workload configuration (using summon)
+workload:
+  enabled: true
+  type: daemonset
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.91.0"
+  pullPolicy: IfNotPresent
+
+# Service configuration (for local pod access)
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+    - name: metrics
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: health
+      port: 13133
+      targetPort: 13133
+      protocol: TCP
+
+# Resources (per node)
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Update strategy
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /
+    port: 13133
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 13133
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: "/metrics"
+
+# Service Account
+serviceAccount:
+  enabled: true
+  name: otel-collector-agent
+
+# Security Context (need root for hostNetwork if enabled)
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  fsGroup: 0
+
+# Tolerations to run on all nodes
+tolerations:
+  - operator: Exists
+    effect: NoSchedule
+  - operator: Exists
+    effect: NoExecute
+
+# Priority Class (optional, for critical pods)
+priorityClassName: system-node-critical
+
+# Glyphs configuration
+glyphs:
+  # OpenTelemetry Agent configuration
+  opentelemetry:
+    - type: collectorAgent
+      name: agent
+
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.91.0"
+
+      # Forward to gateway instead of exporting directly
+      forwardTo: otel-collector-gateway.observability.svc.cluster.local:4317
+
+      # Receivers - local telemetry collection
+      receivers:
+        - otlp          # OTLP from local pods
+        - prometheus    # Prometheus scraping
+
+      # Processors - lightweight processing
+      processors:
+        - batch
+        - memory_limiter
+        - resourcedetection
+
+      # Resources
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+
+      # Host network for better performance (optional)
+      # Enable if you need pods to reach agent via hostPort
+      hostNetwork: false
+
+      # Tolerations
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+        - operator: Exists
+          effect: NoExecute
+
+      # Update strategy
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+
+      # Pod annotations
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"

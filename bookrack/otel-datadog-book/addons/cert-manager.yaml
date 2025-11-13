@@ -1,0 +1,77 @@
+# Cert-Manager
+# Required for OpenTelemetry Operator webhooks (if certManager.enabled=true)
+# Optional: Operator can auto-generate certs if cert-manager not available
+
+name: cert-manager
+namespace: cert-manager
+
+# Use external Helm chart
+chart:
+  name: cert-manager
+  repository: https://charts.jetstack.io
+  version: "v1.13.3"
+
+# Install CRDs
+installCRDs: true
+
+# Replicas
+replicaCount: 1
+
+# Resources
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Webhook
+webhook:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# CA Injector
+cainjector:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Startup API check
+startupapicheck:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Security
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Prometheus
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false
+
+# Labels
+labels:
+  app.kubernetes.io/component: cert-manager
+  app.kubernetes.io/part-of: pki
