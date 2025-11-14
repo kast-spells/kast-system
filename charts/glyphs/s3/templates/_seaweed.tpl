@@ -93,10 +93,10 @@ data:
 
     # Count secrets
     SECRET_COUNT=$(echo "$SECRETS_JSON" | jq '.items | length')
-    echo "📊 Found $SECRET_COUNT S3 identity secret(s)"
+    echo "INFO: Found $SECRET_COUNT S3 identity secret(s)"
 
     if [ "$SECRET_COUNT" -eq 0 ]; then
-      echo "⚠️  No S3 identities found, creating empty config"
+      echo "WARNING: No S3 identities found, creating empty config"
       IDENTITIES="[]"
     else
       # Build identities array from secrets
@@ -147,7 +147,7 @@ data:
     # Build final S3 config
     S3_CONFIG=$(jq -n --argjson identities "$IDENTITIES" '{identities: $identities}')
 
-    echo "📝 Generated S3 config with ${SECRET_COUNT} identities"
+    echo "INFO: Generated S3 config with ${SECRET_COUNT} identities"
 
     # Create/update Secret (NOT ConfigMap for security)
     # Key name is s3.json to match the file path expected by SeaweedFS
@@ -157,34 +157,34 @@ data:
       --dry-run=client -o yaml | \
       kubectl apply -f -
 
-    echo "✅ Secret updated successfully"
+    echo "SUCCESS: Secret updated successfully"
 
     # Restart seaweedfs-s3 deployment to reload config
-    echo "🔄 Restarting seaweedfs-s3 deployment..."
+    echo "Restarting seaweedfs-s3 deployment..."
     kubectl rollout restart deployment/seaweedfs-s3 -n ${NAMESPACE} || true
 
     # Wait for deployment to be ready (max 60s)
     # Pod will automatically send SIGHUP to itself via lifecycle.postStart hook
-    echo "⏳ Waiting for seaweedfs-s3 to be ready..."
+    echo "Waiting for seaweedfs-s3 to be ready..."
     kubectl wait --for=condition=available --timeout=60s deployment/seaweedfs-s3 -n ${NAMESPACE} || {
-      echo "⚠️  Deployment did not become ready in time, skipping bucket creation"
-      echo "🎉 S3 aggregation complete (buckets creation skipped)"
+      echo "WARNING: Deployment did not become ready in time, skipping bucket creation"
+      echo "SUCCESS: S3 aggregation complete (buckets creation skipped)"
       exit 0
     }
 
     # Give SeaweedFS extra time for lifecycle hook (postStart: sleep 3 + SIGHUP + config load)
-    echo "💤 Waiting 10s for lifecycle hook to complete and config to load..."
+    echo "Waiting 10s for lifecycle hook to complete and config to load..."
     sleep 10
 
     # Create buckets for each identity
-    echo "🪣 Creating buckets..."
+    echo "Creating buckets..."
 
     # Get admin credentials for bucket creation
     ADMIN_ACCESS_KEY=$(kubectl get secret seaweedfs-s3-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)
     ADMIN_SECRET_KEY=$(kubectl get secret seaweedfs-s3-admin -n ${NAMESPACE} -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)
 
     if [ -z "$ADMIN_ACCESS_KEY" ] || [ -z "$ADMIN_SECRET_KEY" ]; then
-      echo "⚠️  Admin credentials not found, skipping bucket creation"
+      echo "WARNING: Admin credentials not found, skipping bucket creation"
     else
       # S3 endpoint (internal service)
       S3_ENDPOINT="http://seaweedfs-s3.${NAMESPACE}.svc:8333"
@@ -198,18 +198,18 @@ data:
       BUCKET_LIST=$(echo "$IDENTITIES" | jq -r '.[].actions[]' | grep ':' | sed 's/.*://' | grep -v '\*' | sort -u)
 
       if [ -z "$BUCKET_LIST" ]; then
-          echo "📭 No buckets to create (empty or wildcard only)"
+          echo "INFO: No buckets to create (empty or wildcard only)"
       else
           BUCKET_COUNT=$(echo "$BUCKET_LIST" | wc -l)
-          echo "📊 Found $BUCKET_COUNT unique bucket(s) to create"
+          echo "INFO: Found $BUCKET_COUNT unique bucket(s) to create"
 
           for bucket in $BUCKET_LIST; do
-              echo "  🪣 Creating bucket: $bucket"
+              echo "  Creating bucket: $bucket"
               if aws s3 mb "s3://${bucket}" \
                       --endpoint-url="${S3_ENDPOINT}" 2>&1; then
-                  echo "✅ Bucket ${bucket} created successfully"
+                  echo "SUCCESS: Bucket ${bucket} created successfully"
               else
-                  echo "⚠️  Bucket ${bucket} creation failed (may already exist)"
+                  echo "WARNING: Bucket ${bucket} creation failed (may already exist)"
               fi
           done
       fi

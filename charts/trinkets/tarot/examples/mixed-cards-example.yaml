@@ -363,15 +363,15 @@ tarot:
             
             # Health check
             curl -f "$BASE_URL/health" || exit 1
-            echo "✅ Health check passed"
+            echo "PASS: Health check passed"
             
             # API endpoint test
             curl -f "$BASE_URL/api/status" || exit 1
-            echo "✅ API status check passed"
+            echo "PASS: API status check passed"
             
             # Database connectivity test
             curl -f "$BASE_URL/api/db-check" || exit 1
-            echo "✅ Database connectivity passed"
+            echo "PASS: Database connectivity passed"
             
             echo "All smoke tests passed!"
         resources:
