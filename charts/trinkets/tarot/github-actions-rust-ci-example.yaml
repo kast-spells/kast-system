@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        rust: [stable, beta, nightly]
+        exclude:
+          # Reduce matrix for faster CI
+          - os: macOS-latest
+            rust: beta
+          - os: windows-latest
+            rust: beta
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+    
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ matrix.rust }}-
+          ${{ runner.os }}-cargo-
+    
+    - name: Check formatting
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      run: cargo fmt --all -- --check
+    
+    - name: Run clippy
+      if: matrix.rust == 'stable'
+      run: cargo clippy --all --all-features --all-targets -- -D warnings
+    
+    - name: Build
+      run: cargo build --all --all-features
+    
+    - name: Run tests
+      run: cargo test --all --all-features
+    
+    - name: Test no default features
+      run: cargo test --all --no-default-features
+    
+    - name: Test hexagonal features
+      if: matrix.os == 'ubuntu-latest' && matrix.rust == 'stable'
+      run: |
+        cd hexagonal-rust
+        chmod +x test-features.sh
+        ./test-features.sh
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Install tarpaulin
+      run: |
+        cargo install cargo-tarpaulin || true
+    
+    - name: Generate coverage
+      run: |
+        cargo tarpaulin --all-features --workspace \
+          --out Xml --output-dir target/coverage \
+          --exclude-files "*/examples/*" \
+          --exclude-files "*/tests/*" \
+          --exclude-files "*/mocks/*" \
+          --timeout 300
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./target/coverage/cobertura.xml
+        fail_ci_if_error: false
+        verbose: true
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install cargo-audit
+      run: cargo install cargo-audit || true
+    
+    - name: Run security audit
+      run: cargo audit
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Check documentation
+      run: cargo doc --all --no-deps --all-features
+      env:
+        RUSTDOCFLAGS: "-D warnings"
+
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust 1.75.0
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: 1.75.0
+    
+    - name: Check MSRV
+      run: |
+        cargo check --all --all-features
+
+  release-check:
+    name: Release Check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Check release build
+      run: |
+        cargo build --release --all --all-features
+    
+    - name: Package check
+      run: |
+        cargo package --list --workspace

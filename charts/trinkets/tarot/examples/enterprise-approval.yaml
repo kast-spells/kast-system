@@ -1,0 +1,367 @@
+name: tarot-enterprise-approval
+
+# Enterprise production deployment with approval gates and compliance
+# Demonstrates: suspend execution mode, approval workflows, compliance checks
+
+# Enterprise secrets for production deployment
+secrets:
+  production-registry:
+    type: vault-secret
+    path: "secret/production/registry"
+    keys: ["username", "password", "ca_cert"]
+  security-scanner:
+    type: vault-secret
+    path: "secret/security/scanner"
+    keys: ["api_key", "license"]
+  compliance-db:
+    type: k8s-secret
+    name: compliance-database
+    keys: ["username", "password", "connection_string"]
+  notification-webhook:
+    type: vault-secret
+    path: "secret/notifications/slack"
+    keys: ["webhook_url", "channel"]
+
+# Enterprise environment variables
+envs:
+  PRODUCTION_REGISTRY: "prod-registry.company.com"
+  SECURITY_POLICY: "enterprise-strict"
+  COMPLIANCE_LEVEL: "sox-compliant"
+  APPROVAL_TIMEOUT: "24h"
+  DEPLOYMENT_WINDOW: "weekdays-only"
+
+# Enterprise workflow cards (simulated)
+cards:
+  security-compliance-scan:
+    type: card
+    labels:
+      cardType: security
+      security: required
+      compliance: sox
+      scanner: enterprise
+      default: cluster
+    container:
+      image: security/enterprise-scanner:latest
+      command: ["security-scan"]
+      args: ["--policy", "enterprise-strict", "--compliance", "sox", "--format", "json"]
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
+          memory: "4Gi"
+          cpu: "2"
+
+  approval-gate:
+    type: card
+    labels:
+      cardType: approval
+      gate: manual
+      level: production
+      timeout: 24h
+      default: cluster
+    suspend:
+      duration: "24h"
+    
+tarot:
+  executionMode: suspend  # Enables approval gates and human intervention
+  reading:
+    # Automated security and compliance scanning
+    security-scan:
+      selectors:
+        security: required
+        compliance: sox
+        scanner: enterprise
+      position: foundation
+      with:
+        target_image: "{{workflow.parameters.image}}"
+        policy_level: "{{envs.SECURITY_POLICY}}"
+        compliance_standard: "{{envs.COMPLIANCE_LEVEL}}"
+      volumes:
+        scan-results:
+          type: persistentVolumeClaim
+          size: "5Gi"
+          mountPath: /scan-results
+      
+    # Vulnerability assessment
+    vulnerability-scan:
+      container:
+        image: aquasec/trivy:latest
+        command: ["trivy"]
+        args: 
+          - "image"
+          - "--exit-code"
+          - "1"
+          - "--severity"
+          - "CRITICAL,HIGH"
+          - "--format"
+          - "json"
+          - "--output"
+          - "/scan-results/vulnerabilities.json"
+          - "{{workflow.parameters.image}}"
+      position: foundation
+      with:
+        image: "{{workflow.parameters.image}}"
+        severity_threshold: "HIGH"
+        
+    # License compliance check
+    license-compliance:
+      container:
+        image: fossology/fossology:latest
+        command: ["fossology-scan"]
+        args:
+          - "--image"
+          - "{{workflow.parameters.image}}"
+          - "--output"
+          - "/scan-results/licenses.json"
+          - "--policy"
+          - "enterprise-approved-licenses"
+      position: foundation
+      with:
+        image: "{{workflow.parameters.image}}"
+        license_policy: "enterprise-strict"
+        
+    # Automated compliance report generation
+    compliance-report:
+      container:
+        image: compliance/report-generator:latest
+        command: ["python", "generate_report.py"]
+        args:
+          - "--security-scan"
+          - "/scan-results/security.json"
+          - "--vulnerability-scan"  
+          - "/scan-results/vulnerabilities.json"
+          - "--license-scan"
+          - "/scan-results/licenses.json"
+          - "--output"
+          - "/reports/compliance-report.pdf"
+          - "--standard"
+          - "{{envs.COMPLIANCE_LEVEL}}"
+      position: action
+      depends: [security-scan, vulnerability-scan, license-compliance]
+      volumes:
+        compliance-reports:
+          type: persistentVolumeClaim
+          size: "1Gi"
+          mountPath: /reports
+      envs:
+        COMPLIANCE_DB: "{{secrets.compliance-db.connection_string}}"
+        REPORT_TEMPLATE: "sox-compliance-v2"
+      with:
+        report_format: "pdf"
+        include_remediation: "true"
+        
+    # Security team approval gate
+    security-approval:
+      container:
+        image: approval/security-gate:latest
+        command: ["approval-gate"]
+        args:
+          - "--duration"
+          - "{{envs.APPROVAL_TIMEOUT}}"
+          - "--approvers"
+          - "security-team@company.com,ciso@company.com"
+          - "--message"
+          - "Production deployment security approval required"
+      suspend:
+        duration: "{{envs.APPROVAL_TIMEOUT}}"
+        approvers:
+          - "security-team@company.com"
+          - "ciso@company.com"
+        message: |
+          Production deployment approval required for:
+          Image: {{workflow.parameters.image}}
+          Environment: {{workflow.parameters.environment}}
+          
+          Compliance report available at: /reports/compliance-report.pdf
+          
+          Security scan results:
+          - Security policy: {{envs.SECURITY_POLICY}}
+          - Compliance level: {{envs.COMPLIANCE_LEVEL}}
+          
+          Please review and approve/reject this deployment.
+        metadata:
+          image: "{{workflow.parameters.image}}"
+          environment: "{{workflow.parameters.environment}}"
+          compliance_report: "/reports/compliance-report.pdf"
+      position: challenge
+      depends: [compliance-report]
+      
+    # Operations team approval gate  
+    ops-approval:
+      container:
+        image: approval/ops-gate:latest
+        command: ["approval-gate"]
+        args:
+          - "--duration"
+          - "{{envs.APPROVAL_TIMEOUT}}"
+          - "--approvers"
+          - "ops-team@company.com,sre-team@company.com"
+          - "--message"
+          - "Operations approval required for production deployment"
+      suspend:
+        duration: "{{envs.APPROVAL_TIMEOUT}}"
+        approvers:
+          - "ops-team@company.com"
+          - "sre-team@company.com"
+        message: |
+          Operations approval required for production deployment:
+          
+          Application: {{workflow.parameters.application}}
+          Image: {{workflow.parameters.image}}
+          Environment: {{workflow.parameters.environment}}
+          Deployment window: {{envs.DEPLOYMENT_WINDOW}}
+          
+          Security approval: Approved
+          Compliance check: Passed
+          
+          Ready for production deployment.
+        conditions:
+          - security-approval.outputs.status == "approved"
+      position: challenge
+      depends: [security-approval]
+      
+    # Automated pre-deployment validation
+    pre-deployment-validation:
+      container:
+        image: kubernetes/pre-deploy-validator:latest
+        command: ["validate-deployment"]
+        args:
+          - "--image"
+          - "{{workflow.parameters.image}}"
+          - "--namespace"
+          - "{{workflow.parameters.namespace}}"
+          - "--environment"
+          - "{{workflow.parameters.environment}}"
+          - "--check-resources"
+          - "--check-networking"
+          - "--check-secrets"
+      position: outcome
+      depends: [ops-approval]
+      with:
+        namespace: "{{workflow.parameters.namespace}}"
+        resource_limits: "true"
+        network_policies: "true"
+        
+    # Blue-green production deployment
+    production-deployment:
+      container:
+        image: deployment/blue-green:latest
+        command: ["python", "deploy.py"]
+        args:
+          - "--image"
+          - "{{workflow.parameters.image}}"
+          - "--namespace"
+          - "{{workflow.parameters.namespace}}"
+          - "--strategy"
+          - "blue-green"
+          - "--health-check"
+          - "{{workflow.parameters.health_check_url}}"
+          - "--rollback-threshold"
+          - "95"
+      position: outcome
+      depends: [pre-deployment-validation]
+      secrets:
+        k8s-admin:
+          type: vault-secret
+          path: "secret/kubernetes/production"
+          keys: ["kubeconfig"]
+      envs:
+        DEPLOYMENT_STRATEGY: "blue-green"
+        HEALTH_CHECK_RETRIES: "10"
+        ROLLBACK_ENABLED: "true"
+      with:
+        replicas: "{{workflow.parameters.replicas}}"
+        canary_percentage: "10"
+        
+    # Post-deployment monitoring setup
+    monitoring-setup:
+      container:
+        image: monitoring/setup:latest
+        command: ["setup-monitoring"]
+        args:
+          - "--application"
+          - "{{workflow.parameters.application}}"
+          - "--namespace"
+          - "{{workflow.parameters.namespace}}"
+          - "--alerts"
+          - "production-critical"
+          - "--dashboards"
+          - "production-overview"
+      position: outcome
+      depends: [production-deployment]
+      with:
+        alert_manager: "production"
+        dashboard_template: "enterprise-app"
+        
+    # Success notification
+    deployment-notification:
+      container:
+        image: curlimages/curl:latest
+        command: ["curl"]
+        args:
+          - "-X"
+          - "POST"
+          - "{{secrets.notification-webhook.webhook_url}}"
+          - "-H"
+          - "Content-Type: application/json"
+          - "-d"
+          - |
+            {
+              "channel": "{{secrets.notification-webhook.channel}}",
+              "text": "Production Deployment Successful",
+              "attachments": [
+                {
+                  "color": "good",
+                  "fields": [
+                    {"title": "Application", "value": "{{workflow.parameters.application}}", "short": true},
+                    {"title": "Image", "value": "{{workflow.parameters.image}}", "short": true},
+                    {"title": "Environment", "value": "{{workflow.parameters.environment}}", "short": true},
+                    {"title": "Deployment Time", "value": "{{workflow.creationTimestamp}}", "short": true}
+                  ]
+                }
+              ]
+            }
+      position: outcome
+      depends: [monitoring-setup]
+
+# Enterprise workflow configuration
+workflow:
+  serviceAccount: enterprise-deployer
+  generateName: true
+  arguments:
+    parameters:
+      - name: application
+        value: "payment-gateway"
+      - name: image
+        value: "prod-registry.company.com/payment-gateway:v2.1.0"
+      - name: environment
+        value: "production"
+      - name: namespace
+        value: "payment-prod"
+      - name: replicas
+        value: "10"
+      - name: health_check_url
+        value: "https://payment-gateway.company.com/health"
+  labels:
+    environment: "production"
+    compliance: "sox-required"
+    approval: "required"
+    team: "payment-platform"
+  annotations:
+    change-request: "CHG-2024-001234"
+    security-review: "SEC-2024-005678"
+    compliance-assessment: "COMP-2024-009876"
+
+# Enterprise resource limits
+resources:
+  activeDeadlineSeconds: 86400  # 24 hours for full approval cycle
+
+# Production node affinity
+nodeSelector:
+  environment: production
+  compliance: sox
+
+# RBAC for enterprise deployment
+rbac:
+  enabled: true

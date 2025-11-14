@@ -1,0 +1,12 @@
+apiVersion: v2
+name: tarot
+version: 0.1.0
+description: Dynamic workflow composition system using mystical card-based architecture
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-system
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: laaledesiempre
+    email: laaledesiempre@disroot.org

@@ -1,0 +1,72 @@
+name: vault-unified-test
+
+spellbook:
+  name: test-app
+chapter:
+  name: production
+
+# Lexicon con vault server
+lexicon:
+  production-vault:
+    type: vault
+    labels:
+      default: book
+    server: vault.vault.svc.cluster.local:8200
+    secretPath: secret
+    auth:
+      kubernetes:
+        path: kubernetes
+        role: test-vault-role
+
+# Cards
+cards:
+  deploy-task:
+    type: card
+    labels:
+      category: deploy
+    container:
+      image: alpine:latest
+      command: ["sh", "-c", "echo Deploying with vault secrets"]
+
+# Tarot with unified secrets
+tarot:
+  executionMode: container
+
+  # Unified secrets - K8s and Vault in same place
+  secrets:
+    # K8s Secret
+    local-config:
+      contentType: env
+      content:
+        LOG_LEVEL: "info"
+        ENVIRONMENT: "production"
+
+    # Vault Secret
+    docker-creds:
+      location: vault
+      path: chapter
+      format: env
+      keys: [DOCKER_USER, DOCKER_PASS]
+
+    # Vault with random password
+    api-key:
+      location: vault
+      path: chapter
+      random: true
+      randomKey: API_SECRET
+
+  reading:
+    deploy:
+      selectors: {category: deploy}
+      position: foundation
+
+  serviceAccount:
+    enabled: true
+    name: vault-test-runner
+    annotations:
+      vault.hashicorp.com/role: "test-vault-role"
+
+  rbac:
+    enabled: true
+
+  generateName: true

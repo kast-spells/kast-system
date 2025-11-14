@@ -1,0 +1,36 @@
+name: tarot-minimal-test
+
+# Spellbook/chapter (compartido con summon si existiera)
+spellbook:
+  name: tarot-test
+chapter:
+  name: default
+
+# Cards registry (nivel root)
+cards:
+  simple-task:
+    type: card
+    labels:
+      cardType: task
+    container:
+      image: busybox:latest
+      command: ["echo", "hello world"]
+
+# Tarot configuration
+tarot:
+  executionMode: container
+
+  reading:
+    simple-task:
+      position: foundation
+      with:
+        message: "Hello from tarot!"
+
+  serviceAccount:
+    enabled: true
+    name: tarot-runner
+
+  rbac:
+    enabled: true
+
+  generateName: true
