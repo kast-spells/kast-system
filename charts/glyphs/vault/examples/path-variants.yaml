@@ -1,7 +1,3 @@
-# kast - Kubernetes arcane spelling technology
-# Copyright (C) 2023 namenmalkv@gmail.com
-# Licensed under the GNU GPL v3. See LICENSE file for details.
-
 # Test example for all vault secret path resolution variants
 # This validates the 4 different path resolution patterns in _vault.tpl
 

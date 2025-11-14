@@ -1,0 +1,176 @@
+# Comprehensive Vault Glyph TDD Test
+# Tests all vault secret parameters through kaster system
+
+spellbook:
+  name: example-tdd-book
+chapter:
+  name: infrastructure
+
+# Test vault lexicon configuration
+lexicon:
+  - chapter: infrastructure
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+namespace: vault-test
+
+glyphs:
+  vault:
+    # TEST 1: Path Resolution Variants
+    book-level-secret:
+      type: secret
+      path: "book"
+      format: plain
+      keys:
+        - username
+        - password
+
+    chapter-level-secret:
+      type: secret
+      path: "chapter"
+      format: plain
+      keys:
+        - api-key
+        - token
+
+    absolute-path-secret:
+      type: secret
+      path: "/shared/credentials"
+      format: plain
+      keys:
+        - database-url
+        - redis-url
+
+    summon-level-secret:
+      type: secret
+      format: plain
+      keys:
+        - service-key
+        - endpoint
+
+    # TEST 2: Format Variants
+    env-format-secret:
+      type: secret
+      format: env
+      keys:
+        - database-url
+        - api-key
+        - service-port
+      staticData:
+        environment: production
+        region: us-east-1
+
+    json-format-secret:
+      type: secret
+      format: json
+      key: config-json
+
+    b64-format-secret:
+      type: secret
+      format: b64
+      key: encoded-data
+
+    yaml-format-secret:
+      type: secret
+      format: yaml
+      key: config-yaml
+
+    plain-format-secret:
+      type: secret
+      format: plain
+      keys:
+        - username
+        - password
+        - host
+      staticData:
+        port: "5432"
+        ssl: "true"
+
+    # TEST 3: Random Secrets
+    basic-random-secret:
+      type: secret
+      format: plain
+      random: true
+      keys:
+        - username
+      staticData:
+        database: postgres
+
+    custom-random-key-secret:
+      type: secret
+      format: plain
+      randomKey: admin-password
+      keys:
+        - service-name
+      staticData:
+        environment: staging
+
+    random-env-format-secret:
+      type: secret
+      format: env
+      random: true
+      keys:
+        - database-host
+        - database-port
+      staticData:
+        ssl-mode: require
+
+    # TEST 4: Advanced Options
+    custom-sa-secret:
+      type: secret
+      format: plain
+      serviceAccount: custom-vault-sa
+      keys:
+        - token
+      refreshPeriod: 5m0s
+
+    tls-secret:
+      type: secret
+      format: plain
+      secretType: kubernetes.io/tls
+      keys:
+        - tls.crt
+        - tls.key
+
+    metadata-secret:
+      type: secret
+      format: plain
+      keys:
+        - api-key
+      annotations:
+        vault.io/source: "external-secrets"
+        reloader.stakater.com/match: "true"
+      labels:
+        app: my-application
+        tier: backend
+        environment: production
+
+    # TEST 5: Edge Cases
+    special-chars-secret:
+      type: secret
+      format: env
+      keys:
+        - "api-key"
+        - "database.host"
+        - "service-port"
+      staticData:
+        special-value: "with-dashes"
+
+    static-only-secret:
+      type: secret
+      format: env
+      staticData:
+        database-type: postgres
+        connection-pool-size: "20"
+        max-connections: "100"
+
+    minimal-secret:
+      type: secret
+      # All other values should use defaults

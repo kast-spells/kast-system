@@ -1,7 +1,3 @@
-# kast - Kubernetes arcane spelling technology
-# Copyright (C) 2023 namenmalkv@gmail.com
-# Licensed under the GNU GPL v3. See LICENSE file for details.
-
 # Test example for Vault PostgreSQL Database Secret Engine
 # This validates dynamic PostgreSQL credential generation through Vault
 # The engine creates temporary database users with limited TTL

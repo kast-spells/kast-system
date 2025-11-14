@@ -1,0 +1,70 @@
+# Post-Provisioning: Pangolin VPN
+# Creates VPN profile for user when they have VPN access permissions
+
+# Enable this post-provisioning action
+enabled: true
+
+# Conditions: When to run this container
+# User must have at least ONE of these groups or roles
+conditions:
+  groups:
+    - vpn-users
+    - remote-workers
+  roles:
+    - vpn-access
+    - developer  # Developers get VPN by default
+
+# Container configuration (summon sidecar format)
+container:
+  name: pangolin-provisioner
+  image:
+    name: curlimages/curl
+    tag: latest
+  command:
+    - /bin/sh
+    - -c
+  args:
+    - |
+      echo "Provisioning VPN for user: {{ .username }}"
+      echo "Email: {{ .email }}"
+      echo "Groups: {{ .groups | join "," }}"
+
+      # Pangolin API call to create VPN profile
+      curl -X POST http://pangolin.vpn.svc:8080/api/v1/peers \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $PANGOLIN_API_TOKEN" \
+        -d '{
+          "username": "{{ .username }}",
+          "email": "{{ .email }}",
+          "displayName": "{{ .firstName }} {{ .lastName }}",
+          "groups": {{ .groups | toJson }},
+          "allowedIPs": ["10.8.0.0/16"],
+          "persistentKeepalive": 25,
+          "enabled": true
+        }'
+
+      echo "VPN profile created successfully"
+
+  env:
+    - name: PANGOLIN_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: pangolin-api-credentials
+          key: token
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Job configuration
+job:
+  # Backoff limit for retries
+  backoffLimit: 3
+  # Timeout in seconds
+  activeDeadlineSeconds: 300
+  # Restart policy
+  restartPolicy: OnFailure

@@ -1,0 +1,17 @@
+# Client Scope: groups
+# Groups scope with full path for organization hierarchy
+
+description: "Groups scope with organization hierarchy"
+protocol: openid-connect
+default: true
+
+protocolMappers:
+  - name: groups-mapper
+    protocol: openid-connect
+    protocolMapper: oidc-group-membership-mapper
+    config:
+      full.path: "false"
+      access.token.claim: "true"
+      id.token.claim: "true"
+      userinfo.token.claim: "true"
+      claim.name: groups

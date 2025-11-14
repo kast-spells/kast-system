@@ -1,0 +1,19 @@
+# Integration: Jenkins (Engineering only)
+# Jenkins OIDC client - only accessible by engineering department
+
+enabled: true
+clientId: jenkins
+webUrl: https://jenkins.test.local
+
+redirectUris:
+  - https://jenkins.test.local/securityRealm/finishLogin
+
+defaultClientScopes:
+  - profile
+  - email
+  - custom-roles
+  - groups
+
+secret: keycloak-client-jenkins
+directAccess: true
+public: false

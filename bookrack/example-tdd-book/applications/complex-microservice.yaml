@@ -1,0 +1,94 @@
+# Complex Microservice Example
+# Shows comprehensive application with runes (additional charts)
+
+name: payment-service
+namespace: applications
+
+# Main application (via summon)
+image:
+  repository: example-registry/payment-service
+  tag: v2.1.0
+  pullPolicy: IfNotPresent
+
+# Service configuration  
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      name: http
+    - port: 8080
+      name: admin
+
+# Resources and scaling
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# Environment configuration
+envs:
+  SERVICE_NAME: payment-service
+  ENVIRONMENT: development
+  LOG_LEVEL: info
+
+# Persistent storage
+volumes:
+  cache:
+    type: pvc
+    size: 5Gi
+    destinationPath: /app/cache
+
+# Infrastructure integration (routing)
+glyphs:
+  istio:
+    payment-service-vs:
+      type: virtualService
+      http:
+        - match:
+            - uri:
+                prefix: /payments
+          route:
+            - destination:
+                host: payment-service
+                port:
+                  number: 80
+      gateways:
+        - external-gateway
+      hosts:
+        - api.example-tdd.com
+
+# Additional services via runes
+runes:
+  - name: redis-cache
+    repository: https://charts.bitnami.com/bitnami
+    chart: redis
+    revision: 17.11.3
+    values:
+      auth:
+        enabled: false
+      master:
+        persistence:
+          enabled: false
+          
+  - name: postgresql-db
+    repository: https://charts.bitnami.com/bitnami  
+    chart: postgresql
+    revision: 12.8.0
+    values:
+      auth:
+        postgresPassword: dev-password-123
+        database: payments
+      primary:
+        persistence:
+          enabled: true
+          size: 20Gi

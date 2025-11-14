@@ -1,7 +1,3 @@
-# kast - Kubernetes arcane spelling technology
-# Copyright (C) 2023 namenmalkv@gmail.com
-# Licensed under the GNU GPL v3. See LICENSE file for details.
-
 # Empty Selector Example
 # Tests runicIndexer behavior when selector is empty (no labels to match)
 # Should use default fallback instead of matching ALL gateways

@@ -1,0 +1,58 @@
+# Example API Application Spell
+# Demonstrates summon-based application deployment
+
+name: example-api
+namespace: applications
+
+# Simple application configuration (uses summon)
+image:
+  repository: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Environment variables
+envs:
+  ENVIRONMENT: development
+  API_VERSION: v1
+  LOG_LEVEL: info
+
+# Infrastructure integration using glyphs
+glyphs:
+  istio:
+    example-api-vs:
+      type: virtualService
+      http:
+        - match:
+            - uri:
+                prefix: /api
+          route:
+            - destination:
+                host: example-api
+                port:
+                  number: 80
+      gateways:
+        - external-gateway
+      hosts:
+        - api.example-tdd.com
