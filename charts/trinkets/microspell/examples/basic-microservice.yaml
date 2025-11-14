@@ -1,0 +1,38 @@
+# Basic Microservice Example
+# Shows how to deploy a simple microservice with Istio integration
+
+name: user-service
+repository: https://github.com/my-org/user-service.git
+revision: v1.2.0
+path: helm-chart
+
+image:
+  repository: registry.example.com/user-service
+  tag: v1.2.0
+
+# Enable service with external access
+service:
+  enabled: true
+  external: true
+  ports:
+    - port: 80
+      name: http
+  prefix: /api/users
+
+# Environment configuration
+envs:
+  ENV: production
+  LOG_LEVEL: info
+  DATABASE_URL:
+    type: secret
+    name: user-db-credentials
+    key: url
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi

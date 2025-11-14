@@ -1,0 +1,83 @@
+# Job Data Processor Example
+# Shows how to use microspell for batch job processing with vault secrets
+
+spellbook:
+  name: example-tdd-book
+chapter:
+  name: infrastructure
+
+lexicon:
+  - chapter: infrastructure
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+
+name: data-processor
+
+image:
+  name: busybox
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Job workload configuration
+workload:
+  enabled: true
+  type: job
+  restartPolicy: OnFailure
+
+# No service needed for jobs
+service:
+  enabled: false
+
+# Job command
+command:
+  - /bin/sh
+  - -c
+  - echo "Processing data with vault secrets"; sleep 10; echo "Job completed"
+
+# Environment variables
+envs:
+  JOB_TYPE: batch-processing
+  BATCH_SIZE: "1000"
+  LOG_LEVEL: info
+
+# Simple vault secret for job
+secrets:
+  job-secret:
+    location: vault
+    path: chapter
+    private: secrets
+    format: env
+    keys:
+      - api-key
+      - database-url
+
+# Persistent storage for job output
+volumes:
+  output:
+    type: pvc
+    size: 1Gi
+    destinationPath: /output
+  temp:
+    type: emptyDir
+    destinationPath: /tmp
+    size: 500Mi
+
+# Service account
+serviceAccount:
+  enabled: true
+
+# Basic resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi

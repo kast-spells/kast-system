@@ -1,0 +1,503 @@
+# Microspell - Opinionated Microservice Deployment Chart
+# Built on top of Summon with additional microservice-specific features
+
+# Microservice identity and metadata
+name: microservice-name  # Service name
+repository: infra-default-landing  # Git repository or project name
+containerFile: Containerfile  # Dockerfile/Containerfile name
+
+# Container image configuration
+image:
+  repository: ghcr.io/organization/service  # Container registry URL
+  # tag: latest  # Optional, defaults to chart appVersion
+  # pullPolicy: IfNotPresent
+
+# Service metadata for observability and organization
+metadata:
+  owners:  # Service owners (teams or individuals)
+    - platform-team
+    - john.doe
+  org: example.com  # Organization
+  escalation:  # Escalation contacts
+    - oncall-team
+    - sre-team
+  description: "Core API service for user management"  # Service description
+  serviceLevel: 3  # Service criticality: 3, 5, 8, 13, 21 (higher = more critical)
+  type: backend  # Service type: frontend, backend, api, scheduler, worker
+  lang: go  # Programming language
+  bu: engineering  # Business unit
+  environment: production  # Environment label
+  tags:  # Additional tags
+    - api
+    - critical
+    - public-facing
+
+# Environment variables - simplified configuration
+envs:
+  ENV: production  # Environment: development, staging, production
+  LOG_LEVEL: info
+  # Add any service-specific environment variables
+  # API_TIMEOUT: "30s"
+  # CACHE_TTL: "300"
+
+# Infrastructure features
+infrastructure:
+  prolicy:
+    enabled: false  # Enable Vault policy creation
+    # serviceAccount: custom-sa  # Custom service account for Vault
+
+# ============================================
+# DataStore - PostgreSQL Integration
+# ============================================
+dataStore:
+  psql:
+    enabled: false
+
+    # ==========================================
+    # Cluster Selection / Creation
+    # ==========================================
+    # IF selector is empty → MANAGED (creates new CNPG cluster)
+    # IF selector has values → EXTERNAL (uses existing cluster via runicIndexer)
+    selector: {}
+    # environment: production
+    # tier: shared
+
+    # Cluster name (managed only)
+    # Default: {service-name}-pg
+    clusterName: ""
+
+    # ==========================================
+    # Database Configuration
+    # ==========================================
+    database: ""     # Database name (default: service name)
+    username: ""     # Database username (default: service name)
+
+    # ==========================================
+    # Cluster Configuration (managed only)
+    # Ignored when selector exists
+    # ==========================================
+    cluster:
+      instances: 1
+
+      image: {}
+      # repository: ""
+      # name: ""
+      # tag: ""
+
+      storage:
+        size: 10Gi
+        storageClass: ""
+
+      resources: {}
+      # limits:
+      #   cpu: 2000m
+      #   memory: 4Gi
+      # requests:
+      #   cpu: 500m
+      #   memory: 1Gi
+
+      # Advanced CNPG options
+      startDelay: ""       # Default: 3600
+      stopDelay: ""        # Default: 1800
+      primaryUpdateStrategy: ""
+
+      # Managed roles
+      roles: []
+      # - name: readonly
+      #   login: true
+
+      # PostgreSQL configuration
+      postgresql: {}
+      # parameters:
+      #   max_connections: "200"
+      #   shared_buffers: "2GB"
+
+      # Affinity rules
+      affinity: {}
+
+    # ==========================================
+    # Database Initialization
+    # ==========================================
+    # Behavior:
+    # - NO selector (managed): postInitApp (bootstrap SQL)
+    # - WITH selector (external): Job (schema migration)
+    initDb:
+      enabled: false
+
+      # SQL to execute
+      sql: ""
+      # sql: |
+      #   CREATE EXTENSION IF NOT EXISTS pg_trgm;
+      #   CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY);
+
+      # Or reference ConfigMap
+      configMap:
+        name: ""
+        key: init.sql
+
+      # Job configuration (external clusters only)
+      job:
+        image:
+          repository: postgres
+          tag: "16-alpine"
+        backoffLimit: 3
+        restartPolicy: OnFailure
+
+    # ==========================================
+    # Credentials Configuration
+    # ==========================================
+    # Behavior:
+    # - NO selector (managed): Static superuser + Dynamic app credentials
+    # - WITH selector (external): Dynamic credentials only
+    credentials:
+      # Dynamic credentials configuration
+      dynamic:
+        role: read-write  # read-write | read-only
+        ttl: ""           # "" = infinite (default 30m), "1h" = 1 hour, etc.
+
+      # Superuser configuration (managed only)
+      superuser:
+        enabled: true
+        name: ""  # Default: {service-name}-pg-superuser
+        secretType: kubernetes.io/basic-auth
+        vaultSelector: {}
+
+    # ==========================================
+    # Connection Configuration
+    # ==========================================
+    connection:
+      # Connection string format
+      format: dsn  # dsn | url | separate
+
+      # DSN format string (when format=dsn or url)
+      # Variables: {host}, {port}, {database}, {username}, {password}
+      dsnTemplate: "postgresql://{username}:{password}@{host}:{port}/{database}"
+
+      # Environment variable names
+      envNames:
+        # When format=dsn or url (single env var)
+        dsn: DATABASE_URL
+
+        # When format=separate (multiple env vars)
+        host: DB_HOST
+        port: DB_PORT
+        database: DB_NAME
+        username: DB_USER
+        password: DB_PASSWORD
+
+      # Host pattern (for managed clusters)
+      # Variables: {clusterName}
+      # Available: {clusterName}-rw, {clusterName}-ro, {clusterName}-r
+      host: "{clusterName}-rw"
+
+      # Port
+      port: 5432
+
+      # SSL mode
+      sslMode: disable  # disable | require | verify-ca | verify-full
+
+      # Additional connection parameters
+      params: {}
+      # connect_timeout: 10
+      # application_name: myapp
+
+# Vault secrets integration (simplified from summon)
+secrets: {}
+# # Mount secret as file
+# tls-cert:
+#   mountPath: /etc/tls/cert.pem
+#   vpath: secret/data/tls/cert  # Vault path
+#
+# # Use secret as environment variables
+# db-credentials:
+#   env: true
+#   vpath: secret/data/database/creds
+#
+# # Binary secret (base64 decoded)
+# license-key:
+#   binary: true
+#   mountPath: /app/license.key
+#   vpath: secret/data/licenses/app
+#
+# # Formatted secrets
+# app-config:
+#   format: yaml  # yaml, json, plain
+#   mountPath: /config/app.yaml
+#   vpath: secret/data/config/app
+#
+# # Create secret locally
+# api-key:
+#   location: create
+#   contentType: file
+#   mountPath: /etc/api/key
+#   content: "sk_live_xyz123"
+
+# Service configuration with advanced networking
+service:
+  enabled: true
+  type: ClusterIP  # ClusterIP, NodePort, LoadBalancer
+  annotations: {}
+  # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  labels: {}
+
+  ports: []
+  # - port: 80
+  #   targetPort: 8080
+  #   protocol: TCP
+  #   name: http
+  # - port: 9090
+  #   targetPort: 9090
+  #   protocol: TCP
+  #   name: metrics
+
+  # Istio/Service Mesh features
+  circuitBreaking:
+    enabled: false
+    maxRequestsPerConnection: 10
+    http1MaxPendingRequests: 10
+    maxConnections: 10
+    consecutive5xxErrors: 5
+    interval: 30s
+    baseEjectionTime: 3m
+    maxEjectionPercent: 100
+
+  retry:
+    enabled: false
+    attempts: 3
+    perTryTimeout: "10s"
+    retryOn: "5xx,reset,connect-failure,refused-stream"
+
+  # URL path configuration
+  rewrite: /  # Rewrite incoming paths
+  prefix: ""  # URL prefix, defaults to service name
+  timeout: 30s  # Request timeout
+
+  # Service discovery
+  subdomain: ""  # For headless services
+  external: false  # Expose via external gateway
+
+# Glyphs integration for Istio/Service Mesh
+glyphs: {}
+# istio:
+#   # External traffic configuration
+#   - type: virtualService
+#     name: external
+#     enabled: true
+#     gateway: external-gateway
+#     hosts:
+#     - api.example.com
+#     httpRules:
+#     - match:
+#       - uri:
+#           prefix: /v1
+#       route:
+#       - destination:
+#           port: 80
+#     selector:
+#       access: external
+#
+#   # Internal service mesh
+#   - type: virtualService
+#     name: internal
+#     enabled: true
+#     hosts:
+#     - microservice.default.svc.cluster.local
+#     httpRules:
+#     - match:
+#       - uri:
+#           prefix: /
+#       route:
+#       - destination:
+#           port: 80
+#     selector:
+#       access: internal
+#
+#   # Destination rules
+#   - type: destinationRule
+#     name: service-dr
+#     host: microservice.default.svc.cluster.local
+#     trafficPolicy:
+#       connectionPool:
+#         tcp:
+#           maxConnections: 100
+#       loadBalancer:
+#         simple: ROUND_ROBIN
+
+############################################
+# Base Summon Configuration
+# All summon features are available below
+############################################
+
+# Workload configuration
+workload:
+  enabled: true
+  type: deployment  # deployment, statefulset, job, cronjob, daemonset
+  replicas: 2
+
+  # For StatefulSet
+  # volumeClaimTemplates:
+  #   data:
+  #     destinationPath: /data
+  #     size: 10Gi
+  #     storageClass: fast-ssd
+  #     accessModes: ReadWriteOnce
+
+  # For CronJob
+  # schedule: "0 */6 * * *"  # Every 6 hours
+
+# Override image configuration (usually set above)
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# ServiceAccount configuration
+serviceAccount:
+  enabled: true
+  automount: true
+  annotations: {}
+  # vault.hashicorp.com/agent-inject: "true"
+  # vault.hashicorp.com/role: "microservice"
+  labels: {}
+  name: ""
+
+# Pod configuration
+podAnnotations: {}
+# prometheus.io/scrape: "true"
+# prometheus.io/port: "9090"
+# prometheus.io/path: "/metrics"
+
+podLabels: {}
+# version: "v1.2.3"
+
+podSecurityContext: {}
+# fsGroup: 2000
+# runAsNonRoot: true
+# runAsUser: 1000
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+# Resource management
+resources: {}
+# limits:
+#   cpu: 1000m
+#   memory: 1Gi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+# Health checks
+probes: {}
+# liveness:
+#   type: httpGet
+#   path: /healthz
+#   port: 8080
+#   initialDelaySeconds: 30
+#   periodSeconds: 10
+# readiness:
+#   type: httpGet
+#   path: /ready
+#   port: 8080
+#   initialDelaySeconds: 5
+#   periodSeconds: 5
+# startup:
+#   type: httpGet
+#   path: /startup
+#   port: 8080
+#   failureThreshold: 30
+#   periodSeconds: 10
+
+# Autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+
+# Node scheduling
+nodeSelector: {}
+# node-role: worker
+
+tolerations: []
+# - key: "dedicated"
+#   operator: "Equal"
+#   value: "microservices"
+#   effect: "NoSchedule"
+
+affinity: {}
+# podAntiAffinity:
+#   preferredDuringSchedulingIgnoredDuringExecution:
+#   - weight: 100
+#     podAffinityTerm:
+#       topologyKey: kubernetes.io/hostname
+
+# Init and sidecar containers
+initContainers: {}
+# wait-for-db:
+#   image:
+#     repository: busybox
+#     tag: latest
+#   command: ["sh", "-c", "until nc -z postgres 5432; do sleep 1; done"]
+
+sideCars: {}
+# envoy-proxy:
+#   image:
+#     repository: envoyproxy/envoy
+#     tag: latest
+#   resources:
+#     limits:
+#       cpu: 100m
+#       memory: 128Mi
+
+# ConfigMaps - unified contentType
+configMaps: {}
+# app-config:
+#   contentType: yaml
+#   location: create
+#   mountPath: /config
+#   name: config.yaml
+#   content:
+#     server:
+#       port: 8080
+#     database:
+#       pool_size: 10
+
+# Volumes
+volumes: {}
+# cache:
+#   type: emptyDir
+#   destinationPath: /cache
+#   sizeLimit: 1Gi
+# persistent-data:
+#   type: pvc
+#   destinationPath: /data
+#   create: true
+#   size: 10Gi
+#   storageClass: ssd
+
+# Additional environment variables (merged with envs above)
+# envs:
+#   EXTRA_VAR: value
+
+######################
+# Kast system configuration
+######################
+spellbook:
+  name: default
+chapter:
+  name: default
+
+# Additional glyphs can be added here
+# vault:
+# - type: secret
+#   name: app-secrets
+# istio:
+# - type: peerAuthentication
+#   mtls:
+#     mode: STRICT
