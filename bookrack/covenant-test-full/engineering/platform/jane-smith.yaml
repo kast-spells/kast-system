@@ -1,0 +1,11 @@
+# SRE - Platform Team
+email: jane.smith@test.local
+firstName: Jane
+lastName: Smith
+status: active
+emailVerified: true
+
+realmRoles:
+  - developer
+  - sre
+  - platform-engineer

@@ -1,0 +1,18 @@
+# Integration: Grafana
+# Grafana OIDC client for monitoring dashboards
+
+enabled: true
+clientId: grafana
+webUrl: https://grafana.test.local
+
+redirectUris:
+  - https://grafana.test.local/login/generic_oauth
+
+defaultClientScopes:
+  - profile
+  - email
+  - custom-roles
+
+secret: keycloak-client-grafana
+directAccess: true
+public: false

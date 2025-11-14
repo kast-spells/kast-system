@@ -1,0 +1,16 @@
+# Authentication Flow: link-existing-user
+# Auto-links IDP accounts to existing Keycloak users on first broker login
+
+builtIn: false
+providerId: basic-flow
+topLevel: true
+
+authenticationExecutions:
+  - authenticator: idp-review-profile
+    requirement: REQUIRED
+    priority: 0
+    authenticatorFlow: false
+  - authenticator: idp-auto-link
+    requirement: REQUIRED
+    priority: 1
+    authenticatorFlow: false

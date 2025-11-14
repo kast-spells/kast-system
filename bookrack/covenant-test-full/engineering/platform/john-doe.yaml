@@ -1,0 +1,12 @@
+# Platform Team Lead
+email: john.doe@test.local
+firstName: John
+lastName: Doe
+status: active
+emailVerified: true
+
+realmRoles:
+  - developer
+  - org-admin
+  - platform-engineer
+  - engineering-lead

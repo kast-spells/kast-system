@@ -1,0 +1,58 @@
+# Example TDD Book - Comprehensive Demo
+# This book serves as both documentation and TDD testing for the librarian system
+
+name: example-tdd-book
+description: "Comprehensive example showing all kast-system features for TDD validation"
+
+# Chapters define the deployment sequence
+chapters:
+  - infrastructure  # Core infrastructure components
+  - applications   # Application deployments
+
+# Global ArgoCD configuration
+projectName: example-tdd-project
+argocdNamespace: argocd
+
+# Global app parameters applied to all applications
+appParams:
+  cleanDefinition: false
+  noHelm: false
+  disableAutoSync: false
+  skipCrds: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+# Default trinket (summon) - used when no chart/path specified
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: feature/coding-standards
+
+# Trinkets registry (for multi-source detection)
+trinkets:
+  kaster:
+    key: glyphs
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/kaster
+    revision: feature/coding-standards
+  tarot:
+    key: tarot
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/trinkets/tarot
+    revision: feature/coding-standards
+
+# Default cluster targeting
+clusterSelector:
+  environment: development

@@ -1,7 +1,3 @@
-# kast - Kubernetes arcane spelling technology
-# Copyright (C) 2023 namenmalkv@gmail.com
-# Licensed under the GNU GPL v3. See LICENSE file for details.
-
 # Test example for vault cryptoKey generation
 # This validates Ed25519 and RSA keypair generation and storage in Vault
 

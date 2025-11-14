@@ -1,0 +1,29 @@
+# Istio Gateway Infrastructure Spell
+# Example of infrastructure deployment using glyphs
+
+name: istio-external-gateway
+namespace: istio-system
+
+# This spell uses glyphs through kaster
+glyphs:
+  istio:
+    external-gateway:
+      type: gateway
+      selector:
+        istio: gateway
+      servers:
+        - port:
+            number: 80
+            name: http
+            protocol: HTTP
+          hosts:
+            - "*.example-tdd.com"
+        - port:
+            number: 443
+            name: https
+            protocol: HTTPS
+          hosts:
+            - "*.example-tdd.com"
+          tls:
+            mode: SIMPLE
+            credentialName: example-tdd-cert

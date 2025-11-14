@@ -1,0 +1,18 @@
+# Certificate Manager Infrastructure Spell
+# Example of certificate management using glyphs
+
+name: tdd-certificates
+namespace: cert-manager
+
+# Uses certManager glyph through kaster
+glyphs:
+  certManager:
+    example-tdd-wildcard:
+      type: certificate
+      secretName: example-tdd-cert
+      dnsNames:
+        - "*.example-tdd.com"
+        - "example-tdd.com"
+      issuerRef:
+        name: letsencrypt-staging
+        kind: ClusterIssuer

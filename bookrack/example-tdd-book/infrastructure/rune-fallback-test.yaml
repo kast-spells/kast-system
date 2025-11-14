@@ -1,0 +1,54 @@
+# Test: Runes with defaultTrinket fallback
+# Validates that runes can use summon as fallback when chart/path not defined
+
+name: rune-fallback-test
+
+# Source 1: defaultTrinket (summon) - primary workload
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+image:
+  repository: nginx
+  tag: latest
+
+service:
+  enabled: true
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+
+# Source 2: Runa WITHOUT chart/path → should fallback to defaultTrinket (summon)
+# This creates a SECOND deployment in the same Application
+runes:
+  - values:
+      workload:
+        enabled: true
+        type: statefulset
+        replicas: 1
+        volumeClaimTemplates:
+          data:
+            size: 5Gi
+            destinationPath: /data
+      image:
+        repository: postgres
+        tag: "15"
+      service:
+        enabled: true
+        ports:
+          - port: 5432
+            name: postgres
+
+# Source 3: Runa WITH chart/path → explicit external chart
+# This should use the specified repository
+  - repository: https://charts.bitnami.com/bitnami
+    chart: redis
+    revision: 18.0.0
+    values:
+      auth:
+        enabled: false
+      master:
+        persistence:
+          enabled: false

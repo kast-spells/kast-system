@@ -1,0 +1,52 @@
+# Infrastructure Lexicon for Example TDD Book
+# Defines reusable infrastructure references
+
+lexicon:
+  # Istio Gateways
+  - name: external-gateway
+    type: istio-gw
+    labels:
+      access: external
+      environment: development
+      default: book
+    gateway: istio-system/external-gateway
+    
+  - name: internal-gateway
+    type: istio-gw
+    labels:
+      access: internal
+      environment: development
+    gateway: istio-system/internal-gateway
+    
+  # Certificate Issuers  
+  - name: letsencrypt-staging
+    type: cert-issuer
+    labels:
+      environment: development
+      default: chapter
+    issuer: letsencrypt-staging
+    
+  - name: letsencrypt-prod
+    type: cert-issuer
+    labels:
+      environment: production
+    issuer: letsencrypt-prod
+    
+  # Database Connections
+  - name: postgres-primary
+    type: database
+    labels:
+      engine: postgres
+      tier: primary
+      environment: development
+      default: book
+    connectionString: postgres.data.svc.cluster.local:5432
+    
+  # Kubernetes Clusters
+  - name: dev-cluster
+    type: k8s-cluster
+    labels:
+      environment: development
+      region: us-west-2
+      default: book
+    clusterURL: https://kubernetes.default.svc
