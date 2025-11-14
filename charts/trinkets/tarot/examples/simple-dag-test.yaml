@@ -1,0 +1,32 @@
+name: tarot-simple-dag
+
+# Simple DAG test with two tasks
+cards:
+  first-task:
+    type: task
+    container:
+      image: busybox:latest
+      command: ["echo", "first task"]
+
+  second-task:
+    type: task
+    container:
+      image: busybox:latest
+      command: ["echo", "second task"]
+
+tarot:
+  executionMode: dag
+  reading:
+    first-task:
+      position: foundation
+      
+    second-task:
+      position: action
+      depends: [first-task]
+
+workflow:
+  serviceAccount: tarot-runner
+  generateName: true
+
+rbac:
+  enabled: true

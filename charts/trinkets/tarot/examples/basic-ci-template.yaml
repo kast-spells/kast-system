@@ -1,0 +1,182 @@
+name: tarot-basic-ci-template
+
+# Basic CI pipeline using cluster-wide template
+# Demonstrates: cluster template usage with parameter injection
+
+# Application secrets (injected as parameters)
+secrets:
+  github-access:
+    type: vault-secret
+    path: "secret/github/ci"
+    keys: ["token", "username"]
+  registry-creds:
+    type: k8s-secret
+    name: harbor-registry
+    keys: ["username", "password"]
+  sonar-token:
+    type: vault-secret
+    path: "secret/sonar/ci"
+    keys: ["token"]
+
+# Application environment variables (injected as parameters)
+envs:
+  REGISTRY_URL: "harbor.company.com"
+  SONAR_URL: "https://sonar.company.com"
+  BUILD_ARGS: "--platform=linux/amd64"
+
+# Cluster-wide template in lexicon (simulated)
+lexicon:
+  - name: enterprise-ci-template
+    type: workflow-template
+    labels:
+      pipeline: ci
+      compliance: pci-dss
+      default: cluster
+    template:
+      metadata:
+        name: enterprise-ci
+      spec:
+        entrypoint: main
+        arguments:
+          parameters:
+            # Required parameters
+            - name: repository
+            - name: branch
+            - name: registry-url
+            - name: git-token
+            - name: registry-username
+            - name: registry-password
+            # Optional parameters with defaults
+            - name: sonar-url
+              value: ""
+            - name: sonar-token
+              value: ""
+            - name: build-args
+              value: ""
+            - name: compliance-level
+              value: "standard"
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: git-clone
+                  template: git-clone-step
+                - name: security-scan
+                  template: security-scan-step
+                  dependencies: [git-clone]
+                - name: quality-gate
+                  template: quality-gate-step
+                  dependencies: [security-scan]
+                  when: "{{workflow.parameters.sonar-url}} != ''"
+                - name: build-image
+                  template: build-step
+                  dependencies: [quality-gate]
+                - name: compliance-check
+                  template: compliance-step
+                  dependencies: [build-image]
+                  when: "{{workflow.parameters.compliance-level}} == 'pci-dss'"
+                - name: push-image
+                  template: push-step
+                  dependencies: [compliance-check]
+          
+          - name: git-clone-step
+            container:
+              image: alpine/git:latest
+              command: [sh, -c]
+              args: ["git clone --branch {{workflow.parameters.branch}} {{workflow.parameters.repository}} /workspace"]
+              env:
+                - name: GIT_TOKEN
+                  value: "{{workflow.parameters.git-token}}"
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+          
+          - name: security-scan-step
+            container:
+              image: aquasec/trivy:latest
+              command: ["trivy"]
+              args: ["fs", "--exit-code", "1", "/workspace"]
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+          
+          - name: quality-gate-step
+            container:
+              image: sonarsource/sonar-scanner-cli:latest
+              command: ["sonar-scanner"]
+              args: ["-Dsonar.host.url={{workflow.parameters.sonar-url}}", "-Dsonar.login={{workflow.parameters.sonar-token}}"]
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+          
+          - name: build-step
+            container:
+              image: quay.io/buildah/stable:latest
+              securityContext:
+                privileged: true
+              command: ["buildah"]
+              args: ["build", "{{workflow.parameters.build-args}}", "-t", "{{workflow.parameters.registry-url}}/app:latest", "/workspace"]
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+          
+          - name: compliance-step
+            container:
+              image: compliance/scanner:latest
+              command: ["compliance-scan"]
+              args: ["--level", "{{workflow.parameters.compliance-level}}", "/workspace"]
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+          
+          - name: push-step
+            container:
+              image: quay.io/buildah/stable:latest
+              securityContext:
+                privileged: true
+              command: ["buildah"]
+              args: ["push", "--creds", "{{workflow.parameters.registry-username}}:{{workflow.parameters.registry-password}}", "{{workflow.parameters.registry-url}}/app:latest"]
+        
+        volumes:
+          - name: workspace
+            emptyDir: {}
+
+tarot:
+  # Use cluster-wide template instead of custom reading
+  template: enterprise-ci-template
+  
+  # Parameter injection from secrets and envs
+  parameters:
+    # Required parameters
+    repository: "{{workflow.parameters.repo}}"
+    branch: "{{workflow.parameters.branch}}"
+    registry-url: "{{envs.REGISTRY_URL}}"
+    git-token: "{{secrets.github-access.token}}"
+    registry-username: "{{secrets.registry-creds.username}}"
+    registry-password: "{{secrets.registry-creds.password}}"
+    
+    # Optional parameters
+    sonar-url: "{{envs.SONAR_URL}}"
+    sonar-token: "{{secrets.sonar-token.token}}"
+    build-args: "{{envs.BUILD_ARGS}}"
+    compliance-level: "pci-dss"
+
+# Workflow configuration
+workflow:
+  serviceAccount: tarot-runner
+  generateName: true
+  arguments:
+    parameters:
+      - name: repo
+        value: "https://github.com/enterprise/payment-api.git"
+      - name: branch
+        value: "main"
+  labels:
+    compliance: "pci-dss"
+    environment: "production"
+  annotations:
+    security.policy/required: "true"
+
+# RBAC enabled for workflow execution
+rbac:
+  enabled: true

@@ -1,0 +1,138 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+
+{{- if .Values.tarot.rbac.enabled }}
+{{/* ServiceAccount - usa summon glyph con tarot.serviceAccount o hereda del summon */}}
+{{- $saContext := deepCopy . -}}
+{{- if .Values.tarot.serviceAccount.enabled -}}
+  {{/* Usa serviceAccount definido en tarot */}}
+  {{- $_ := set $saContext.Values "serviceAccount" .Values.tarot.serviceAccount -}}
+{{- else if not .Values.serviceAccount.enabled -}}
+  {{/* Si no hay SA en summon ni en tarot, crear uno default */}}
+  {{- $saName := "tarot-runner" -}}
+  {{- $_ := set $saContext.Values "serviceAccount" (dict "enabled" true "name" $saName) -}}
+{{- end -}}
+{{- include "summon.serviceAccount" $saContext }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "common.name" . }}-workflow-runner
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+rules:
+  # Workflow management
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflows", "workflowtemplates", "workflowtaskresults", "workflowtasksets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Pod management for workflow execution
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Secret access for workflow steps
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  
+  # ConfigMap access for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  
+  # PVC management for persistent volumes
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Service management for workflow services
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Events for workflow status reporting
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "common.name" . }}-workflow-runner
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "tarot.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "common.name" . }}-workflow-runner
+  apiGroup: rbac.authorization.k8s.io
+
+{{/* ClusterRole for accessing cluster-wide templates */}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "common.name" . }}-cluster-template-reader
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+rules:
+  # Cluster workflow template access
+  - apiGroups: ["argoproj.io"]
+    resources: ["clusterworkflowtemplates"]
+    verbs: ["get", "list", "watch"]
+  
+  # Node information for scheduling
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "common.name" . }}-cluster-template-reader
+  labels:
+    {{- include "tarot.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "tarot.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "common.name" . }}-cluster-template-reader
+  apiGroup: rbac.authorization.k8s.io
+
+{{/* Additional RoleBindings for external triggers (e.g., Argo Events Sensors) */}}
+{{- if .Values.tarot.rbac.triggerServiceAccounts }}
+{{- range .Values.tarot.rbac.triggerServiceAccounts }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "common.name" $ }}-trigger-{{ .name }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    {{- include "tarot.labels" $ | nindent 4 }}
+    kast.ing/trigger-binding: "true"
+subjects:
+  - kind: ServiceAccount
+    name: {{ .serviceAccount }}
+    namespace: {{ .namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "common.name" $ }}-workflow-runner
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}
+
+{{- end }}

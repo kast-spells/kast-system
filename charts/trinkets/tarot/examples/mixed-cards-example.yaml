@@ -1,0 +1,459 @@
+name: tarot-mixed-cards-showcase
+
+# Comprehensive example showing all card resolution types and features
+# Demonstrates: All execution modes, all card types, complex dependencies, volume sharing
+
+# Comprehensive secrets for different scenarios
+secrets:
+  git-credentials:
+    type: vault-secret
+    path: "secret/git/access"
+    keys: ["token", "username"]
+    mount: /root/.ssh
+    defaultMode: 0600
+  docker-registry:
+    type: k8s-secret
+    name: docker-hub-credentials
+  database-access:
+    type: vault-secret
+    path: "secret/database/app"
+    keys: ["username", "password", "connection_string"]
+  api-keys:
+    type: vault-secret
+    path: "secret/external/apis"
+    keys: ["slack_webhook", "datadog_key", "aws_access_key"]
+
+# Environment variables for all scenarios
+envs:
+  REGISTRY_URL: "docker.io/company"
+  DATABASE_URL: "postgresql://{{secrets.database-access.connection_string}}"
+  LOG_LEVEL: "info"
+  ENVIRONMENT: "staging"
+  API_TIMEOUT: "30s"
+  RETRY_COUNT: "3"
+
+# Comprehensive card library (simulated)
+cards:
+  git-clone:
+    type: card
+    labels:
+      cardType: source
+      vcs: git
+      action: clone
+      security: standard
+      default: book
+    container:
+      image: alpine/git:latest
+      command: [sh, -c]
+    volumes:
+      source-code:
+        type: emptyDir
+        mountPath: /workspace
+
+  npm-install:
+    type: card
+    labels:
+      cardType: installer
+      framework: nodejs
+      action: install
+    container:
+      image: node:18-alpine
+      command: ["npm", "ci"]
+    volumes:
+      source-code:
+        type: inherit
+
+  npm-test:
+    type: card
+    labels:
+      cardType: test
+      framework: nodejs
+      test: unit
+      default: chapter
+    container:
+      image: node:18-alpine
+      command: ["npm", "test"]
+
+  security-scan:
+    type: card
+    labels:
+      cardType: security
+      security: required
+      scanner: trivy
+      level: high
+      default: book
+    container:
+      image: aquasec/trivy:latest
+      command: ["trivy", "fs"]
+
+  docker-build:
+    type: card
+    labels:
+      cardType: build
+      builder: docker
+      target: container
+      platform: linux
+      default: chapter
+    container:
+      image: docker:24-dind
+      securityContext:
+        privileged: true
+
+tarot:
+  executionMode: dag
+  reading:
+    # Foundation: Source code retrieval (registered card by name)
+    git-clone:
+      position: foundation
+      with:
+        repository: "{{workflow.parameters.git_repo}}"
+        branch: "{{workflow.parameters.git_branch}}"
+        depth: "1"
+      volumes:
+        workspace:
+          type: persistentVolumeClaim
+          size: "10Gi"
+          mountPath: /workspace
+          
+    # Foundation: Configuration setup (inline definition)
+    config-setup:
+      container:
+        image: busybox:latest
+        command: [sh, -c]
+        args:
+          - |
+            echo "Setting up configuration..."
+            mkdir -p /config
+            cat > /config/app.yaml << EOF
+            database:
+              url: {{envs.DATABASE_URL}}
+              timeout: {{envs.API_TIMEOUT}}
+              retry: {{envs.RETRY_COUNT}}
+            logging:
+              level: {{envs.LOG_LEVEL}}
+            environment: {{envs.ENVIRONMENT}}
+            EOF
+            echo "Configuration setup complete"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      position: foundation
+      volumes:
+        app-config:
+          type: emptyDir
+          mountPath: /config
+      envs:
+        CONFIG_FORMAT: "yaml"
+        CONFIG_VALIDATION: "strict"
+
+    # Action: Dependency installation (selector-based resolution)
+    install-deps:
+      selectors:
+        framework: nodejs
+        action: install
+      position: action
+      depends: [git-clone, config-setup]
+      with:
+        package_manager: "npm"
+        cache_enabled: "true"
+        production_only: "false"
+      volumes:
+        node-modules:
+          type: emptyDir
+          mountPath: /workspace/node_modules
+          
+    # Action: Unit testing (registered card by name with overrides)
+    unit-tests:
+      position: action
+      depends: [install-deps]
+      with:
+        test_command: "npm run test:unit"
+        coverage: "true"
+        reporter: "json"
+      envs:
+        NODE_ENV: "test"
+        TEST_TIMEOUT: "30000"
+      secrets:
+        test-database:
+          type: vault-secret
+          path: "secret/database/test"
+          keys: ["connection_string"]
+          
+    # Action: Integration testing (inline definition)
+    integration-tests:
+      container:
+        image: node:18-alpine
+        command: ["npm", "run"]
+        args: ["test:integration"]
+        env:
+          - name: NODE_ENV
+            value: "test"
+          - name: TEST_DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: test-database-secret
+                key: connection_string
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      position: action
+      depends: [install-deps]
+      volumes:
+        test-results:
+          type: emptyDir
+          mountPath: /test-results
+      with:
+        parallel: "true"
+        timeout: "600s"
+        
+    # Challenge: Security scanning (selector-based)
+    security-analysis:
+      selectors:
+        security: required
+        scanner: trivy
+        level: high
+      position: challenge
+      depends: [unit-tests, integration-tests]
+      with:
+        scan_target: "/workspace"
+        output_format: "json"
+        severity: "HIGH,CRITICAL"
+        exit_code: "1"
+        
+    # Challenge: Code quality analysis (inline definition)
+    quality-analysis:
+      container:
+        image: sonarsource/sonar-scanner-cli:latest
+        command: ["sonar-scanner"]
+        args:
+          - "-Dsonar.projectKey={{workflow.parameters.project_key}}"
+          - "-Dsonar.sources=/workspace/src"
+          - "-Dsonar.tests=/workspace/tests"
+          - "-Dsonar.javascript.lcov.reportPaths=/test-results/coverage.lcov"
+          - "-Dsonar.testExecutionReportPaths=/test-results/test-report.xml"
+        env:
+          - name: SONAR_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: sonar-credentials
+                key: token
+          - name: SONAR_HOST_URL
+            value: "https://sonar.company.com"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"  
+            cpu: "1"
+      position: challenge
+      depends: [unit-tests, integration-tests]
+      secrets:
+        sonar-credentials:
+          type: vault-secret
+          path: "secret/sonar/project"
+          keys: ["token"]
+      with:
+        quality_gate: "true"
+        coverage_threshold: "80"
+        
+    # Challenge: Container build (selector-based)
+    container-build:
+      selectors:
+        builder: docker
+        target: container
+        platform: linux
+      position: challenge
+      depends: [security-analysis, quality-analysis]
+      with:
+        dockerfile: "Dockerfile"
+        context: "/workspace"
+        tags: 
+          - "{{envs.REGISTRY_URL}}/{{workflow.parameters.app_name}}:{{workflow.parameters.version}}"
+          - "{{envs.REGISTRY_URL}}/{{workflow.parameters.app_name}}:latest"
+        build_args:
+          - "NODE_ENV=production"
+          - "BUILD_DATE={{workflow.creationTimestamp}}"
+      volumes:
+        docker-socket:
+          type: hostPath
+          path: /var/run/docker.sock
+          mountPath: /var/run/docker.sock
+          
+    # Challenge: Container security scan (inline definition)
+    container-security-scan:
+      container:
+        image: aquasec/trivy:latest
+        command: ["trivy"]
+        args:
+          - "image"
+          - "--exit-code"
+          - "1"
+          - "--severity"
+          - "CRITICAL,HIGH"
+          - "--format"
+          - "json"
+          - "--output"
+          - "/scan-results/container-scan.json"
+          - "{{envs.REGISTRY_URL}}/{{workflow.parameters.app_name}}:{{workflow.parameters.version}}"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "400m"
+      position: challenge
+      depends: [container-build]
+      volumes:
+        container-scan-results:
+          type: emptyDir
+          mountPath: /scan-results
+          
+    # Outcome: Deploy to staging (inline definition with approval)
+    deploy-staging:
+      container:
+        image: bitnami/kubectl:latest
+        command: ["kubectl"]
+        args:
+          - "set"
+          - "image"
+          - "deployment/{{workflow.parameters.app_name}}"
+          - "app={{envs.REGISTRY_URL}}/{{workflow.parameters.app_name}}:{{workflow.parameters.version}}"
+          - "--namespace={{workflow.parameters.staging_namespace}}"
+        env:
+          - name: KUBECONFIG
+            value: "/kubeconfig/config"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      position: outcome
+      depends: [container-security-scan]
+      secrets:
+        k8s-staging:
+          type: vault-secret
+          path: "secret/kubernetes/staging"
+          keys: ["kubeconfig"]
+          mount: /kubeconfig
+      with:
+        namespace: "{{workflow.parameters.staging_namespace}}"
+        wait_timeout: "300s"
+        
+    # Outcome: Smoke testing (inline definition)
+    smoke-tests:
+      container:
+        image: curlimages/curl:latest
+        command: [sh, -c]
+        args:
+          - |
+            echo "Running smoke tests..."
+            BASE_URL="{{workflow.parameters.staging_url}}"
+            
+            # Health check
+            curl -f "$BASE_URL/health" || exit 1
+            echo "PASS: Health check passed"
+            
+            # API endpoint test
+            curl -f "$BASE_URL/api/status" || exit 1
+            echo "PASS: API status check passed"
+            
+            # Database connectivity test
+            curl -f "$BASE_URL/api/db-check" || exit 1
+            echo "PASS: Database connectivity passed"
+            
+            echo "All smoke tests passed!"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      position: outcome
+      depends: [deploy-staging]
+      with:
+        timeout: "120s"
+        retries: "3"
+        
+    # Outcome: Notification (inline definition)
+    success-notification:
+      container:
+        image: curlimages/curl:latest
+        command: ["curl"]
+        args:
+          - "-X"
+          - "POST"
+          - "{{secrets.api-keys.slack_webhook}}"
+          - "-H"
+          - "Content-Type: application/json"
+          - "-d"
+          - |
+            {
+              "text": "🎉 Deployment Pipeline Completed Successfully!",
+              "attachments": [
+                {
+                  "color": "good",
+                  "fields": [
+                    {"title": "Application", "value": "{{workflow.parameters.app_name}}", "short": true},
+                    {"title": "Version", "value": "{{workflow.parameters.version}}", "short": true},
+                    {"title": "Environment", "value": "{{envs.ENVIRONMENT}}", "short": true},
+                    {"title": "URL", "value": "{{workflow.parameters.staging_url}}", "short": true}
+                  ]
+                }
+              ]
+            }
+      position: outcome
+      depends: [smoke-tests]
+
+# Comprehensive workflow configuration
+workflow:
+  serviceAccount: comprehensive-runner
+  generateName: true
+  arguments:
+    parameters:
+      - name: git_repo
+        value: "https://github.com/company/awesome-app.git"
+      - name: git_branch
+        value: "develop"
+      - name: app_name
+        value: "awesome-app"
+      - name: version
+        value: "v1.2.3"
+      - name: project_key
+        value: "awesome-app"
+      - name: staging_namespace
+        value: "staging"
+      - name: staging_url
+        value: "https://awesome-app-staging.company.com"
+  labels:
+    pipeline: "comprehensive"
+    team: "platform"
+    application: "awesome-app"
+  annotations:
+    description: "Comprehensive CI/CD pipeline with all card types"
+    version: "v1.0"
+
+# Resource configuration
+resources:
+  activeDeadlineSeconds: 3600  # 1 hour timeout
+
+# Node selection for optimal performance
+nodeSelector:
+  workload: ci-cd
+  performance: standard
+
+# RBAC configuration
+rbac:
+  enabled: true
