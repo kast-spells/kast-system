@@ -15,13 +15,13 @@ The kast-system testing infrastructure consists of:
 - **Empty directories** (tests/unit, tests/integration)
 
 ### Key Findings
-✅ **Strengths:**
+[STRENGTHS]
 - Well-structured TDD workflow with red/green/refactor phases
 - Automatic discovery of charts, glyphs, and trinkets
 - Comprehensive resource validation system
 - Good separation between different test types
 
-⚠️ **Pain Points:**
+[PAIN POINTS]
 - **5 unused/orphaned scripts** not referenced in Makefile
 - **Multiple overlapping validation approaches** (validate-output.sh vs validate-resource-completeness.sh vs validate-k8s-resources.sh)
 - **Confusing script naming** (test-book-render.sh is complex, not intuitive)
@@ -35,10 +35,10 @@ The kast-system testing infrastructure consists of:
 ### 1.1 Active Scripts (Used by Makefile)
 
 #### `validate-resource-completeness.sh` (300 lines)
-**Status:** ✅ ACTIVELY USED (Primary validation engine)  
-**Purpose:** Core TDD validation - ensures rendered templates contain ALL expected K8s resources based on configuration  
-**Called by:** `test-comprehensive`, `validate-completeness`  
-**Complexity:** HIGH - Complex parsing logic for values and resource counting  
+**Status:** [ACTIVE] ACTIVELY USED (Primary validation engine)
+**Purpose:** Core TDD validation - ensures rendered templates contain ALL expected K8s resources based on configuration
+**Called by:** `test-comprehensive`, `validate-completeness`
+**Complexity:** HIGH - Complex parsing logic for values and resource counting
 
 **Key Features:**
 - Parses YAML values to understand expected resources
@@ -48,15 +48,15 @@ The kast-system testing infrastructure consists of:
 - Chart-specific validations (summon, microspell)
 - StatefulSet volumeClaimTemplates handling
 
-**Recommendation:** ✅ KEEP - Core functionality, well-tested
+**Recommendation:** [KEEP] - Core functionality, well-tested
 
 ---
 
 #### `test-covenant-book.sh` (405 lines)
-**Status:** ✅ ACTIVELY USED  
-**Purpose:** Tests covenant books (identity & access management) with two-stage deployment model  
-**Called by:** `test-covenant`, `test-covenant-book`, `test-covenant-chapter`, `test-covenant-all-chapters`, `test-covenant-debug`  
-**Complexity:** HIGH - Handles complex covenant architecture with main/chapter split  
+**Status:** [ACTIVE] ACTIVELY USED
+**Purpose:** Tests covenant books (identity & access management) with two-stage deployment model
+**Called by:** `test-covenant`, `test-covenant-book`, `test-covenant-chapter`, `test-covenant-all-chapters`, `test-covenant-debug`
+**Complexity:** HIGH - Handles complex covenant architecture with main/chapter split
 
 **Key Features:**
 - Tests main covenant (ApplicationSet generator)
@@ -66,15 +66,15 @@ The kast-system testing infrastructure consists of:
 - Validates Vault secret generation
 - Production covenant chart integration (proto-the-yaml-life repo)
 
-**Recommendation:** ✅ KEEP - Critical for covenant testing, unique functionality
+**Recommendation:** [KEEP] - Critical for covenant testing, unique functionality
 
 ---
 
 #### `snapshot-librarian-apps.sh` (89 lines)
-**Status:** ✅ ACTIVELY USED (Librarian migration TDD)  
-**Purpose:** Generates snapshot baseline of current librarian Applications for TDD migration validation  
-**Called by:** `snapshot-librarian`, `tdd-librarian-red`  
-**Complexity:** LOW - Simple extraction and file generation  
+**Status:** [ACTIVE] ACTIVELY USED (Librarian migration TDD)
+**Purpose:** Generates snapshot baseline of current librarian Applications for TDD migration validation
+**Called by:** `snapshot-librarian`, `tdd-librarian-red`
+**Complexity:** LOW - Simple extraction and file generation
 
 **Key Features:**
 - Renders librarian chart
@@ -82,15 +82,15 @@ The kast-system testing infrastructure consists of:
 - Saves individual Application YAML files
 - Creates TDD baseline for migration
 
-**Recommendation:** 🔄 CONSOLIDATE - Could be merged with test-applicationset-expansion.sh (related functionality)
+**Recommendation:** [CONSOLIDATE] - Could be merged with test-applicationset-expansion.sh (related functionality)
 
 ---
 
 #### `test-applicationset-expansion.sh` (164 lines)
-**Status:** ✅ ACTIVELY USED (Librarian migration TDD)  
-**Purpose:** Simulates ApplicationSet git files generator to expand Applications  
-**Called by:** `test-librarian-appsets`, `tdd-librarian-green`  
-**Complexity:** MEDIUM - Template expansion simulation  
+**Status:** [ACTIVE] ACTIVELY USED (Librarian migration TDD)
+**Purpose:** Simulates ApplicationSet git files generator to expand Applications
+**Called by:** `test-librarian-appsets`, `tdd-librarian-green`
+**Complexity:** MEDIUM - Template expansion simulation
 
 **Key Features:**
 - Simulates ApplicationSet generator behavior
@@ -98,16 +98,16 @@ The kast-system testing infrastructure consists of:
 - Expands ApplicationSet templates
 - Generates individual Application files
 
-**Recommendation:** 🔄 CONSOLIDATE - Could be merged with snapshot-librarian-apps.sh into single librarian-migration-test.sh
+**Recommendation:** [CONSOLIDATE] - Could be merged with snapshot-librarian-apps.sh into single librarian-migration-test.sh
 
 ---
 
 ### 1.2 Unused/Orphaned Scripts (Not Referenced in Makefile)
 
-#### `validate-output.sh` (218 lines) ❌ ORPHANED
-**Status:** ❌ NOT USED  
-**Purpose:** Old validation script with overlapping functionality  
-**Last Modified:** Unknown (check git log)  
+#### `validate-output.sh` (218 lines) [ORPHANED]
+**Status:** [UNUSED] NOT USED
+**Purpose:** Old validation script with overlapping functionality
+**Last Modified:** Unknown (check git log)
 
 **Overlapping Features:**
 - YAML validation (duplicates validate-resource-completeness.sh)
@@ -120,27 +120,27 @@ The kast-system testing infrastructure consists of:
 - References `tests/configs/` directory (doesn't exist)
 - References setup-test-configs.sh script (doesn't exist)
 
-**Recommendation:** 🗑️ DELETE - Superseded by validate-resource-completeness.sh
+**Recommendation:** [DELETE] - Superseded by validate-resource-completeness.sh
 
 ---
 
-#### `validate-k8s-resources.sh` (195 lines) ❌ ORPHANED
-**Status:** ❌ NOT USED  
-**Purpose:** Kubernetes resource validation (overlaps with other validators)  
+#### `validate-k8s-resources.sh` (195 lines) [ORPHANED]
+**Status:** [UNUSED] NOT USED
+**Purpose:** Kubernetes resource validation (overlaps with other validators)
 
 **Features:**
 - kubectl dry-run validation (duplicates test-snapshots K8s validation)
 - Resource expectation validation (duplicates validate-resource-completeness.sh)
 - Chart-specific validations (duplicates validate-resource-completeness.sh)
 
-**Recommendation:** 🗑️ DELETE - Functionality absorbed by validate-resource-completeness.sh and test-snapshots
+**Recommendation:** [DELETE] - Functionality absorbed by validate-resource-completeness.sh and test-snapshots
 
 ---
 
-#### `test-book-render.sh` (297 lines) ❌ COMPLEX & ORPHANED
-**Status:** ❌ NOT USED (despite complexity)  
-**Purpose:** Test book/chapter/spell rendering with full librarian context  
-**Complexity:** HIGH - Multi-source ArgoCD Application rendering  
+#### `test-book-render.sh` (297 lines) [COMPLEX & ORPHANED]
+**Status:** [UNUSED] NOT USED (despite complexity)
+**Purpose:** Test book/chapter/spell rendering with full librarian context
+**Complexity:** HIGH - Multi-source ArgoCD Application rendering
 
 **Features:**
 - Intelligent multi-source Application rendering
@@ -154,14 +154,14 @@ The kast-system testing infrastructure consists of:
 - Hardcoded paths to /usr/local/bin/yq and /usr/bin/jq
 - Complex logic that's hard to maintain
 
-**Recommendation:** 🔄 EVALUATE - Potentially useful functionality but needs integration or deletion
+**Recommendation:** [EVALUATE] - Potentially useful functionality but needs integration or deletion
 
 ---
 
-#### `render-spell-from-cluster.sh` (116 lines) ⚠️ UTILITY SCRIPT
-**Status:** ⚠️ STANDALONE UTILITY (Not part of TDD workflow)  
-**Purpose:** Debug utility - renders a spell using values from ArgoCD Application in cluster  
-**Complexity:** MEDIUM - Requires cluster access  
+#### `render-spell-from-cluster.sh` (116 lines) [UTILITY SCRIPT]
+**Status:** [STANDALONE] STANDALONE UTILITY (Not part of TDD workflow)
+**Purpose:** Debug utility - renders a spell using values from ArgoCD Application in cluster
+**Complexity:** MEDIUM - Requires cluster access
 
 **Features:**
 - Extracts Application spec from running cluster
@@ -170,21 +170,21 @@ The kast-system testing infrastructure consists of:
 
 **Use Case:** Debugging production issues, not automated testing
 
-**Recommendation:** ✅ KEEP - Useful debugging tool, move to docs/scripts/utilities/
+**Recommendation:** [KEEP] - Useful debugging tool, move to docs/scripts/utilities/
 
 ---
 
 #### `compare-librarian-migration.sh` (147 lines)
-**Status:** ⚠️ PARTIALLY USED (Referenced but workflow unclear)  
-**Purpose:** Compares Applications from current librarian vs ApplicationSet expansion  
-**Called by:** `compare-librarian-migration`, `tdd-librarian-green`, `tdd-librarian-refactor`  
+**Status:** [PARTIAL] PARTIALLY USED (Referenced but workflow unclear)
+**Purpose:** Compares Applications from current librarian vs ApplicationSet expansion
+**Called by:** `compare-librarian-migration`, `tdd-librarian-green`, `tdd-librarian-refactor`
 
 **Features:**
 - Diff comparison between snapshot and generated apps
 - Success rate calculation
 - Normalized YAML comparison (removes dynamic fields)
 
-**Recommendation:** ✅ KEEP - Part of librarian migration TDD workflow
+**Recommendation:** [KEEP] - Part of librarian migration TDD workflow
 
 ---
 
@@ -195,10 +195,10 @@ The kast-system testing infrastructure consists of:
 #### Core TDD Workflow (3 targets)
 ```makefile
 tdd-red          # Run tests expecting failures
-tdd-green        # Run tests expecting success  
+tdd-green        # Run tests expecting success
 tdd-refactor     # Run tests after refactoring
 ```
-**Status:** ✅ WELL-DESIGNED - Clear TDD phases
+**Status:** [OK] WELL-DESIGNED - Clear TDD phases
 
 ---
 
@@ -218,7 +218,7 @@ test-glyphs-all         # Test all glyphs
 - `test-comprehensive` is the primary test but doesn't include snapshots
 - `test-snapshots` duplicates some validation from `test-comprehensive`
 
-**Recommendation:** 🔄 RENAME/RESTRUCTURE
+**Recommendation:** [RESTRUCTURE] RENAME/RESTRUCTURE
 ```makefile
 test              # Keep as default: comprehensive + snapshots + lint
 test-fast         # Syntax only (quick feedback)
@@ -239,7 +239,7 @@ show-glyph-diff         # Show diff for glyph test
 list-glyphs             # List available glyphs
 ```
 
-**Status:** ✅ GOOD DESIGN - Dynamic, discoverable
+**Status:** [OK] GOOD DESIGN - Dynamic, discoverable
 
 ---
 
@@ -251,7 +251,7 @@ update-all-snapshots    # Update all snapshots
 show-snapshot-diff      # Show diff for snapshot
 ```
 
-**Status:** ✅ CLEAR PURPOSE
+**Status:** [OK] CLEAR PURPOSE
 
 ---
 
@@ -264,7 +264,7 @@ validate-completeness   # Resource completeness validation
 
 **Issue:** Scripts exist but not exposed as targets
 
-**Recommendation:** 🗑️ DELETE orphaned scripts or expose as targets
+**Recommendation:** [DELETE] orphaned scripts or expose as targets
 
 ---
 
@@ -280,7 +280,7 @@ test-covenant-debug         # Debug covenant rendering
 list-covenant-books         # List available books
 ```
 
-**Status:** ✅ COMPREHENSIVE - Good coverage of covenant testing needs
+**Status:** [OK] COMPREHENSIVE - Good coverage of covenant testing needs
 
 ---
 
@@ -295,11 +295,11 @@ test-tarot-rbac             # RBAC generation
 test-tarot-complex          # Complex workflows
 ```
 
-**Status:** ✅ WELL-ORGANIZED - Clear test categories
+**Status:** [OK] WELL-ORGANIZED - Clear test categories
 
 **Issue:** All inline in Makefile (no script), making Makefile very long
 
-**Recommendation:** 🔄 EXTRACT to tests/scripts/test-tarot.sh
+**Recommendation:** [EXTRACT] to tests/scripts/test-tarot.sh
 
 ---
 
@@ -309,15 +309,15 @@ snapshot-librarian          # Generate baseline snapshot
 test-librarian-appsets      # Test ApplicationSet expansion
 compare-librarian-migration # Compare snapshot vs generated
 tdd-librarian-red           # TDD red phase
-tdd-librarian-green         # TDD green phase  
+tdd-librarian-green         # TDD green phase
 tdd-librarian-refactor      # TDD refactor phase
 ```
 
-**Status:** ✅ GOOD TDD STRUCTURE
+**Status:** [OK] GOOD TDD STRUCTURE
 
 **Issue:** Spread across 3 scripts (could be 1-2)
 
-**Recommendation:** 🔄 CONSOLIDATE scripts
+**Recommendation:** [CONSOLIDATE] scripts
 
 ---
 
@@ -331,7 +331,7 @@ clean-output-tests  # Clean test outputs
 clean               # Clean test files
 ```
 
-**Status:** ✅ USEFUL UTILITIES
+**Status:** [OK] USEFUL UTILITIES
 
 ---
 
@@ -343,9 +343,9 @@ test-runic-fallback     # Fallback testing
 test-runic-empty        # Empty selector testing
 ```
 
-**Status:** ⚠️ EXPERIMENTAL - Inline in Makefile, not documented with ##
+**Status:** [EXPERIMENTAL] - Inline in Makefile, not documented with ##
 
-**Recommendation:** 🔄 DOCUMENT or DELETE if obsolete
+**Recommendation:** [DOCUMENT] or DELETE if obsolete
 
 ---
 
@@ -428,7 +428,7 @@ make generate-expected GLYPH=vault # Generate expected outputs
 make show-glyph-diff GLYPH=vault EXAMPLE=secrets # Show diffs
 ```
 
-**Status:** ✅ GOOD - Clear, discoverable, works well
+**Status:** [OK] - Clear, discoverable, works well
 
 ---
 
@@ -442,7 +442,7 @@ make test-covenant-book BOOK=covenant-tyl         # Main only
 make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl # Chapter only
 ```
 
-**Status:** ✅ EXCELLENT - Clear stages, good documentation
+**Status:** [EXCELLENT] - Clear stages, good documentation
 
 ---
 
@@ -460,7 +460,7 @@ make tdd-librarian-refactor # Verify after cleanup
 - Uses 3 scripts when could use 1
 - compare-librarian-migration.sh duplicates some logic
 
-**Recommendation:** 🔄 CONSOLIDATE into single test-librarian-migration.sh
+**Recommendation:** [CONSOLIDATE] into single test-librarian-migration.sh
 
 ---
 
@@ -468,46 +468,46 @@ make tdd-librarian-refactor # Verify after cleanup
 
 ### 5.1 Critical Issues
 
-1. **❌ Orphaned Scripts (5 scripts, ~875 lines)**
+1. **[FAIL] Orphaned Scripts (5 scripts, ~875 lines)**
    - validate-output.sh (218 lines)
    - validate-k8s-resources.sh (195 lines)
    - test-book-render.sh (297 lines)
    - Parts of render-spell-from-cluster.sh (116 lines)
    - Setup scripts referenced but missing
 
-2. **⚠️ Confusing Naming**
+2. **[WARNING] Confusing Naming**
    - `test` vs `test-all` (which is more complete?)
    - `test-comprehensive` doesn't include snapshots
    - `validate-*` scripts overlap
 
-3. **🔄 Overlapping Functionality**
+3. **[REVIEW] Overlapping Functionality**
    - 3 validation scripts with overlapping features
    - Resource validation in multiple places
    - K8s validation duplicated
 
-4. **📁 Directory Structure Issues**
+4. **[DIRECTORY] Directory Structure Issues**
    - Empty tests/unit/ and tests/integration/
    - No clear separation between test code and test outputs
    - Missing tests/configs/ referenced by orphaned scripts
 
-5. **📝 Documentation Gaps**
+5. **[DOCUMENTATION] Documentation Gaps**
    - No tests/README.md explaining testing approach
    - Script purposes not clear from names
    - Some Makefile targets not documented with ##
 
 ### 5.2 Minor Issues
 
-6. **🧹 Cleanup**
+6. **[CLEANUP] Cleanup**
    - No automated cleanup of test artifacts
    - Old snapshots may accumulate
    - No way to verify which snapshots are current
 
-7. **🔗 Dependencies**
+7. **[DEPENDENCIES] Dependencies**
    - Hardcoded paths (/usr/local/bin/yq, /usr/bin/jq)
    - Some scripts require cluster access (not always available)
    - yq vs grep fallback logic is complex
 
-8. **📊 Test Coverage**
+8. **[METRICS] Test Coverage**
    - No coverage metrics for glyphs
    - Can't easily see which glyphs/charts have complete testing
    - test-status is good but could be enhanced
@@ -804,19 +804,19 @@ debug-chart              # Verbose rendering
 ## 12. Risk Assessment
 
 ### Low Risk Changes:
-✅ Deleting clearly unused scripts (validate-output.sh, validate-k8s-resources.sh)
-✅ Moving render-spell-from-cluster.sh to utilities
-✅ Adding documentation
-✅ Adding .gitignore rules
+[OK] Deleting clearly unused scripts (validate-output.sh, validate-k8s-resources.sh)
+[OK] Moving render-spell-from-cluster.sh to utilities
+[OK] Adding documentation
+[OK] Adding .gitignore rules
 
 ### Medium Risk Changes:
-⚠️ Consolidating librarian migration scripts (need thorough testing)
-⚠️ Extracting tarot tests (verify all test cases preserved)
-⚠️ Restructuring Makefile targets (may break CI/CD or developer workflows)
+[WARNING] Consolidating librarian migration scripts (need thorough testing)
+[WARNING] Extracting tarot tests (verify all test cases preserved)
+[WARNING] Restructuring Makefile targets (may break CI/CD or developer workflows)
 
 ### High Risk Changes:
-🔴 Deleting test-book-render.sh (need to verify no critical functionality lost)
-🔴 Changing primary test target behavior (could break existing workflows)
+[HIGH-RISK] Deleting test-book-render.sh (need to verify no critical functionality lost)
+[HIGH-RISK] Changing primary test target behavior (could break existing workflows)
 
 ### Mitigation:
 - Create feature branch for all changes

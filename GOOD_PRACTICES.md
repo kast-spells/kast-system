@@ -98,20 +98,20 @@ EOF
 
 # 2. Verify failure
 make tdd-red
-# Output: ❌ summon-pod-disruption (expectations failed)
-#         ✅ Good! Tests are failing - now implement
+# Output: [FAIL] summon-pod-disruption (expectations failed)
+#         [OK] Good! Tests are failing - now implement
 
 # 3. GREEN PHASE - Implement
 # Create charts/summon/templates/pod-disruption-budget.yaml
 
 # 4. Verify success
 make tdd-green
-# Output: ✅ summon-pod-disruption
+# Output: [PASS] summon-pod-disruption
 
 # 5. REFACTOR PHASE - Improve
 # Add validation, defaults, documentation
 make tdd-refactor
-# Output: ✅ All tests pass
+# Output: [PASS] All tests pass
 ```
 
 #### Adding New Glyph Features
@@ -128,21 +128,21 @@ EOF
 
 # 2. Test failure
 make glyphs vault
-# Output: ❌ vault-dynamic-db-creds (template not found)
+# Output: [FAIL] vault-dynamic-db-creds (template not found)
 
 # 3. GREEN PHASE - Implement template
 # Create charts/glyphs/vault/templates/database-role.tpl
 
 # 4. Test success
 make glyphs vault
-# Output: ✅ vault-dynamic-db-creds
+# Output: [PASS] vault-dynamic-db-creds
 
 # 5. Lock in expected output
 make generate-expected GLYPH=vault
 
 # 6. REFACTOR PHASE
 make glyphs vault
-# Output: ✅ vault-dynamic-db-creds (output matches expected)
+# Output: [PASS] vault-dynamic-db-creds (output matches expected)
 ```
 
 ### Five Whys for Problem Solving
@@ -249,13 +249,13 @@ spec:
 #### Template Names
 
 ```go
-// Correct:
+// [CORRECT]:
 {{- define "istio.virtualService" }}
 {{- define "vault.secret" }}
 {{- define "summon.persistentVolumeClaim" }}
 {{- define "certManager.certificate" }}
 
-// Incorrect:
+// [INCORRECT]:
 {{- define "summon.pvc" }}              // Abbreviation
 {{- define "istio.vs" }}                // Abbreviation
 {{- define "summon.persistante" }}      // Typo
@@ -265,13 +265,13 @@ spec:
 #### File Names
 
 ```
-Correct:
+[CORRECT]:
 - virtualService.tpl
 - persistentVolumeClaim.tpl
 - certificate.yaml
 - _helpers.tpl
 
-Incorrect:
+[INCORRECT]:
 - pvc.tpl                    # Abbreviation
 - VirtualService.tpl         # Capital letter
 - secret-template.tpl        # Redundant suffix
@@ -342,12 +342,12 @@ image: {{ default $root.Values.defaultImage $glyphDefinition.image }}
 ### Single Responsibility Principle
 
 ```go
-// Good: One template per resource type
+// [GOOD]: One template per resource type
 {{- define "myglyph.deployment" }}    // Generates Deployment
 {{- define "myglyph.service" }}       // Generates Service
 {{- define "myglyph.configmap" }}     // Generates ConfigMap
 
-// Bad: One template generating multiple unrelated resources
+// [BAD]: One template generating multiple unrelated resources
 {{- define "myglyph.everything" }}    // Generates Deployment + Service + ConfigMap
 ```
 
@@ -625,13 +625,13 @@ type: logging           # Logging aggregator
 ### Naming Best Practices
 
 ```yaml
-# Good: Descriptive and specific
+# [GOOD]: Descriptive and specific
 - name: external-production-gateway
 - name: vault-production-server
 - name: postgres-primary-database
 - name: jetstream-production-eventbus
 
-# Bad: Vague and ambiguous
+# [BAD]: Vague and ambiguous
 - name: gateway1
 - name: server
 - name: db
@@ -789,11 +789,11 @@ make test-covenant-all-chapters BOOK=covenant-tyl
 #### 2. Single Example per Chart
 
 ```
-# Bad:
+# [BAD]:
 charts/summon/examples/
 └── basic.yaml  # Only one scenario
 
-# Good:
+# [GOOD]:
 charts/summon/examples/
 ├── basic-deployment.yaml
 ├── statefulset-with-storage.yaml
@@ -804,12 +804,12 @@ charts/summon/examples/
 #### 3. Ignoring Test Failures
 
 ```bash
-# Bad: Continuing development with failing tests
+# [BAD]: Continuing development with failing tests
 make test
 # Output: Some tests failing
 # Continues working on new features
 
-# Good: Fix all failures before proceeding
+# [GOOD]: Fix all failures before proceeding
 make test
 # Output: Some tests failing
 # Stops, investigates, fixes root cause
@@ -818,23 +818,23 @@ make test
 #### 4. Manual Testing Only
 
 ```bash
-# Bad: Only testing manually with kubectl
+# [BAD]: Only testing manually with kubectl
 helm install test-release charts/summon
 kubectl get pods
 
-# Good: Automated testing with TDD commands
+# [GOOD]: Automated testing with TDD commands
 make test-all
 ```
 
 #### 5. Not Testing Edge Cases
 
 ```yaml
-# Bad: Only testing happy path
+# [BAD]: Only testing happy path
 workload:
   enabled: true
   replicas: 2
 
-# Good: Testing edge cases
+# [GOOD]: Testing edge cases
 workload:
   enabled: false  # Disabled workload
   replicas: 0     # Zero replicas
@@ -912,16 +912,16 @@ workload:
 
 ```go
 {{- define "myglyph.resource" }}
-{{- $root := . }}  // ❌ Wrong!
-{{- $glyph := .Values.glyph }}  // ❌ Wrong!
+{{- $root := . }}  // [INCORRECT] Wrong!
+{{- $glyph := .Values.glyph }}  // [INCORRECT] Wrong!
 ```
 
 #### Solution
 
 ```go
 {{- define "myglyph.resource" }}
-{{- $root := index . 0 -}}  // ✅ Correct
-{{- $glyphDefinition := index . 1 }}  // ✅ Correct
+{{- $root := index . 0 -}}  // [CORRECT]
+{{- $glyphDefinition := index . 1 }}  // [CORRECT]
 ```
 
 ### 2. Testing Glyphs Directly
@@ -929,14 +929,14 @@ workload:
 #### Pitfall
 
 ```bash
-# ❌ This will fail
+# [FAIL] This will fail
 helm template charts/glyphs/vault
 ```
 
 #### Solution
 
 ```bash
-# ✅ Test through kaster
+# [CORRECT] Test through kaster
 make glyphs vault
 ```
 
@@ -945,7 +945,7 @@ make glyphs vault
 #### Pitfall
 
 ```yaml
-# ❌ Hardcoded gateway
+# [INCORRECT] Hardcoded gateway
 spec:
   gateways:
     - istio-system/external-gateway
@@ -954,7 +954,7 @@ spec:
 #### Solution
 
 ```go
-// ✅ Use runic indexer
+// [CORRECT] Use runic indexer
 {{- $gateways := get (include "runicIndexer.runicIndexer"
     (list $root.Values.lexicon $glyphDefinition.selector "istio-gw" $root.Values.chapter.name)
     | fromJson) "results" }}
@@ -971,7 +971,7 @@ spec:
 
 ```go
 {{- define "myglyph.resource" }}
-// ❌ No validation - will fail with cryptic error
+// [INCORRECT] No validation - will fail with cryptic error
 name: {{ $glyphDefinition.name }}
 ```
 
@@ -979,7 +979,7 @@ name: {{ $glyphDefinition.name }}
 
 ```go
 {{- define "myglyph.resource" }}
-// ✅ Validate required fields
+// [CORRECT] Validate required fields
 {{- if not $glyphDefinition.name }}
   {{- fail "myglyph.resource requires 'name' field" }}
 {{- end }}
@@ -991,14 +991,14 @@ name: {{ $glyphDefinition.name }}
 #### Pitfall
 
 ```go
-// ❌ Will fail if field not provided
+// [INCORRECT] Will fail if field not provided
 replicas: {{ $glyphDefinition.replicas }}
 ```
 
 #### Solution
 
 ```go
-// ✅ Provide sensible default
+// [CORRECT] Provide sensible default
 replicas: {{ default 1 $glyphDefinition.replicas }}
 ```
 
@@ -1007,14 +1007,14 @@ replicas: {{ default 1 $glyphDefinition.replicas }}
 #### Pitfall
 
 ```go
-// ❌ Wrong - common glyph doesn't take list
+// [INCORRECT] Wrong - common glyph doesn't take list
 {{- include "common.name" (list $root $glyph) }}
 ```
 
 #### Solution
 
 ```go
-// ✅ Correct - common glyph takes $root directly
+// [CORRECT] - common glyph takes $root directly
 {{- include "common.name" $root }}
 ```
 
@@ -1045,7 +1045,7 @@ Fix: Update to standard parameter pattern
 #### Pitfall
 
 ```bash
-# ❌ Implementing without seeing tests fail
+# [INCORRECT] Implementing without seeing tests fail
 make create-example CHART=summon EXAMPLE=new-feature
 # Edit template immediately
 make tdd-green
@@ -1054,7 +1054,7 @@ make tdd-green
 #### Solution
 
 ```bash
-# ✅ Follow proper TDD cycle
+# [CORRECT] Follow proper TDD cycle
 make create-example CHART=summon EXAMPLE=new-feature
 make tdd-red        # See it fail
 # Edit template
@@ -1072,7 +1072,7 @@ make tdd-refactor   # Verify still passes
 #### Avoid Deep Nesting
 
 ```go
-// ❌ BAD: Deep nested loops
+// [BAD]: Deep nested loops
 {{- range $chapter := .Values.chapters }}
   {{- range $spell := $chapter.spells }}
     {{- range $glyph := $spell.glyphs }}
@@ -1083,7 +1083,7 @@ make tdd-refactor   # Verify still passes
   {{- end }}
 {{- end }}
 
-// ✅ GOOD: Flatten when possible
+// [GOOD]: Flatten when possible
 {{- $allResources := list }}
 {{- range $chapter := .Values.chapters }}
   {{- $allResources = concat $allResources $chapter.resources }}
@@ -1096,12 +1096,12 @@ make tdd-refactor   # Verify still passes
 #### Cache Expensive Operations
 
 ```go
-// ❌ BAD: Repeated expensive calls
+// [BAD]: Repeated expensive calls
 {{- range $item := .Values.items }}
   name: {{ include "expensive.computation" $root }}
 {{- end }}
 
-// ✅ GOOD: Compute once, reuse
+// [GOOD]: Compute once, reuse
 {{- $computedValue := include "expensive.computation" $root }}
 {{- range $item := .Values.items }}
   name: {{ $computedValue }}
@@ -1111,12 +1111,12 @@ make tdd-refactor   # Verify still passes
 #### Minimize Lexicon Queries
 
 ```go
-// ❌ BAD: Query lexicon in loop
+// [BAD]: Query lexicon in loop
 {{- range $service := .Values.services }}
   {{- $gateway := get (include "runicIndexer.runicIndexer" ...) "results" }}
 {{- end }}
 
-// ✅ GOOD: Query once, reuse
+// [GOOD]: Query once, reuse
 {{- $gateways := get (include "runicIndexer.runicIndexer" ...) "results" }}
 {{- range $service := .Values.services }}
   {{- range $gateway := $gateways }}
@@ -1130,7 +1130,7 @@ make tdd-refactor   # Verify still passes
 Keep examples focused and reasonably sized:
 
 ```yaml
-# ✅ GOOD: Focused example (< 100 lines)
+# [GOOD]: Focused example (< 100 lines)
 workload:
   enabled: true
   type: deployment
@@ -1138,7 +1138,7 @@ workload:
 service:
   enabled: true
 
-# ❌ BAD: Kitchen sink example (> 500 lines)
+# [BAD]: Kitchen sink example (> 500 lines)
 # Every possible configuration option
 # Makes tests slow and hard to debug
 ```
@@ -1152,7 +1152,7 @@ service:
 #### Never Hardcode Secrets
 
 ```yaml
-# ❌ NEVER DO THIS
+# [INCORRECT] NEVER DO THIS
 apiVersion: v1
 kind: Secret
 metadata:
@@ -1164,7 +1164,7 @@ stringData:
 #### Use Vault Integration
 
 ```yaml
-# ✅ CORRECT: Use Vault glyph
+# [CORRECT]: Use Vault glyph
 glyphs:
   vault:
     my-secret:
@@ -1181,7 +1181,7 @@ glyphs:
 #### Principle of Least Privilege
 
 ```yaml
-# ✅ GOOD: Minimal permissions
+# [GOOD]: Minimal permissions
 serviceAccount:
   enabled: true
 
@@ -1194,7 +1194,7 @@ rbac:
 ```
 
 ```yaml
-# ❌ BAD: Excessive permissions
+# [BAD]: Excessive permissions
 rbac:
   enabled: true
   rules:
@@ -1208,7 +1208,7 @@ rbac:
 #### Default Deny
 
 ```yaml
-# ✅ GOOD: Explicit allow
+# [GOOD]: Explicit allow
 networkPolicy:
   enabled: true
   policyTypes:
@@ -1226,7 +1226,7 @@ networkPolicy:
 #### Non-Root Containers
 
 ```yaml
-# ✅ GOOD: Run as non-root
+# [GOOD]: Run as non-root
 securityContext:
   runAsNonRoot: true
   runAsUser: 1000
@@ -1237,7 +1237,7 @@ securityContext:
 ```
 
 ```yaml
-# ❌ BAD: Running as root
+# [BAD]: Running as root
 securityContext:
   runAsUser: 0  # Root user
   privileged: true  # Privileged container
@@ -1248,7 +1248,7 @@ securityContext:
 #### Use Specific Tags
 
 ```yaml
-# ✅ GOOD: Specific version
+# [GOOD]: Specific version
 image:
   name: myapp
   tag: v1.2.3-sha256-abc123
@@ -1256,7 +1256,7 @@ image:
 ```
 
 ```yaml
-# ❌ BAD: Latest tag
+# [BAD]: Latest tag
 image:
   name: myapp
   tag: latest  # Unpredictable
