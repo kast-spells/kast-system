@@ -6,8 +6,9 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 
 {{- if $root.Values.glyphs }}
   {{- range $chartName, $_ := $root.Subcharts }}
-    {{- range $glyph:= index $root.Values.glyphs $chartName }}
-      {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyph ) }}
+    {{- range $glyphName, $glyph:= index $root.Values.glyphs $chartName }}
+      {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+      {{- include (printf "%s.%s" $chartName $glyph.type ) (list $root $glyphWithName ) }}
     {{- end }}
   {{- end }}
 {{- end }}
