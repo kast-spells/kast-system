@@ -3,7 +3,7 @@ Copyright (C) 2025 laaledesiempre@disroot.org
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
 
-{{- define "postgre.cluster" }}
+{{- define "postgresql.cluster" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 
@@ -14,7 +14,7 @@ metadata:
   name: {{ default (include "common.name" $root ) $glyphDefinition.name }}
 spec:
   # Description XXX
-  description: {{ default (print "Postgre cluster for" (default (include "common.name" $root ) $glyphDefinition.name)) $glyphDefinition.description }} # NOTE check
+  description: {{ default (print "PostgreSQL cluster for" (default (include "common.name" $root ) $glyphDefinition.name)) $glyphDefinition.description }} # NOTE check
 
   # Image XXX
   {{- with $glyphDefinition.image }}
@@ -68,14 +68,14 @@ spec:
       {{- end }}
 
 
-      {{- with $glyphDefinition.postInitApp }} #leer la funcion de cofnigmap en summon
+      {{- with $glyphDefinition.postInitApp }} #leer la funcion de configmap en summon
 
       {{- if eq .type "cm" }}
 
       {{- if eq .create true }}
 
       # XXX configmap creation
-      {{- $defaultValues := dict "name" (default (print "posgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
+      {{- $defaultValues := dict "name" (default (print "postgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
 
       {{- include "summon.configmap" ( list $root $defaultValues ) }}
 
@@ -85,8 +85,8 @@ spec:
       # XXX postInitApplicationSQLRefs
       postInitApplicationSQLRefs:
         configMapRefs:  #create by summon.configmap
-          - name: {{ default (print "posgres-postinit-app" $glyphDefinition.name) .name }} #NOTE no sure if works
-            key: {{ default (print "posgres-postinit-app" $glyphDefinition.name) ( default .name .key) }}
+          - name: {{ default (print "postgres-postinit-app" $glyphDefinition.name) .name }} #NOTE no sure if works
+            key: {{ default (print "postgres-postinit-app" $glyphDefinition.name) ( default .name .key) }}
 
     #  {{- else}} # As secret
     #    secretRefs: # secret true mean uses secret directly, for prod #TODO
@@ -109,7 +109,7 @@ spec:
     size: 1Gi
     {{- end }}
 
-  # resourses XXX
+  # resources XXX
   {{- with $glyphDefinition.resources }}
   {{- toYaml . | nindent 2 }}
   {{- end }}

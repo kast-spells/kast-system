@@ -1,3 +1,7 @@
+# kast - Kubernetes arcane spelling technology
+# Copyright (C) 2023 namenmalkv@gmail.com
+# Licensed under the GNU GPL v3. See LICENSE file for details.
+
 # Lexicon Lookup Example
 # Tests runicIndexer functionality for finding infrastructure references with AND logic
 
@@ -38,9 +42,9 @@ lexicon:
 
 # Expected result: Only external-gateway
 # Selector requires BOTH access=external AND environment=staging (AND logic)
-# external-gateway: ✅ matches both
-# internal-gateway: ❌ access=internal (doesn't match)
-# external-prod: ❌ environment=production (doesn't match)
+# external-gateway: MATCH - matches both
+# internal-gateway: NO MATCH - access=internal (doesn't match)
+# external-prod: NO MATCH - environment=production (doesn't match)
 
 glyphs:
   istio:

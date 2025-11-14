@@ -45,35 +45,5 @@ spec:
           {{- else }}
           restartPolicy: OnFailure
           {{- end }}
-          {{- with $root.Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- if $root.Values.initContainers }}
-          initContainers:
-            {{- include "summon.common.container" (list $root $root.Values.initContainers ) | nindent 12 }}
-          {{- end }}
-          containers:
-            {{- if $root.Values.sideCars }}
-            {{- include "summon.common.container" (list $root $root.Values.sideCars ) | nindent 12 }}
-            {{- end }}
-            #main Container
-            {{- include "summon.common.container" (list $root (list $root.Values) ) | nindent 12  }}
-          {{- with $root.Values.nodeSelector }}
-          nodeSelector:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with $root.Values.affinity }}
-          affinity:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with $root.Values.tolerations }}
-          tolerations:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with $root.Values.imagePullSecrets }}
-          imagePullSecrets:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- include "summon.common.volumes" $root |nindent 10 }}
+          {{- include "summon.common.podSpec.body" $root | nindent 10 }}
 {{- end -}}

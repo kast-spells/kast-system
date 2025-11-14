@@ -1,3 +1,7 @@
+# kast - Kubernetes arcane spelling technology
+# Copyright (C) 2023 namenmalkv@gmail.com
+# Licensed under the GNU GPL v3. See LICENSE file for details.
+
 # Wildcard Certificate Example  
 # Shows how to create wildcard certificates for multiple subdomains
 

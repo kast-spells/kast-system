@@ -1,0 +1,17 @@
+# kast - Kubernetes arcane spelling technology
+# Copyright (C) 2023 namenmalkv@gmail.com
+# Licensed under the GNU GPL v3. See LICENSE file for details.
+
+spellbook:
+  name: test-postgresql
+  chapters:
+    - databases
+
+chapter:
+  name: databases
+
+glyphs:
+  postgresql:
+    minimal-db:
+      type: cluster
+      description: Minimal PostgreSQL cluster
