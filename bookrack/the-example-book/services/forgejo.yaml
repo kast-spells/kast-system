@@ -1,0 +1,75 @@
+name: forgejo
+appParams:
+  disableAutoSync: false
+
+# S3 backend for Forgejo storage (LFS, attachments, avatars, packages)
+glyphs:
+  s3:
+    forgejo-data:
+      type: bucket
+      permissions: ["Read", "Write", "List"]
+      # Creates bucket: the-example-book-{chapter}-forgejo-data
+      # Generates secret with AWS credentials
+
+# Consume S3 credentials
+secrets:
+  forgejo-data:
+    contentType: env  # Injects AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, ENDPOINT
+
+volumes:
+  data:
+    type: pvc
+    size: 5Gi
+    destinationPath: /data
+
+envs:
+  PUID: "1000"
+  PGID: "1000"
+  # S3 Storage Configuration - Global settings
+  FORGEJO__storage__STORAGE_TYPE: "minio"
+  FORGEJO__storage__MINIO_ENDPOINT: "seaweedfs-s3.seaweedfs.svc:8333"
+  FORGEJO__storage__MINIO_BUCKET: "the-example-book-intro-forgejo-data"
+  FORGEJO__storage__MINIO_LOCATION: "us-east-1"
+  FORGEJO__storage__MINIO_USE_SSL: "false"
+  FORGEJO__storage__MINIO_CHECKSUM_ALGORITHM: "default"
+  # Credentials from S3 glyph secret
+  FORGEJO__storage__MINIO_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+  FORGEJO__storage__MINIO_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+  # LFS Storage - uses S3
+  FORGEJO__lfs__STORAGE_TYPE: "minio"
+  FORGEJO__lfs__MINIO_BASE_PATH: "lfs/"
+  # Attachments Storage - uses S3
+  FORGEJO__attachment__STORAGE_TYPE: "minio"
+  FORGEJO__attachment__MINIO_BASE_PATH: "attachments/"
+  # Avatar Storage - uses S3
+  FORGEJO__avatar__STORAGE_TYPE: "minio"
+  FORGEJO__avatar__MINIO_BASE_PATH: "avatars/"
+  # Repository Avatar Storage - uses S3
+  FORGEJO__repo-avatar__STORAGE_TYPE: "minio"
+  FORGEJO__repo-avatar__MINIO_BASE_PATH: "repo-avatars/"
+  # Packages Storage - uses S3
+  FORGEJO__packages__STORAGE_TYPE: "minio"
+  FORGEJO__packages__MINIO_BASE_PATH: "packages/"
+
+image:
+  repository: codeberg.org/forgejo
+  name: forgejo
+  tag: 7.0.12
+
+service:
+  ports: 
+    - port: 3000
+    - port: 2222
+      name: ssh
+      targetPort: 22
+
+istio:
+  internal:
+    type: virtualService
+    enabled: true
+    subdomain: forgejo
+    httpRules:
+      - prefix: /
+        port: 3000
+    tcpRules:
+      - port: 2222

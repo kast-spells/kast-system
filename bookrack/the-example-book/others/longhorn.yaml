@@ -24,10 +24,11 @@ values:
 
 glyphs:
   istio:
-  - type: virtualService
-    enabled: True
-    subdomain: longhorn
-    host: longhorn-frontend
-    httpRules:
-      - prefix: /
-        port: 80
+    longhorn:
+      type: virtualService
+      enabled: True
+      subdomain: longhorn
+      host: longhorn-frontend
+      httpRules:
+        - prefix: /
+          port: 80

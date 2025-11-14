@@ -7,12 +7,12 @@ values:
 
 glyphs:
   certManager:
-  - type: clusterIssuer
-    enabled: true
-    name: default-issuer
-    selectorLabels:
-      type: cert-manager
-      default: book
+    default-issuer:
+      type: clusterIssuer
+      enabled: true
+      selectorLabels:
+        type: cert-manager
+        default: book
 
 runes:
   - name: external-dns

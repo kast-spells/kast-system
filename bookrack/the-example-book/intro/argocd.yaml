@@ -30,14 +30,16 @@ values:
       enabled: false
 glyphs:
   istio:
-    - type: virtualService
+    argocd:
+      type: virtualService
       enabled: True
       subdomain: argocd
       host: argocd-server
       httpRules:
         - prefix: /
           port: 80
-    - type: virtualService
+    workflows:
+      type: virtualService
       enabled: True
       subdomain: workflows
       namespace: argo-workflows
