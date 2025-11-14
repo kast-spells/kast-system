@@ -694,7 +694,7 @@ selector:
   tier: primary  # Specific - matches exact resource
 ```
 
-#### Leverage Fallbacks
+#### Using Fallbacks
 
 ```yaml
 # Try specific resource

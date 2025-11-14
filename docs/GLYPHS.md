@@ -11,7 +11,7 @@ Comprehensive guide to the glyph system in kast. Glyphs are reusable Helm named 
 - Provide consistent interfaces across deployments
 - Enable composition of complex systems from simple definitions
 - Reduce YAML duplication and boilerplate
-- Leverage infrastructure discovery via [Lexicon](LEXICON.md)
+- Use infrastructure discovery via [Lexicon](LEXICON.md)
 
 **Core Concept:** "Spell once, use everywhere"
 
@@ -711,7 +711,7 @@ glyphs:
 
 ### Use Lexicon for Discovery
 
-**Leverage runic indexer with [Lexicon](LEXICON.md):**
+**Use runic indexer with [Lexicon](LEXICON.md):**
 ```yaml
 # Lexicon defines infrastructure
 lexicon:

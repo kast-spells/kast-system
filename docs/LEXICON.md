@@ -357,7 +357,7 @@ selector:
   tier: primary
 ```
 
-#### Leverage Fallbacks
+#### Using Fallbacks
 ```yaml
 # Try specific first
 selector:

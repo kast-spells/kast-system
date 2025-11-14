@@ -735,7 +735,7 @@ glyphs:
 
 ### Context Usage
 
-**Leverage spellbook/chapter context:**
+**Use spellbook/chapter context:**
 
 ```yaml
 # Automatically uses book name in vault paths
