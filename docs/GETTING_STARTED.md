@@ -483,7 +483,7 @@ argocd app sync web-app-prod
 
 ## Common Patterns
 
-These patterns demonstrate how kast-system's [Hierarchy Systems](HIERARCHY_SYSTEMS.md) enable powerful configuration management strategies.
+These patterns demonstrate how kast-system's [Hierarchy Systems](HIERARCHY_SYSTEMS.md) enable multi-level configuration inheritance and scope-based overrides.
 
 ### Pattern 1: Multi-Environment
 
