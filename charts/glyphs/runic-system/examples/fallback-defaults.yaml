@@ -1,3 +1,7 @@
+# kast - Kubernetes arcane spelling technology
+# Copyright (C) 2023 namenmalkv@gmail.com
+# Licensed under the GNU GPL v3. See LICENSE file for details.
+
 # Fallback Defaults Example
 # Tests runicIndexer default fallback behavior (book vs chapter defaults)
 
@@ -33,8 +37,8 @@ lexicon:
 # Expected result: chapter-default-gateway
 # Selector access=unknown doesn't match any gateway
 # Falls back to chapter default first (chapter=production), then book default
-# chapter-default-gateway: ✅ default=chapter AND chapter=production
-# book-default-gateway: ✅ default=book (but chapter default takes precedence)
+# chapter-default-gateway: EXPECTED - default=chapter AND chapter=production
+# book-default-gateway: FALLBACK - default=book (but chapter default takes precedence)
 
 glyphs:
   istio:

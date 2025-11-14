@@ -1,5 +1,5 @@
 # S3 Glyph default values
-# This glyph provides seamless S3 integration with automatic credential management
+# This glyph provides S3 integration with automatic credential management
 
 # Default S3 provider selector (uses runicIndexer with default: book fallback)
 # selector:

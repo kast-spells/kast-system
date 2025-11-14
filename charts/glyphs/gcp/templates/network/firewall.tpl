@@ -56,7 +56,7 @@ spec:
       {{- $contentList | toYaml |nindent 6 }}
     {{- end }}
   {{- end }}
-  {{- if not $glyphDefinition.notargetTags }}
+  {{- if not $glyphDefinition.noTargetTags }}
     {{- if $glyphDefinition.targetTags }}
   targetTags:
     {{- range $glyphDefinition.targetTags }}
@@ -64,7 +64,7 @@ spec:
     {{- end }}
     {{- end }}
   {{- end }}
-  {{- if not $glyphDefinition.notargetRanges }}
+  {{- if not $glyphDefinition.noTargetRanges }}
     {{- if $glyphDefinition.targetRanges }}
   targetRanges:
     {{- range $glyphDefinition.targetRanges }}
@@ -74,8 +74,8 @@ spec:
   {{- else }}
   targetRanges: []
   {{- end }}
-  {{- if $glyphDefinition.othertargets }}
-    {{- range $target, $contentList := $glyphDefinition.othertargets }}
+  {{- if $glyphDefinition.otherTargets }}
+    {{- range $target, $contentList := $glyphDefinition.otherTargets }}
       {{ $target |nindent 4 }}:
       {{- $contentList | toYaml |nindent 6 }}
     {{- end }}

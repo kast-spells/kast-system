@@ -1,7 +1,7 @@
 apiVersion: v2
 name: postgresql
 version: 1.0.0
-description: posgresql glyphs for kast
+description: PostgreSQL glyphs for kast (CloudNativePG)
 home: https://github.com/kast-spells
 sources:
   - https://github.com/kast-spells/kast-system
