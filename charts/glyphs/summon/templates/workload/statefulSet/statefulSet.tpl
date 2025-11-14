@@ -34,39 +34,7 @@ spec:
       annotations:
         {{- include "summon.checksums.annotations" $root | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "common.serviceAccountName" $root }}
-      {{- with $root.Values.securityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- if $root.Values.initContainers }}
-      initContainers:
-        {{- include "summon.common.container" (list $root $root.Values.initContainers ) | nindent 8 }}
-      {{- end }}
-      containers:
-        {{- if $root.Values.sideCars }}
-        {{- include "summon.common.container" (list $root $root.Values.sideCars ) | nindent 8 }}
-        {{- end }}
-        #main Container
-        {{- include "summon.common.container" (list $root (list $root.Values) ) | nindent 8  }}
-        {{- with $root.Values.nodeSelector }}
-      nodeSelector:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with $root.Values.affinity }}
-      affinity:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with $root.Values.tolerations }}
-      tolerations:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with $root.Values.imagePullSecrets }}
-      imagePullSecrets:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-
-        {{- include "summon.common.volumes" $root |nindent 6 }}
+      {{- include "summon.common.podSpec" $root | nindent 6 }}
   {{- if $root.Values.workload.volumeClaimTemplates }}
   volumeClaimTemplates:
   {{- range $name, $volume := $root.Values.workload.volumeClaimTemplates }}
