@@ -55,8 +55,8 @@ EOF
 
 # Verify test fails (feature doesn't exist yet)
 make tdd-red
-# Output: ❌ summon-pod-disruption (expectations failed)
-#         ✅ Good! Tests are failing - now implement
+# Output: [FAIL] summon-pod-disruption (expectations failed)
+#         [OK] Good! Tests are failing - now implement
 ```
 
 #### 2. GREEN Phase - Make Tests Pass
@@ -85,7 +85,7 @@ make tdd-green        # Run tests expecting success
 
 # Verify test passes
 make tdd-green
-# Output: ✅ summon-pod-disruption
+# Output: [PASS] summon-pod-disruption
 ```
 
 #### 3. REFACTOR Phase - Improve Code
@@ -140,9 +140,9 @@ make test-syntax
 **Output:**
 ```
 Testing chart: summon
-  ✅ basic-deployment
-  ✅ complex-production
-  ✅ statefulset-with-storage
+  [PASS] basic-deployment
+  [PASS] complex-production
+  [PASS] statefulset-with-storage
 ```
 
 ### Layer 2: Resource Completeness
@@ -165,19 +165,19 @@ make test-comprehensive
 
 **Output:**
 ```
-🧪 TDD: Comprehensive validation...
+TDD: Comprehensive validation...
 Testing chart: summon
   Validating basic-deployment...
-    ✅ Workload resource present (deployment)
-    ✅ Service resource present
-    ✅ ServiceAccount resource present
-  ✅ summon-basic-deployment
+    [OK] Workload resource present (deployment)
+    [OK] Service resource present
+    [OK] ServiceAccount resource present
+  [PASS] summon-basic-deployment
 
   Validating deployment-with-storage...
-    ✅ Workload resource present (deployment)
-    ✅ Service resource present
-    ✅ All 2 PVC resources present
-  ✅ summon-deployment-with-storage
+    [OK] Workload resource present (deployment)
+    [OK] Service resource present
+    [OK] All 2 PVC resources present
+  [PASS] summon-deployment-with-storage
 ```
 
 ### Layer 3: Snapshot Testing
@@ -213,7 +213,7 @@ make generate-snapshots CHART=summon
 
 # Test shows diff
 make test-snapshots
-# Output: ❌ summon-basic-deployment (output differs from expected)
+# Output: [FAIL] summon-basic-deployment (output differs from expected)
 
 # Review diff
 make show-snapshot-diff CHART=summon EXAMPLE=basic-deployment
@@ -253,9 +253,9 @@ make glyphs vault
 
 # Output:
 # Testing glyph: vault via kaster
-#   ✅ vault-secrets (rendered successfully)
-#   ✅ vault-prolicy-test (output matches expected)
-#   ✅ vault-random-secrets (rendered successfully)
+#   [PASS] vault-secrets (rendered successfully)
+#   [PASS] vault-prolicy-test (output matches expected)
+#   [PASS] vault-random-secrets (rendered successfully)
 
 # Generate expected outputs
 make generate-expected GLYPH=vault
@@ -284,7 +284,7 @@ make test-all         # All tests (comprehensive + snapshots + glyphs + tarot)
 
 ### test-status Command
 
-**Purpose:** Show testing coverage for all components
+**Purpose:** Show usage instructions for the testing system
 
 **Command:**
 ```bash
@@ -293,31 +293,27 @@ make test-status
 
 **Output:**
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Testing Status Report
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Testing Status Report
+Run tests with: make test [MODE] [TYPE] [COMPONENTS]
+  Modes: syntax, comprehensive, snapshots, all
+  Types: glyph, trinket, chart, spell, book, glyphs, trinkets, charts
 
-📦 Main Charts:
-  ✅ summon: 17 examples (17 snapshots)
-  ⚠️  kaster: 1 examples (no snapshots)
-  ❌ librarian: NO examples/
+Examples:
+  make test syntax glyph vault
+  make test all glyphs
+  make test comprehensive trinket tarot
+```
 
-🎭 Glyphs:
-  ✅ argo-events: 5 examples (5 snapshots)
-  ✅ vault: 11 examples (11 snapshots)
-  ✅ istio: 2 examples (2 snapshots)
-  ⚠️  certManager: 2 examples (no snapshots)
-  ❌ keycloak: NO examples/
+**Note:** For detailed testing coverage analysis, use the modular test system:
+```bash
+# Test all glyphs
+bash tests/core/test-dispatcher.sh all glyph
 
-🔮 Trinkets:
-  ⚠️  microspell: 8 examples (no snapshots)
-  ⚠️  tarot: 14 examples (no snapshots)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Test all trinkets
+bash tests/core/test-dispatcher.sh all trinket
 
-Legend:
-  ✅ = Examples + Snapshots complete
-  ⚠️  = Examples exist, snapshots needed
-  ❌ = No examples (needs TDD work)
+# Test specific components
+bash tests/core/test-dispatcher.sh comprehensive glyph vault istio
 ```
 
 **Automatic discovery:**
@@ -360,8 +356,8 @@ EOF
 
 # 3. Verify test fails (feature doesn't exist)
 make tdd-red
-# Output: ❌ summon-ingress-support (expectations failed)
-#         ✅ Good! Tests are failing - now implement
+# Output: [FAIL] summon-ingress-support (expectations failed)
+#         [OK] Good! Tests are failing - now implement
 
 # === GREEN PHASE ===
 # 4. Implement feature
@@ -392,7 +388,7 @@ EOF
 
 # 5. Verify test passes
 make tdd-green
-# Output: ✅ summon-ingress-support
+# Output: [PASS] summon-ingress-support
 
 # === REFACTOR PHASE ===
 # 6. Clean up implementation
@@ -440,7 +436,7 @@ EOF
 
 # 2. Test (expect failure - template doesn't exist)
 make glyphs vault
-# Output: ❌ vault-database-engine (template "vault.databaseEngine" not found)
+# Output: [FAIL] vault-database-engine (template "vault.databaseEngine" not found)
 
 # === GREEN PHASE ===
 # 3. Implement template
@@ -460,7 +456,7 @@ EOF
 
 # 4. Test (expect success)
 make glyphs vault
-# Output: ✅ vault-database-engine
+# Output: [PASS] vault-database-engine
 
 # === REFACTOR PHASE ===
 # 5. Generate expected output
@@ -468,7 +464,7 @@ make generate-expected GLYPH=vault
 
 # 6. Verify diff validation works
 make glyphs vault
-# Output: ✅ vault-database-engine (output matches expected)
+# Output: [PASS] vault-database-engine (output matches expected)
 ```
 
 ## Testing Commands Reference
@@ -517,7 +513,6 @@ make glyphs vault
 | `make create-example CHART=<name> EXAMPLE=<example>` | Create new test example |
 | `make inspect-chart CHART=<name> EXAMPLE=<example>` | Debug chart output |
 | `make debug-chart CHART=<name> EXAMPLE=<example>` | Verbose debugging |
-| `make validate-completeness` | Ensure expected resources generated |
 | `make lint` | Helm lint all charts |
 | `make watch` | Auto-run tests on file changes |
 | `make clean-output-tests` | Clean generated test outputs |
@@ -534,10 +529,7 @@ make glyphs vault
 | Command | Purpose |
 |---------|---------|
 | `make test-covenant` | Test all covenant books |
-| `make test-covenant-book BOOK=<name>` | Test specific covenant book |
-| `make test-covenant-chapter BOOK=<name> CHAPTER=<chapter>` | Test specific chapter |
-| `make test-covenant-all-chapters BOOK=<name>` | Test main + all chapters |
-| `make test-covenant-debug BOOK=<name>` | Debug covenant rendering |
+| `make test-covenant BOOK=<name>` | Test specific covenant book |
 | `make list-covenant-books` | List available covenant books |
 
 ## Continuous Testing
@@ -566,8 +558,8 @@ make watch
 # Complete validation
 make test-all
 
-# Resource completeness check
-make validate-completeness
+# Resource completeness runs automatically
+# Part of test-comprehensive
 
 # Helm lint
 make lint

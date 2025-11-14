@@ -11,7 +11,7 @@ Comprehensive guide to the glyph system in kast. Glyphs are reusable Helm named 
 - Provide consistent interfaces across deployments
 - Enable composition of complex systems from simple definitions
 - Reduce YAML duplication and boilerplate
-- Leverage infrastructure discovery via [Lexicon](LEXICON.md)
+- Use infrastructure discovery via [Lexicon](LEXICON.md)
 
 **Core Concept:** "Spell once, use everywhere"
 
@@ -252,13 +252,13 @@ glyphs:
 **Purpose:** Database provisioning and access management
 
 **Glyphs:**
-- **postgres-cloud** - Cloud-hosted PostgreSQL clusters
+- **postgresql** - Cloud-hosted PostgreSQL clusters
 - **vault** (databaseEngine) - Dynamic database credentials
 
 **Usage Pattern:**
 ```yaml
 glyphs:
-  postgres-cloud:
+  postgresql:
     app-db:                     # Resource name as map key
       type: cluster             # Create PostgreSQL cluster
       replicas: 3
@@ -272,7 +272,7 @@ glyphs:
 ```
 
 **Documentation:**
-- [docs/glyphs/postgres-cloud.md](glyphs/postgres-cloud.md)
+- [docs/glyphs/postgresql.md](glyphs/postgresql.md)
 - [Vault Integration](VAULT.md) (databaseEngine section)
 
 ### Identity & Access
@@ -305,7 +305,6 @@ glyphs:
 **Glyphs:**
 - **common** - Shared utilities (labels, names, annotations)
 - **freeForm** - Pass-through YAML
-- **default-verbs** - Utility templates
 - **runic-system** - Runic indexer and discovery
 
 **Usage Pattern:**
@@ -712,7 +711,7 @@ glyphs:
 
 ### Use Lexicon for Discovery
 
-**Leverage runic indexer with [Lexicon](LEXICON.md):**
+**Use runic indexer with [Lexicon](LEXICON.md):**
 ```yaml
 # Lexicon defines infrastructure
 lexicon:
@@ -966,7 +965,7 @@ glyphs:
         kind: ClusterIssuer
 
   # Database
-  postgres-cloud:
+  postgresql:
     app-database:               # Map key is resource name
       type: cluster
       replicas: 3

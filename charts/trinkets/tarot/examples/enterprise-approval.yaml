@@ -212,8 +212,8 @@ tarot:
           Environment: {{workflow.parameters.environment}}
           Deployment window: {{envs.DEPLOYMENT_WINDOW}}
           
-          Security approval: ✅ Approved
-          Compliance check: ✅ Passed
+          Security approval: Approved
+          Compliance check: Passed
           
           Ready for production deployment.
         conditions:
@@ -309,7 +309,7 @@ tarot:
           - |
             {
               "channel": "{{secrets.notification-webhook.channel}}",
-              "text": "🚀 Production Deployment Successful",
+              "text": "Production Deployment Successful",
               "attachments": [
                 {
                   "color": "good",

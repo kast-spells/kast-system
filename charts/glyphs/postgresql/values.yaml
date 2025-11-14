@@ -62,7 +62,7 @@
 # 
 #       secret: the-secret #if not created
 
-# Default values for postgres-cloud glyph (empty for now)
+# Default values for postgresql glyph (empty for now)
 # Add default configurations here when needed
 
 

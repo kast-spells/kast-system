@@ -27,7 +27,7 @@ Reusable Helm named template for specific functionality. Glyphs are invoked via 
 
 ### Databases
 
-- [postgres-cloud](glyphs/postgres-cloud.md) - Cloud-hosted PostgreSQL
+- [postgresql](glyphs/postgresql.md) - Cloud-hosted PostgreSQL
 - [s3](glyphs/s3.md) - S3-compatible storage
 
 ### Identity & Access
@@ -42,7 +42,6 @@ Reusable Helm named template for specific functionality. Glyphs are invoked via 
 
 - [runic-system](glyphs/runic-system.md) - Runic indexer and discovery system
 - [common](glyphs/common.md) - Shared utilities (labels, names, annotations)
-- [default-verbs](glyphs/default-verbs.md) - Utility templates
 - [freeForm](glyphs/freeform.md) - Pass-through YAML manifests
 - [trinkets](glyphs/trinkets.md) - Trinket orchestration glyph
 

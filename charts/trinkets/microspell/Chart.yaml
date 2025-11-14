@@ -1,7 +1,7 @@
 apiVersion: v2
 name: microspell
 version: 0.0.1
-description: a simple microservice stylestuff
+description: Opinionated microservice deployment chart with Vault, Istio, and monitoring integration
 home: https://github.com/kast-spells
 sources:
   - https://github.com/kast-spells/kast-system

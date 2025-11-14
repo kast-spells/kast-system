@@ -2,8 +2,6 @@ name: librarian-sync
 
 on:
   push:
-    branches:
-      - master
     tags:
       - "librarian-*"
 
@@ -23,7 +21,11 @@ jobs:
             echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           else
             echo "is_tag=false" >> $GITHUB_OUTPUT
-            echo "COMMIT_MSG=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+            {
+              echo "COMMIT_MSG<<EOF"
+              echo "${{ github.event.head_commit.message }}"
+              echo "EOF"
+            } >> $GITHUB_ENV
           fi
 
       - name: Clone destination repository
@@ -36,7 +38,7 @@ jobs:
       - name: Copy files to destination repository (branch)
         run: |
           rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' librarian/ librarian-repo/
-          rsync -av --exclude='Chart.yaml' librarian/ librarian-repo/
+          rsync -av --exclude='Chart.yaml' --exclude='charts/' librarian/ librarian-repo/
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'

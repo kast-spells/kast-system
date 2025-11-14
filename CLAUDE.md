@@ -585,9 +585,9 @@ The project uses a unique "glyphs" pattern where reusable Helm templates are org
 - **Not Helm dependencies**: Glyphs are copied files, not Chart.yaml dependencies
 
 **Available Glyphs:**
-- **Core**: common (helpers), summon (workload helpers), runic-system (infrastructure discovery), default-verbs (RBAC)
+- **Core**: common (helpers), summon (workload helpers), runic-system (infrastructure discovery)
 - **Security**: vault (Vault secrets), keycloak (SSO/OIDC)
-- **Storage**: s3 (object storage), postgres-cloud (managed databases)
+- **Storage**: s3 (object storage), postgresql (managed databases)
 - **Networking**: istio (service mesh), certManager (TLS certificates)
 - **Events**: argo-events (event-driven workflows)
 - **Cloud**: gcp (Google Cloud resources), crossplane (cloud provisioning)
@@ -1064,7 +1064,7 @@ Understanding how all components work together from configuration to deployment:
 │  ├─ istio: VirtualService, DestinationRule, Gateway            │
 │  ├─ certManager: Certificate, Issuer                           │
 │  ├─ s3: Bucket, BucketPermission                               │
-│  ├─ postgres-cloud: PostgresCluster, PostgresDatabase          │
+│  ├─ postgresql: PostgresCluster, PostgresDatabase              │
 │  ├─ keycloak: KeycloakRealm, KeycloakClient, KeycloakUser      │
 │  ├─ argo-events: EventSource, Sensor, EventBus                 │
 │  └─ runic-system: Infrastructure lookup via lexicon            │
@@ -1214,7 +1214,7 @@ glyphs:
 
 The testing system automatically discovers all charts, glyphs, and trinkets. Use `make test-status` to see current coverage.
 
-### Fully Tested (✅ Examples + Snapshots)
+### Fully Tested ([COMPLETE] Examples + Snapshots)
 **Main Charts:**
 - summon: 17 examples with full snapshot coverage
 
@@ -1224,7 +1224,7 @@ The testing system automatically discovers all charts, glyphs, and trinkets. Use
 - istio: 2 examples
 - common: 2 examples
 
-### Needs Snapshots (⚠️ Examples exist, snapshots missing)
+### Needs Snapshots ([PARTIAL] Examples exist, snapshots missing)
 **Main Charts:**
 - kaster: 1 example
 
@@ -1241,14 +1241,13 @@ The testing system automatically discovers all charts, glyphs, and trinkets. Use
 
 **Action:** Run `make update-all-snapshots` to generate all missing snapshots.
 
-### Needs TDD Work (❌ No examples/)
+### Needs TDD Work ([MISSING] No examples/)
 **Main Charts:**
 - librarian: Infrastructure chart (may not need examples)
 
 **Glyphs:**
-- default-verbs: Utility glyph
 - keycloak: Integration glyph
-- postgres-cloud: Integration glyph
+- postgresql: Integration glyph
 - trinkets: Meta glyph
 
 **Trinkets:**

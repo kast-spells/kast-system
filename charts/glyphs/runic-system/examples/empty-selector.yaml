@@ -39,10 +39,10 @@ lexicon:
 # Expected result: chapter-default (NOT all gateways!)
 # Empty selector should NOT match all gateways
 # Should fall back to chapter default first, then book default
-# chapter-default: ✅ default=chapter AND chapter=staging
-# book-default: ✅ default=book (but chapter default takes precedence)
-# external-gateway: ❌ should NOT be included
-# internal-gateway: ❌ should NOT be included
+# chapter-default: EXPECTED - default=chapter AND chapter=staging
+# book-default: FALLBACK - default=book (but chapter default takes precedence)
+# external-gateway: EXCLUDED - should NOT be included
+# internal-gateway: EXCLUDED - should NOT be included
 
 glyphs:
   istio:

@@ -1,6 +1,6 @@
 apiVersion: v2
 name: s3
-description: S3 storage glyph for kast - seamless S3 integration
+description: S3 storage glyph for kast - automated S3 bucket and credential management
 type: library
 version: 0.1.0
 appVersion: "1.0"
