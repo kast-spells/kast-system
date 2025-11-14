@@ -1,0 +1,34 @@
+# Staging Microservice Example
+# Microspell configuration for staging environment testing
+
+name: test-microservice
+image:
+  repository: harbor.example.com/apps
+  
+service:
+  enabled: true
+  external: true
+  ports:
+    - port: 80
+      name: http
+  prefix: /api/v1
+  
+infrastructure:
+  prolicy:
+    enabled: false
+
+# Test secrets integration
+secrets:
+  database:
+    location: vault
+    path: chapter
+    private: privates
+  api-key:
+    location: create
+    type: env
+    content: staging-api-key-secret-value
+    contentType: yaml
+    
+envs:
+  ENV: staging
+  SERVICE_NAME: test-microservice

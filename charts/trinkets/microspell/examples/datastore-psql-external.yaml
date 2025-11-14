@@ -1,0 +1,81 @@
+# Microspell with External PostgreSQL
+# Uses existing cluster via runicIndexer
+# App uses dynamic credentials from existing DB Engine
+
+name: psql-external-test
+
+# Chapter and spellbook context
+chapter:
+  name: test-chapter
+spellbook:
+  name: test-book
+
+# Lexicon with Vault and PostgreSQL cluster
+lexicon:
+  - type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: test-book
+    secretPath: secret
+    labels:
+      default: book
+
+  # Existing PostgreSQL cluster
+  - type: postgres
+    name: shared-pg
+    host: shared-pg-rw.database.svc
+    port: 5432
+    database: "*"
+    databaseMount: "database-test-book-test-chapter"
+    credentialsSecret: shared-pg-admin
+    labels:
+      tier: shared
+      environment: staging
+
+# Basic microservice
+image:
+  repository: postgres
+  tag: "16-alpine"
+
+command:
+  - sleep
+  - infinity
+
+# PostgreSQL DataStore (EXTERNAL)
+dataStore:
+  psql:
+    enabled: true
+
+    # Selector → Uses existing cluster
+    selector:
+      tier: shared
+      environment: staging
+
+    database: external_test_db
+    username: external_test_user
+
+    credentials:
+      dynamic:
+        role: read-write
+        ttl: ""  # Infinite lease
+
+    initDb:
+      enabled: true
+      sql: |
+        CREATE TABLE IF NOT EXISTS tasks (
+          id SERIAL PRIMARY KEY,
+          status VARCHAR(50),
+          payload JSONB,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+
+        CREATE INDEX idx_tasks_status ON tasks(status);
+        CREATE INDEX idx_tasks_payload ON tasks USING gin(payload);
+
+# Service configuration
+service:
+  enabled: true
+  ports:
+    - port: 8080
+      name: http
