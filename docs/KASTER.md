@@ -354,15 +354,15 @@ Kaster orchestrates these glyph packages:
 
 **Documentation:** [docs/glyphs/gcp.md](glyphs/gcp.md)
 
-### 7. Postgres Cloud
+### 7. PostgreSQL
 
-**Location:** `charts/glyphs/postgres-cloud/`
+**Location:** `charts/glyphs/postgresql/`
 
 **Templates:**
-- `postgres-cloud.cluster` - PostgreSQL cluster
-- `postgres-cloud.database` - Database provisioning
+- `postgresql.cluster` - PostgreSQL cluster
+- `postgresql.database` - Database provisioning
 
-**Documentation:** [docs/glyphs/postgres-cloud.md](glyphs/postgres-cloud.md)
+**Documentation:** [docs/glyphs/postgresql.md](glyphs/postgresql.md)
 
 ### 8. Keycloak
 
