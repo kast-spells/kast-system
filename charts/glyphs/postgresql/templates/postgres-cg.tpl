@@ -70,24 +70,13 @@ spec:
       {{- with $glyphDefinition.postInitSQL }} #SQL executed outside transaction (for CREATE DATABASE)
 
       {{- if eq .type "cm" }}
-
-      {{- if eq .create true }}
-
-      # XXX configmap creation for postInitSQL
       {{- $cmName := default (print "postgres-postinit-sql-" $glyphDefinition.name) .name }}
-      {{- $cmKey := default "init.sql" .key }}
-      {{- $defaultValues := dict "name" $cmName "definition" (dict "name" $cmKey "content" .content "contentType" "file") }}
-
-      {{- include "summon.configMap" ( list $root $defaultValues ) }}
-
-      {{- end}}
-
 
       # XXX postInitSQLRefs (executed outside transaction)
       postInitSQLRefs:
         configMapRefs:
-          - name: {{ default (print "postgres-postinit-sql-" $glyphDefinition.name) .name }}
-            key: {{ default "init.sql" .key }}
+          - name: {{ $cmName }}
+            key: {{ $cmName }}
 
       {{- end }} #if for cm or secret
 
@@ -96,24 +85,13 @@ spec:
       {{- with $glyphDefinition.postInitApp }} #leer la funcion de configmap en summon
 
       {{- if eq .type "cm" }}
-
-      {{- if eq .create true }}
-
-      # XXX configmap creation for postInitApp
       {{- $cmName := default (print "postgres-postinit-app-" $glyphDefinition.name) .name }}
-      {{- $cmKey := default "init.sql" .key }}
-      {{- $defaultValues := dict "name" $cmName "definition" (dict "name" $cmKey "content" .content "contentType" "file") }}
-
-      {{- include "summon.configMap" ( list $root $defaultValues ) }}
-
-      {{- end}}
-
 
       # XXX postInitApplicationSQLRefs
       postInitApplicationSQLRefs:
         configMapRefs:
-          - name: {{ default (print "postgres-postinit-app-" $glyphDefinition.name) .name }}
-            key: {{ default "init.sql" .key }}
+          - name: {{ $cmName }}
+            key: {{ $cmName }}
 
     #  {{- else}} # As secret
     #    secretRefs: # secret true mean uses secret directly, for prod #TODO
@@ -150,5 +128,23 @@ spec:
   {{- with $glyphDefinition.postgresql }} #TODO ver como se gestionan los defaults con herencia #prod
   {{- toYaml . | nindent 2 }}
   {{- end }}
+
+{{/* Create ConfigMaps for postInitSQL if needed */}}
+{{- with $glyphDefinition.postInitSQL }}
+{{- if and (eq .type "cm") (eq .create true) }}
+{{- $cmName := default (print "postgres-postinit-sql-" $glyphDefinition.name) .name }}
+{{- $defaultValues := dict "name" $cmName "definition" (dict "content" .content "contentType" "file") }}
+{{- include "summon.configMap" ( list $root $defaultValues ) }}
+{{- end}}
+{{- end}}
+
+{{/* Create ConfigMaps for postInitApp if needed */}}
+{{- with $glyphDefinition.postInitApp }}
+{{- if and (eq .type "cm") (eq .create true) }}
+{{- $cmName := default (print "postgres-postinit-app-" $glyphDefinition.name) .name }}
+{{- $defaultValues := dict "name" $cmName "definition" (dict "content" .content "contentType" "file") }}
+{{- include "summon.configMap" ( list $root $defaultValues ) }}
+{{- end}}
+{{- end}}
 
 {{- end}}
