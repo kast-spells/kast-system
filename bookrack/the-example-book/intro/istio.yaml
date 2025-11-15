@@ -1,0 +1,33 @@
+# Istio Service Mesh Base
+# Core Istio installation with istiod
+
+name: istio
+repository: https://istio-release.storage.googleapis.com/charts
+chart: istiod
+revision: 1.23.0
+namespace: istio-system
+
+appParams:
+  disableAutoSync: true
+
+values:
+  pilot:
+    autoscaleEnabled: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+
+  global:
+    proxy:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+
+  meshConfig:
+    accessLogFile: /dev/stdout
+    enableTracing: false

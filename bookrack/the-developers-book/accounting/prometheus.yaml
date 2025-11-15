@@ -1,0 +1,52 @@
+# Prometheus - Monitoring and Metrics
+# Time-series database for metrics
+
+name: prometheus
+repository: https://prometheus-community.github.io/helm-charts
+chart: prometheus
+revision: 25.27.0
+namespace: monitoring
+
+appParams:
+  disableAutoSync: true
+
+values:
+  alertmanager:
+    enabled: false
+
+  server:
+    persistentVolume:
+      enabled: true
+      size: 50Gi
+      storageClass: longhorn
+
+    retention: "30d"
+
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+
+  pushgateway:
+    enabled: false
+
+  nodeExporter:
+    enabled: true
+
+  kubeStateMetrics:
+    enabled: true
+
+glyphs:
+  istio:
+    # Internal access to Prometheus
+    prometheus:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - prometheus
+      http:
+        - route:
+            - destination:
+                host: prometheus-server
+                port:
+                  number: 80

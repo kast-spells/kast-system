@@ -1,0 +1,70 @@
+# S3 CSI Driver - Mount S3 buckets as Kubernetes volumes
+# Enables using S3-compatible storage as PersistentVolumes
+# Works with SeaweedFS, VaristyGW, MinIO, or any S3-compatible storage
+
+name: s3-csi
+repository: https://yandex-cloud.github.io/k8s-csi-s3/charts
+chart: csi-s3
+revision: 0.43.2
+namespace: csi-s3
+
+appParams:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"  # Deploy early (infrastructure)
+  managedNamespaceMetadata:
+    labels:
+      pod-security.kubernetes.io/enforce: privileged  # CSI requires privileged
+
+values:
+  storageClass:
+    create: true
+    name: s3-storage
+    singleBucket: ""  # Empty = support multiple buckets
+    mounter: geesefs  # Options: geesefs, s3fs, rclone
+    mountOptions: "--memory-limit 1000 --dir-mode 0777 --file-mode 0666"
+    reclaimPolicy: Retain
+
+  secret:
+    create: false  # Use Vault-managed secret
+    name: s3-csi-credentials
+
+# Register CSI configuration in lexicon
+appendix:
+  lexicon:
+    s3-csi-config:
+      type: csi-config
+      labels:
+        storageClass: s3-storage
+        default: book
+      driver: ru.yandex.s3.csi
+      defaultAttributes:
+        mounter: geesefs
+        options: --memory-limit 1000 --dir-mode 0777 --file-mode 0666
+      secretRefs:
+        controllerPublishSecretRef:
+          name: s3-csi-credentials
+          namespace: csi-s3
+        nodePublishSecretRef:
+          name: s3-csi-credentials
+          namespace: csi-s3
+        nodeStageSecretRef:
+          name: s3-csi-credentials
+          namespace: csi-s3
+
+glyphs:
+  vault:
+    prolicy:
+      type: prolicy
+
+    # S3 credentials for CSI driver
+    # Change endpoint to match your S3 provider
+    s3-csi-credentials:
+      type: secret
+      name: s3-csi-credentials
+      staticData:
+        accessKeyID: admin
+        # Point to your S3 endpoint (SeaweedFS, VaristyGW, etc.)
+        endpoint: "https://seaweedfs-s3.seaweedfs.svc:8333"
+        region: "us-east-1"
+      randomKeys:
+        - secretAccessKey

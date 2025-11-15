@@ -1,0 +1,29 @@
+name: the-example-book
+description: "Example book with real-world spell patterns from production deployments"
+
+trinkets:
+  kaster:
+    key: glyphs
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/kaster
+    revision: master
+  tarot:
+    key: tarot
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/trinkets/tarot
+    revision: master
+
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: master
+
+chapters:
+  - intro       # Infrastructure foundation (Istio, Cert-Manager, ArgoCD)
+  - services    # Application workloads
+  - others      # Additional components (Storage, etc.)
+
+# Note: Lexicon entries for infrastructure resources (gateways, issuers, etc.)
+# are defined in the spells that create those resources, not here.
+# This keeps the book index clean and follows the principle that resources
+# should register themselves in the lexicon where they are created.

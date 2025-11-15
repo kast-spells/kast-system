@@ -1,0 +1,105 @@
+# Harbor - Container Registry
+# OCI-compliant container registry with vulnerability scanning
+
+name: harbor
+repository: https://helm.goharbor.io
+chart: harbor
+revision: 1.16.1
+namespace: harbor
+
+appParams:
+  disableAutoSync: true
+
+# Register Harbor in lexicon for other spells to discover
+appendix:
+  lexicon:
+    container-registry:
+      type: container-registry
+      labels:
+        default: book
+        provider: harbor
+      url: https://harbor.int.example.com
+      project: library
+      robotAccountPrefix: robot$
+
+values:
+  expose:
+    type: clusterIP  # Using Istio for ingress
+    tls:
+      enabled: false  # TLS termination at gateway
+
+  externalURL: https://harbor.int.example.com
+
+  # Use external PostgreSQL
+  database:
+    type: external
+    external:
+      host: "postgres-rw.postgres.svc"
+      port: "5432"
+      username: "harbor"
+      coreDatabase: "harbor_core"
+      existingSecret: "harbor-pg-credentials"
+
+  # Use external Redis
+  redis:
+    type: external
+    external:
+      addr: "redis-master.redis.svc:6379"
+
+  persistence:
+    enabled: true
+    persistentVolumeClaim:
+      registry:
+        storageClass: longhorn
+        size: 100Gi
+      chartmuseum:
+        storageClass: longhorn
+        size: 10Gi
+      jobservice:
+        storageClass: longhorn
+        size: 10Gi
+
+  trivy:
+    enabled: true
+
+glyphs:
+  postgresql:
+    harbor-pg:
+      type: database
+      dbName: harbor_core
+      userName: harbor
+      secret: harbor-pg-credentials
+
+  vault:
+    prolicy:
+      type: prolicy
+
+    harbor-pg-credentials:
+      type: secret
+      secretType: kubernetes.io/basic-auth
+      staticData:
+        username: harbor
+      randomKeys:
+        - password
+
+    harbor-admin:
+      type: secret
+      format: env
+      staticData:
+        HARBOR_ADMIN_USERNAME: admin
+      randomKeys:
+        - HARBOR_ADMIN_PASSWORD
+
+  istio:
+    harbor:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - harbor
+      http:
+        - route:
+            - destination:
+                host: harbor-core
+                port:
+                  number: 80

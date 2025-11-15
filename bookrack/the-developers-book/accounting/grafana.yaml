@@ -1,0 +1,91 @@
+# Grafana - Metrics Visualization
+# Dashboards and alerting with OIDC authentication
+
+name: grafana
+repository: https://grafana.github.io/helm-charts
+chart: grafana
+revision: 8.6.2
+namespace: monitoring
+
+appParams:
+  disableAutoSync: true
+
+values:
+  replicas: 1
+
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: longhorn
+
+  adminUser: admin
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server.monitoring.svc
+          access: proxy
+          isDefault: true
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+  grafana.ini:
+    server:
+      root_url: https://grafana.int.example.com
+    auth.generic_oauth:
+      enabled: true
+      name: Keycloak
+      allow_sign_up: true
+      client_id: grafana
+      scopes: openid email profile
+      auth_url: https://sso.example.com/realms/main/protocol/openid-connect/auth
+      token_url: https://sso.example.com/realms/main/protocol/openid-connect/token
+      api_url: https://sso.example.com/realms/main/protocol/openid-connect/userinfo
+      role_attribute_path: contains(roles[*], 'admin') && 'Admin' || 'Viewer'
+
+glyphs:
+  vault:
+    prolicy:
+      type: prolicy
+
+    grafana-admin:
+      type: secret
+      format: env
+      staticData:
+        GF_SECURITY_ADMIN_USER: admin
+      randomKeys:
+        - GF_SECURITY_ADMIN_PASSWORD
+
+    grafana-oidc:
+      type: secret
+      path: chapter
+      keys:
+        - CLIENT_SECRET
+
+  istio:
+    grafana:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - grafana
+      http:
+        - route:
+            - destination:
+                host: grafana
+                port:
+                  number: 80

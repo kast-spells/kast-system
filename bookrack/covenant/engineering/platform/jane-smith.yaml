@@ -1,0 +1,8 @@
+# Member: Jane Smith
+# Filename determines member name: jane-smith.yaml → jane-smith
+email: jane.smith@test.local
+firstName: Jane
+lastName: Smith
+realmRoles:
+  - developer
+  - sre

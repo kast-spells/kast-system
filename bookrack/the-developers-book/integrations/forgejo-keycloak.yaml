@@ -1,0 +1,40 @@
+# Forgejo Keycloak Integration
+# OIDC client configuration for Forgejo SSO
+# Demonstrates keycloak glyph usage
+
+name: forgejo-keycloak
+
+glyphs:
+  keycloak:
+    # Keycloak client for Forgejo
+    forgejo-client:
+      type: client
+      clientId: forgejo
+      name: "Forgejo Git Service"
+      enabled: true
+      publicClient: false
+      protocol: openid-connect
+      directAccessGrantsEnabled: false
+      standardFlowEnabled: true
+      implicitFlowEnabled: false
+      serviceAccountsEnabled: false
+      redirectUris:
+        - "https://git.int.example.com/*"
+        - "https://git.int.example.com/user/oauth2/keycloak/callback"
+      webOrigins:
+        - "https://git.int.example.com"
+      defaultClientScopes:
+        - profile
+        - email
+        - roles
+      optionalClientScopes:
+        - groups
+
+  vault:
+    # Store Forgejo OIDC client secret
+    forgejo-oidc-secret:
+      type: secret
+      name: forgejo-oidc
+      format: env
+      randomKeys:
+        - CLIENT_SECRET

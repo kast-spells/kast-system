@@ -1,0 +1,52 @@
+# Longhorn - Distributed Block Storage
+# Cloud-native distributed storage for Kubernetes
+
+name: longhorn
+repository: https://charts.longhorn.io
+chart: longhorn
+revision: 1.7.2
+namespace: longhorn-system
+
+appParams:
+  disableAutoSync: true
+
+values:
+  persistence:
+    defaultClass: true
+    defaultClassReplicaCount: 3
+
+  defaultSettings:
+    backupTarget: s3://longhorn-backup@us-east-1/
+    backupTargetCredentialSecret: longhorn-s3-credentials
+    defaultReplicaCount: 3
+    guaranteedInstanceManagerCpu: 10
+    storageMinimalAvailablePercentage: 15
+
+  ingress:
+    enabled: false  # Using Istio VirtualService
+
+glyphs:
+  vault:
+    # S3 credentials for backup target
+    longhorn-s3-credentials:
+      type: secret
+      path: chapter
+      keys:
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+        - AWS_ENDPOINTS
+
+  istio:
+    # Internal access to Longhorn UI
+    longhorn-ui:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - longhorn
+      http:
+        - route:
+            - destination:
+                host: longhorn-frontend
+                port:
+                  number: 80

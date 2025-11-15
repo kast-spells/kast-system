@@ -1,0 +1,132 @@
+# API Service - Simple Microservice
+# Demonstrates summon workload with PostgreSQL, Vault secrets, and Istio routing
+# This is a pure summon spell (no external chart)
+
+name: api-service
+namespace: services
+
+# Workload configuration
+workload:
+  type: deployment
+  replicas: 2
+
+image:
+  repository: example/api-service
+  tag: "v1.2.3"
+  pullPolicy: IfNotPresent
+
+# Resource limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Health checks
+probes:
+  liveness:
+    enabled: true
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+  readiness:
+    enabled: true
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+# Service exposure
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: http
+      targetPort: 8080
+
+# Environment configuration
+envs:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  DATABASE_HOST: "postgres-rw.postgres.svc"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "api_service"
+
+# Glyphs integration
+glyphs:
+  # PostgreSQL database
+  postgresql:
+    api-service-db:
+      type: database
+      dbName: api_service
+      userName: api_service
+      secret: api-service-db-credentials
+
+  # Vault secrets
+  vault:
+    prolicy:
+      type: prolicy
+
+    # Database credentials
+    api-service-db-credentials:
+      type: secret
+      secretType: kubernetes.io/basic-auth
+      staticData:
+        username: api_service
+      randomKeys:
+        - password
+
+    # Application secrets (API keys, JWT secrets, etc.)
+    api-service-secrets:
+      type: secret
+      format: env
+      randomKeys:
+        - JWT_SECRET
+        - API_KEY
+        - ENCRYPTION_KEY
+
+  # Istio routing
+  istio:
+    api-service:
+      type: virtualService
+      selector:
+        access: external
+      hosts:
+        - api
+      http:
+        - match:
+            - uri:
+                prefix: /api
+          route:
+            - destination:
+                host: api-service
+                port:
+                  number: 8080
+
+# Load secrets as environment variables
+envFrom:
+  - secretRef:
+      name: api-service-secrets
+  - secretRef:
+      name: api-service-db-credentials
+      prefix: DB_
+
+# Horizontal Pod Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget for high availability
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

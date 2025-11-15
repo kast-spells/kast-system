@@ -1,0 +1,7 @@
+# Engineering Chapter
+name: engineering
+
+memberDefaults:
+  roles: [developer]
+  emailVerified: true
+  status: active

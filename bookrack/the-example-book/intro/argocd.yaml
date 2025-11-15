@@ -1,0 +1,55 @@
+# ArgoCD - GitOps Continuous Delivery
+# External chart deployment with OIDC authentication
+
+name: argocd
+repository: https://github.com/argoproj/argo-helm.git
+path: charts/argo-cd
+revision: argo-cd-9.1.1
+namespace: argocd
+
+appParams:
+  disableAutoSync: true  # Manual sync for critical infrastructure
+
+values:
+  dex:
+    enabled: false  # Using direct OIDC instead of Dex
+
+  global:
+    domain: argocd.int.example.com
+    image:
+      tag: v3.2.0
+    logging:
+      format: json
+      level: error
+
+  configs:
+    rbac:
+      policy.csv: |
+        g, ArgoCDAdmins, role:admin
+        g, platform-engineer, role:admin
+        g, developer, role:readonly
+
+    cm:
+      oidc.config: |
+        name: Keycloak
+        issuer: https://sso.example.com/realms/main
+        clientID: argocd
+        clientSecret: $keycloak-client-argocd:client_secret
+        requestedScopes: ["openid", "profile", "email", "groups"]
+        requestedIDTokenClaims:
+          groups:
+            essential: true
+
+    params:
+      server.insecure: true  # TLS termination at gateway
+
+  controller:
+    metrics:
+      enabled: false
+
+  server:
+    ingress:
+      enabled: false  # Using Istio VirtualService
+
+  repoServer:
+    replicas: 2
