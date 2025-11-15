@@ -1,0 +1,76 @@
+# Internal Istio Gateway
+# ClusterIP service for internal services with TLS
+# Uses internal DNS and certificate management
+
+name: internal-gateway
+repository: 'https://github.com/istio/istio.git'
+path: manifests/charts/gateways/istio-ingress
+revision: 1.23.0
+namespace: istio-system
+
+values:
+  global:
+    hub: istio
+    tag: "1.23.0"
+  gateways:
+    istio-ingressgateway:
+      name: istio-internal
+      labels:
+        app: internal-gateway
+        istio: internal-gateway
+      serviceAnnotations:
+        external-dns.alpha.kubernetes.io/hostname: int.example.com
+      type: ClusterIP
+      ports:
+        - port: 80
+          targetPort: 8080
+          name: http2
+          protocol: TCP
+        - port: 443
+          targetPort: 8443
+          name: https
+          protocol: TCP
+
+appendix:
+  lexicon:
+    internal-gateway:
+      type: istio-gw
+      labels:
+        access: internal
+        default: chapter
+      gateway: intro/internal-gateway
+      baseURL: int.example.com
+
+glyphs:
+  istio:
+    # Internal gateway for cluster services
+    internal:
+      type: istio-gw
+      enabled: true
+      hosts:
+        - int.example.com
+        - "*.int.example.com"
+      istioSelector:
+        istio: internal-gateway
+      name: internal-gateway
+      noPrefix: true
+      tls:
+        enabled: true
+        issuerName: internal-cert
+      ports:
+        - name: http
+          port: 80
+          protocol: HTTP
+        - name: https
+          port: 443
+          protocol: HTTPS
+
+  certManager:
+    # Wildcard certificate for internal gateway
+    internal-cert:
+      type: certificate
+      enabled: true
+      name: internal-cert
+      dnsNames:
+        - int.example.com
+        - "*.int.example.com"

@@ -1,0 +1,11 @@
+# The Example Book - Root Application
+# Apps of Apps pattern - deploys all spells in this book
+
+name: the-example-book
+repository: https://github.com/kast-spells/kast-system.git
+path: ./librarian
+revision: master
+namespace: argocd
+
+values:
+  book: the-example-book

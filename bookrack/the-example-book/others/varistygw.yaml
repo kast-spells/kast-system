@@ -1,0 +1,138 @@
+# VaristyGW - S3-Compatible Gateway for POSIX Storage
+# Lightweight S3 API over local/network filesystem
+# Perfect for converting existing storage into S3-compatible object storage
+
+name: varistygw
+namespace: storage
+
+# Deployment configuration
+workload:
+  type: deployment
+  replicas: 1
+
+image:
+  repository: ghcr.io/versity
+  name: versitygw
+  tag: v1.0.18
+
+# CLI arguments for POSIX backend
+args:
+  - "posix"           # Backend type: POSIX filesystem
+  - "/data"           # Data directory
+  - "--chuid=1000"    # Run as UID 1000
+  - "--chgid=1000"    # Run as GID 1000
+  - "--bucketlinks"   # Use symlinks for buckets
+
+service:
+  enabled: true
+  ports:
+    - port: 7070
+      name: s3
+    - port: 7071
+      name: admin
+
+# Resource configuration
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Health probes
+probes:
+  liveness:
+    enabled: true
+    httpGet:
+      path: /healthz
+      port: 7070
+    initialDelaySeconds: 15
+    periodSeconds: 10
+
+# Storage volume
+volumes:
+  data:
+    type: pvc
+    size: 100Gi
+    destinationPath: /data
+
+# Environment configuration
+envs:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: "UTC"
+  VGW_HEALTH: "/healthz"
+  VGW_ADMIN_PORT: ":7071"
+  ROOT_REGION: "us-east-1"
+  VGW_FORCE_PATH_STYLE: "true"
+  ROOT_ACCESS_KEY: "admin"
+
+# Horizontal Pod Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+# Register as S3 provider in lexicon
+appendix:
+  lexicon:
+    varistygw-s3-provider:
+      type: s3-provider
+      labels:
+        provider: varistygw
+        default: chapter
+      endpoint: varistygw.storage.svc:7070
+      region: us-east-1
+
+glyphs:
+  vault:
+    prolicy:
+      type: prolicy
+
+    # S3 access credentials
+    varistygw-s3-access:
+      type: secret
+      format: env
+      staticData:
+        ROOT_ACCESS_KEY: admin
+      randomKeys:
+        - ROOT_SECRET_ACCESS_KEY
+
+  istio:
+    # S3 API endpoint
+    s3-api:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - varistygw-s3
+      http:
+        - route:
+            - destination:
+                host: varistygw
+                port:
+                  number: 7070
+
+    # Admin endpoint
+    admin:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - varistygw-admin
+      http:
+        - match:
+            - uri:
+                prefix: /admin
+          route:
+            - destination:
+                host: varistygw
+                port:
+                  number: 7071
+
+# Load secret as environment variable
+envFrom:
+  - secretRef:
+      name: varistygw-s3-access

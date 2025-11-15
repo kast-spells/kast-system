@@ -1,0 +1,83 @@
+# External Istio Gateway
+# LoadBalancer service with public DNS and TLS certificates
+# Demonstrates istio and certManager glyphs integration
+
+name: external-gateway
+repository: 'https://github.com/istio/istio.git'
+path: manifests/charts/gateways/istio-ingress
+revision: 1.23.0
+namespace: istio-system
+
+values:
+  global:
+    hub: istio
+    tag: "1.23.0"
+  gateways:
+    istio-ingressgateway:
+      name: istio-external
+      labels:
+        app: external-gateway
+        istio: external-gateway
+      serviceAnnotations:
+        external-dns.alpha.kubernetes.io/hostname: ip.example.com
+      type: LoadBalancer
+      ports:
+        - port: 80
+          targetPort: 8080
+          name: http2
+          protocol: TCP
+        - port: 443
+          targetPort: 8443
+          name: https
+          protocol: TCP
+        - port: 2222
+          targetPort: 2222
+          name: git-ssh
+          protocol: TCP
+
+appendix:
+  lexicon:
+    external-gateway:
+      type: istio-gw
+      labels:
+        access: external
+        default: book
+      gateway: intro/external-gateway
+      baseURL: example.com
+
+glyphs:
+  istio:
+    # Main external gateway
+    external:
+      type: istio-gw
+      enabled: true
+      hosts:
+        - example.com
+        - "*.example.com"
+      istioSelector:
+        istio: external-gateway
+      name: external-gateway
+      noPrefix: true
+      tls:
+        enabled: true
+        issuerName: external-cert
+      ports:
+        - name: http
+          port: 80
+          protocol: HTTP
+        - name: https
+          port: 443
+          protocol: HTTPS
+        - name: ssh
+          port: 2222
+          protocol: TCP
+
+  certManager:
+    # Wildcard certificate for external gateway
+    external-cert:
+      type: certificate
+      enabled: true
+      name: external-cert
+      dnsNames:
+        - example.com
+        - "*.example.com"

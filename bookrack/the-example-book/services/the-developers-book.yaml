@@ -1,0 +1,11 @@
+# The Developers Book Reference
+# Apps of Apps pattern - reference to another book
+
+name: the-developers-book
+repository: https://github.com/kast-spells/kast-system.git
+path: ./librarian
+revision: master
+namespace: argocd
+
+values:
+  book: the-developers-book

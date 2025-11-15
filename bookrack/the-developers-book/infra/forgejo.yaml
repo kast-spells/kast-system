@@ -1,0 +1,168 @@
+# Forgejo - Self-hosted Git Service
+# Complete example with PostgreSQL, S3 storage, OIDC auth, and webhooks
+# Demonstrates complex workload with multiple glyphs integration
+
+name: forgejo
+namespace: forgejo
+
+# Register Forgejo in lexicon for other spells to discover
+appendix:
+  lexicon:
+    forgejo-server:
+      type: git-server
+      labels:
+        default: book
+        provider: forgejo
+      url: https://git.int.example.com
+      webhookSecretName: forgejo-webhook-secret
+      sshPort: 22
+
+# S3 bucket for repositories, LFS, packages, and attachments
+glyphs:
+  s3:
+    forgejo-storage:
+      type: bucket
+      name: forgejo-storage
+
+  # PostgreSQL cluster for Forgejo metadata
+  postgresql:
+    forgejo-pg:
+      type: cluster
+      dbName: forgejo
+      userName: forgejo
+      secret: forgejo-pg-app
+      superuserSecret: forgejo-pg-superuser
+      storage:
+        size: 10Gi
+
+  vault:
+    prolicy:
+      type: prolicy
+
+    # PostgreSQL superuser credentials
+    forgejo-pg-superuser:
+      type: secret
+      secretType: kubernetes.io/basic-auth
+      staticData:
+        username: postgres
+      randomKeys:
+        - password
+
+    # PostgreSQL app user credentials
+    forgejo-pg-app:
+      type: secret
+      secretType: kubernetes.io/basic-auth
+      staticData:
+        username: forgejo
+      randomKeys:
+        - password
+
+    # Forgejo internal tokens
+    forgejo-tokens:
+      type: secret
+      format: plain
+      randomKeys:
+        - INTERNAL_TOKEN
+        - SECRET_KEY
+        - JWT_SECRET
+
+    # Webhook secret for CI/CD integration
+    forgejo-webhook-secret:
+      type: secret
+      format: plain
+      randomKeys:
+        - WEBHOOK_SECRET
+
+    # OIDC client secret
+    forgejo-oidc:
+      type: secret
+      path: chapter
+      keys:
+        - CLIENT_SECRET
+
+  istio:
+    # Public access via external gateway
+    forgejo:
+      type: virtualService
+      selector:
+        access: external
+      hosts:
+        - git
+      http:
+        - route:
+            - destination:
+                host: forgejo
+                port:
+                  number: 3000
+
+# Workload configuration
+workload:
+  type: statefulset
+  replicas: 1
+
+image:
+  repository: codeberg.org/forgejo/forgejo
+  tag: "9.0.2-rootless"
+
+volumes:
+  data:
+    type: pvc
+    size: 15Gi
+    destinationPath: /data
+
+  config:
+    type: pvc
+    size: 5Gi
+    destinationPath: /var/lib/gitea
+
+envs:
+  # Rootless container user/group
+  PUID: "1000"
+  PGID: "1000"
+
+  # Application
+  GITEA__DEFAULT__APP_NAME: "Forgejo Git"
+  GITEA__DEFAULT__RUN_MODE: "prod"
+
+  # Server
+  GITEA__server__DOMAIN: "git.int.example.com"
+  GITEA__server__ROOT_URL: "https://git.int.example.com/"
+  GITEA__server__HTTP_PORT: "3000"
+  GITEA__server__SSH_DOMAIN: "git.int.example.com"
+  GITEA__server__SSH_PORT: "22"
+  GITEA__server__DISABLE_SSH: "false"
+  GITEA__server__START_SSH_SERVER: "true"
+  GITEA__server__LFS_START_SERVER: "true"
+
+  # Database (credentials from vault secrets)
+  GITEA__database__DB_TYPE: "postgres"
+  GITEA__database__HOST: "forgejo-pg-rw.forgejo.svc:5432"
+  GITEA__database__NAME: "forgejo"
+  GITEA__database__SSL_MODE: "disable"
+
+  # Repository
+  GITEA__repository__ROOT: "/data/git/repositories"
+
+  # Security (tokens from vault)
+  GITEA__security__INSTALL_LOCK: "true"
+
+  # OIDC Authentication
+  GITEA__openid__ENABLE_OPENID_SIGNIN: "true"
+  GITEA__openid__ENABLE_OPENID_SIGNUP: "true"
+  GITEA__service__DISABLE_REGISTRATION: "false"
+  GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"
+  GITEA__service__SHOW_REGISTRATION_BUTTON: "false"
+
+service:
+  enabled: true
+  ports:
+    - port: 3000
+      name: http
+    - port: 22
+      name: ssh
+
+envFrom:
+  - secretRef:
+      name: forgejo-tokens
+  - secretRef:
+      name: forgejo-pg-app

@@ -1,0 +1,140 @@
+# Cert-Manager - TLS Certificate Management
+# Example with DNS provider (Linode) and internal DNS (Pi-hole)
+# Demonstrates glyphs usage and multi-source runes
+
+name: cert-manager
+repository: https://charts.jetstack.io
+chart: cert-manager
+revision: v1.18.2
+namespace: cert-manager
+
+appParams:
+  disableAutoSync: true
+
+values:
+  installCRDs: true
+
+# Register the default issuer in lexicon for other spells to discover
+appendix:
+  lexicon:
+    default-issuer:
+      type: cert-issuer
+      labels:
+        default: book
+      email: admin@example.com
+      issuerName: default-issuer
+
+glyphs:
+  vault:
+    prolicy:
+      type: prolicy
+
+    # DNS provider API token
+    linode-api-token:
+      type: secret
+      name: linode-api-token
+      path: book
+      keys:
+        - LINODE_API_TOKEN
+
+    # Pi-hole admin password for internal DNS
+    pihole-admin-password:
+      type: secret
+      name: pihole-admin-password
+      path: chapter
+      keys:
+        - PIHOLE_PASSWORD
+
+  certManager:
+    # Default cluster issuer using Linode DNS-01 challenge
+    default-issuer:
+      type: clusterIssuer
+      enabled: true
+      nameOverride: default-issuer
+      email: admin@example.com
+      issuerType: linode
+      linode:
+        secret:
+          name: linode-api-token
+          key: LINODE_API_TOKEN
+
+    # DNS endpoint examples for internal services
+    service-a:
+      type: dnsEndpoint
+      dnsName: "service-a.int.example.com"
+      target: "10.42.0.100"
+
+    service-b:
+      type: dnsEndpoint
+      dnsName: "service-b.int.example.com"
+      target: "10.42.0.101"
+
+# Multi-source runes for external-dns integration
+runes:
+  # Linode DNS provider webhook
+  - name: cert-manager-linode
+    repository: https://github.com/monostream/cert-manager-linode.git
+    path: chart
+    revision: main
+
+  # External DNS for public domain
+  - name: external-dns
+    repository: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    revision: 1.19.0
+    values:
+      crd:
+        create: false
+      provider:
+        name: linode
+      serviceAccount:
+        create: false
+        name: "cert-manager"
+      sources:
+        - service
+        - ingress
+        - istio-gateway
+        - istio-virtualservice
+      extraArgs:
+        regex-domain-filter: ^.*$
+        regex-domain-exclusion: ^(\*.*|int\..*|.*\.int\..*)$
+        default-targets: ip.example.com
+      env:
+        - name: LINODE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: linode-api-token
+              key: LINODE_API_TOKEN
+
+  # Internal DNS using Pi-hole
+  - name: internal-dns
+    repository: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    revision: 1.19.0
+    values:
+      serviceAccount:
+        create: false
+        name: "cert-manager"
+      nameOverride: internal-dns
+      provider:
+        name: pihole
+      registry: noop
+      env:
+        - name: EXTERNAL_DNS_PIHOLE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pihole-admin-password
+              key: PIHOLE_PASSWORD
+      extraArgs:
+        pihole-api-version: 6
+        pihole-server: "http://pihole.dns.svc:8081"
+        pihole-tls-skip-verify:
+        regex-domain-filter: ^(int\..*|.*\.int\..*)$
+        regex-domain-exclusion: ^\*.*$
+      policy: upsert-only
+      sources:
+        - service
+        - ingress
+        - istio-gateway
+        - istio-virtualservice
+        - crd

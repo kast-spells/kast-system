@@ -1,0 +1,28 @@
+name: the-developers-book
+description: "Developer tools and CI/CD infrastructure"
+
+trinkets:
+  kaster:
+    key: glyphs
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/kaster
+    revision: master
+  tarot:
+    key: tarot
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/trinkets/tarot
+    revision: master
+
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: master
+
+chapters:
+  - infra          # CI/CD infrastructure (Forgejo, Harbor)
+  - integrations   # Developer integrations (Keycloak clients, webhooks)
+  - accounting     # Monitoring and observability
+
+# Note: Lexicon entries for services (Forgejo, Harbor, etc.)
+# are defined in the spells that deploy those services, not here.
+# This allows each service to register itself with its actual configuration.

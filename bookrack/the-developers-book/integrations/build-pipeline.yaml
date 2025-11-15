@@ -1,0 +1,96 @@
+# Build Pipeline - Argo Events Workflow
+# Triggered by Forgejo webhooks for CI/CD
+# Demonstrates tarot (Argo Events) integration
+
+name: build-pipeline
+
+tarot:
+  # EventBus for event routing
+  eventbus:
+    default:
+      type: native
+      replicas: 3
+
+  # EventSource - Forgejo webhook receiver
+  eventsource:
+    forgejo-webhook:
+      type: webhook
+      port: 12000
+      endpoint: /forgejo
+      method: POST
+      events:
+        - push
+        - pull_request
+
+  # Sensor - Build pipeline trigger
+  sensor:
+    build-trigger:
+      dependencies:
+        - name: forgejo-push
+          eventSourceName: forgejo-webhook
+          eventName: push
+          filters:
+            data:
+              - path: body.ref
+                type: string
+                value:
+                  - "refs/heads/main"
+                  - "refs/heads/master"
+                  - "refs/heads/develop"
+      triggers:
+        - template:
+            name: build-workflow
+            k8s:
+              operation: create
+              source:
+                resource:
+                  apiVersion: argoproj.io/v1alpha1
+                  kind: Workflow
+                  metadata:
+                    generateName: build-
+                    namespace: ci-cd
+                  spec:
+                    entrypoint: build-and-push
+                    serviceAccountName: workflow-executor
+                    arguments:
+                      parameters:
+                        - name: repo-url
+                          value: "https://git.int.example.com/org/repo.git"
+                        - name: branch
+                          value: "main"
+                    templates:
+                      - name: build-and-push
+                        steps:
+                          - - name: clone
+                              template: git-clone
+                          - - name: build
+                              template: container-build
+                          - - name: push
+                              template: container-push
+
+glyphs:
+  vault:
+    # Webhook secret verification
+    forgejo-webhook-secret:
+      type: secret
+      path: book
+      keys:
+        - WEBHOOK_SECRET
+
+  istio:
+    # Expose webhook endpoint
+    webhook-receiver:
+      type: virtualService
+      selector:
+        access: external
+      hosts:
+        - webhooks
+      http:
+        - match:
+            - uri:
+                prefix: /forgejo
+          route:
+            - destination:
+                host: forgejo-webhook-eventsource-svc
+                port:
+                  number: 12000

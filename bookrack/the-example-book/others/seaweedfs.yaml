@@ -1,0 +1,279 @@
+# SeaweedFS - Distributed Object Storage
+# S3-compatible object storage with distributed architecture
+# Demonstrates multi-component deployment with runes and PostgreSQL backend
+
+name: seaweedfs
+namespace: seaweedfs
+
+# Master Server - Coordinate topology and volume allocation
+workload:
+  type: deployment
+  replicas: 1
+
+image:
+  repository: docker.io/chrislusf
+  name: seaweedfs
+  tag: "latest"
+
+command:
+  - /usr/bin/weed
+args:
+  - master
+  - -ip=seaweedfs-master
+  - -ip.bind=0.0.0.0
+  - -port=9333
+  - -defaultReplication=000
+  - -volumeSizeLimitMB=30000
+
+service:
+  enabled: true
+  ports:
+    - port: 9333
+      name: master
+    - port: 19333
+      name: grpc
+    - port: 9324
+      name: metrics
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    enabled: true
+    httpGet:
+      path: /cluster/status
+      port: 9333
+    initialDelaySeconds: 30
+    periodSeconds: 30
+
+  readiness:
+    enabled: true
+    httpGet:
+      path: /cluster/status
+      port: 9333
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+# Register SeaweedFS as S3 provider in lexicon
+appendix:
+  lexicon:
+    seaweedfs-s3-provider:
+      type: s3-provider
+      labels:
+        provider: seaweedfs
+        default: book
+      endpoint: seaweedfs-s3.seaweedfs.svc:8333
+      region: us-east-1
+      serviceAccount: seaweedfs-s3-aggregator-pod
+      role: seaweedfs-s3-identities
+
+glyphs:
+  # PostgreSQL for filer metadata
+  postgresql:
+    seaweedfs-pg:
+      type: cluster
+      dbName: seaweedfs_filer
+      userName: seaweedfs
+      secret: seaweedfs-pg-app
+      superuserSecret: seaweedfs-pg-superuser
+      storage:
+        size: 10Gi
+
+  vault:
+    prolicy:
+      type: prolicy
+
+    # PostgreSQL credentials
+    seaweedfs-pg-app:
+      type: secret
+      secretType: kubernetes.io/basic-auth
+      staticData:
+        username: seaweedfs
+      randomKeys:
+        - password
+
+    seaweedfs-pg-superuser:
+      type: secret
+      secretType: kubernetes.io/basic-auth
+      staticData:
+        username: postgres
+      randomKeys:
+        - password
+
+    # S3 admin credentials
+    seaweedfs-s3-admin:
+      type: secret
+      format: env
+      labels:
+        kast.ing/s3-identity: "true"
+      randomKeys:
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+
+  # S3 buckets
+  s3:
+    seaweedfs-admin:
+      type: bucket
+      bucket: seaweedfs-admin
+
+  istio:
+    # S3 API endpoint
+    s3-api:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - seaweedfs-s3
+      http:
+        - route:
+            - destination:
+                host: seaweedfs-s3
+                port:
+                  number: 8333
+
+    # Filer UI
+    filer:
+      type: virtualService
+      selector:
+        access: internal
+      hosts:
+        - seaweedfs-filer
+      http:
+        - route:
+            - destination:
+                host: seaweedfs-filer
+                port:
+                  number: 8888
+
+# Additional components as runes
+runes:
+  # Volume Server - Data storage
+  - name: seaweedfs-volume
+    values:
+      name: seaweedfs-volume
+      workload:
+        type: statefulset
+        replicas: 1
+
+      image:
+        repository: docker.io/chrislusf
+        name: seaweedfs
+        tag: "latest"
+
+      command:
+        - /usr/bin/weed
+      args:
+        - volume
+        - -ip=seaweedfs-volume
+        - -port=8080
+        - -dir=/data
+        - -max=100
+        - -mserver=seaweedfs-master:9333
+
+      service:
+        enabled: true
+        ports:
+          - port: 8080
+            name: volume
+          - port: 18080
+            name: grpc
+
+      volumes:
+        data:
+          type: pvc
+          size: 100Gi
+          destinationPath: /data
+
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+
+  # Filer Server - Filesystem interface with PostgreSQL
+  - name: seaweedfs-filer
+    values:
+      name: seaweedfs-filer
+      workload:
+        replicas: 1
+
+      image:
+        repository: docker.io/chrislusf
+        name: seaweedfs
+        tag: "latest"
+
+      command:
+        - /usr/bin/weed
+      args:
+        - filer
+        - -ip=seaweedfs-filer
+        - -port=8888
+        - -master=seaweedfs-master:9333
+
+      service:
+        enabled: true
+        ports:
+          - port: 8888
+            name: filer
+
+      # PostgreSQL connection
+      envs:
+        WEED_LEVELDB2_ENABLED: "false"
+        WEED_POSTGRES2_ENABLED: "true"
+        WEED_POSTGRES2_HOSTNAME: "seaweedfs-pg-rw.seaweedfs.svc"
+        WEED_POSTGRES2_PORT: "5432"
+        WEED_POSTGRES2_DATABASE: "seaweedfs_filer"
+        WEED_POSTGRES2_SSLMODE: "disable"
+
+      envFrom:
+        - secretRef:
+            name: seaweedfs-pg-app
+            prefix: WEED_POSTGRES2_
+
+      volumes:
+        buckets:
+          type: emptyDir
+          destinationPath: /buckets
+
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+
+  # S3 API Server
+  - name: seaweedfs-s3
+    values:
+      name: seaweedfs-s3
+      workload:
+        replicas: 1
+
+      image:
+        repository: docker.io/chrislusf
+        name: seaweedfs
+        tag: "latest"
+
+      command:
+        - /usr/bin/weed
+      args:
+        - s3
+        - -port=8333
+        - -filer=seaweedfs-filer:8888
+
+      service:
+        enabled: true
+        ports:
+          - port: 8333
+            name: s3
+
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
