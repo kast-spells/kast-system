@@ -55,7 +55,7 @@ spec:
 
   # Bootstrap XXX
 {{/*# example*/}}
-{{- if or $glyphDefinition.dbName $glyphDefinition.userName $glyphDefinition.secret $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
+{{- if or $glyphDefinition.dbName $glyphDefinition.userName $glyphDefinition.secret $glyphDefinition.postInitSQL $glyphDefinition.postInitApp $glyphDefinition.postInitTemplate $glyphDefinition.postInitPostgres }}
   bootstrap:
     initdb:
       database: {{ default (include "common.name" $root ) $glyphDefinition.dbName }}
@@ -67,6 +67,31 @@ spec:
         name: {{ . }}
       {{- end }}
 
+      {{- with $glyphDefinition.postInitSQL }} #SQL executed outside transaction (for CREATE DATABASE)
+
+      {{- if eq .type "cm" }}
+
+      {{- if eq .create true }}
+
+      # XXX configmap creation for postInitSQL
+      {{- $cmName := default (print "postgres-postinit-sql-" $glyphDefinition.name) .name }}
+      {{- $cmKey := default "init.sql" .key }}
+      {{- $defaultValues := dict "name" $cmName "definition" (dict "name" $cmKey "content" .content "contentType" "file") }}
+
+      {{- include "summon.configMap" ( list $root $defaultValues ) }}
+
+      {{- end}}
+
+
+      # XXX postInitSQLRefs (executed outside transaction)
+      postInitSQLRefs:
+        configMapRefs:
+          - name: {{ default (print "postgres-postinit-sql-" $glyphDefinition.name) .name }}
+            key: {{ default "init.sql" .key }}
+
+      {{- end }} #if for cm or secret
+
+      {{- end }} #end for postInitSQL
 
       {{- with $glyphDefinition.postInitApp }} #leer la funcion de configmap en summon
 
@@ -74,19 +99,21 @@ spec:
 
       {{- if eq .create true }}
 
-      # XXX configmap creation
-      {{- $defaultValues := dict "name" (default (print "postgres-postinit-app" $glyphDefinition.name) .name) "content" .content  }} #NOTE no sure if works
+      # XXX configmap creation for postInitApp
+      {{- $cmName := default (print "postgres-postinit-app-" $glyphDefinition.name) .name }}
+      {{- $cmKey := default "init.sql" .key }}
+      {{- $defaultValues := dict "name" $cmName "definition" (dict "name" $cmKey "content" .content "contentType" "file") }}
 
-      {{- include "summon.configmap" ( list $root $defaultValues ) }}
+      {{- include "summon.configMap" ( list $root $defaultValues ) }}
 
       {{- end}}
 
 
       # XXX postInitApplicationSQLRefs
       postInitApplicationSQLRefs:
-        configMapRefs:  #create by summon.configmap
-          - name: {{ default (print "postgres-postinit-app" $glyphDefinition.name) .name }} #NOTE no sure if works
-            key: {{ default (print "postgres-postinit-app" $glyphDefinition.name) ( default .name .key) }}
+        configMapRefs:
+          - name: {{ default (print "postgres-postinit-app-" $glyphDefinition.name) .name }}
+            key: {{ default "init.sql" .key }}
 
     #  {{- else}} # As secret
     #    secretRefs: # secret true mean uses secret directly, for prod #TODO
