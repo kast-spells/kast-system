@@ -17,7 +17,7 @@ KASTER_DIR := $(CHARTS_DIR)/kaster
 LIBRARIAN_DIR := librarian
 TESTS_DIR := tests
 
-.PHONY: help test test-all tdd-red tdd-green tdd-refactor lint validate clean
+.PHONY: help test test-all tdd-red tdd-green tdd-refactor lint validate-completeness clean
 
 # Default target
 help: ## Show this help message
@@ -169,8 +169,8 @@ generate-expected: ## Generate expected outputs for glyph (Usage: make generate-
 
 show-glyph-diff: ## Show diff for specific glyph test (Usage: make show-glyph-diff GLYPH=vault EXAMPLE=secrets)
 	@echo "$(YELLOW)Showing diff for $(GLYPH)/$(EXAMPLE)...$(RESET)"
-	@if [ -f "output-test/glyph-$(GLYPH)/$(EXAMPLE).yaml" ] && [ -f "output-test/glyph-$(GLYPH)/$(EXAMPLE).expected.yaml" ]; then \
-		diff -u "output-test/glyph-$(GLYPH)/$(EXAMPLE).expected.yaml" "output-test/glyph-$(GLYPH)/$(EXAMPLE).yaml" || true; \
+	@if [ -f "output-test/$(GLYPH)/$(EXAMPLE).yaml" ] && [ -f "output-test/$(GLYPH)/$(EXAMPLE).expected.yaml" ]; then \
+		diff -u "output-test/$(GLYPH)/$(EXAMPLE).expected.yaml" "output-test/$(GLYPH)/$(EXAMPLE).yaml" || true; \
 	else \
 		echo "$(RED)Expected or actual output not found$(RESET)"; \
 	fi
@@ -244,7 +244,7 @@ test-covenant: ## Test all covenant books (Usage: make test-covenant or make tes
 
 list-covenant-books: ## List all available covenant books
 	@echo "$(BLUE)📚 Available Covenant Books:$(RESET)"
-	@BOOKRACK_PATH=$${COVENANT_BOOKRACK_PATH:-$$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack}; \
+	@BOOKRACK_PATH=$${COVENANT_BOOKRACK_PATH:-$$HOME/the.yaml.life/proto-the-yaml-life/bookrack}; \
 	if [ -d "$$BOOKRACK_PATH" ]; then \
 		find "$$BOOKRACK_PATH" -maxdepth 2 -name "index.yaml" -exec grep -l "realm:" {} \; 2>/dev/null | \
 			xargs -I {} dirname {} | xargs -I {} basename {} | sort | sed 's/^/  - /'; \
@@ -263,11 +263,15 @@ test-spell: ## Test individual spell with context (Usage: make test-spell BOOK=e
 		echo "$(YELLOW)Usage: make test-spell BOOK=example-tdd-book SPELL=example-api$(RESET)"; \
 		exit 1; \
 	fi
-	@tests/scripts/test-spell.sh $(BOOK) $(SPELL)
+	@bash tests/core/test-spell.sh $(SPELL) --book $(BOOK)
 
 # =============================================================================
 # LINTING & VALIDATION
 # =============================================================================
+
+validate-completeness: ## Validate resource completeness for all charts
+	@echo "$(BLUE)Validating resource completeness...$(RESET)"
+	@bash tests/core/test-dispatcher.sh comprehensive chart
 
 lint: ## Run helm lint on all charts (glyphs as templates, not dependencies)
 	@echo "$(BLUE)🔍 Linting all charts...$(RESET)"

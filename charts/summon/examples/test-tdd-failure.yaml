@@ -1,0 +1,19 @@
+# Test case to demonstrate TDD Red phase
+# This will fail because we enable autoscaling but comment out the implementation
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+service:
+  enabled: true
+  ports:
+    - port: 8080
+      name: http
+
+# Enable autoscaling - this should generate an HPA resource
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80

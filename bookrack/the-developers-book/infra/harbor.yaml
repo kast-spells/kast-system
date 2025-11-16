@@ -63,13 +63,6 @@ values:
     enabled: true
 
 glyphs:
-  postgresql:
-    harbor-pg:
-      type: database
-      dbName: harbor_core
-      userName: harbor
-      secret: harbor-pg-credentials
-
   vault:
     prolicy:
       type: prolicy

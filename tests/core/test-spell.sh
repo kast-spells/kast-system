@@ -54,10 +54,17 @@ test_spell() {
     fi
 
     local librarian_output
+    local book_index="$REPO_ROOT/bookrack/$book/index.yaml"
+
+    if [ ! -f "$book_index" ]; then
+        log_error "Book index not found: $book_index"
+        return 1
+    fi
+
     librarian_output=$(helm template test-librarian "$LIBRARIAN_DIR" \
-        --set name="$book" \
+        -f "$book_index" \
         --namespace argocd \
-        2>&1)
+        2>/dev/null)
 
     if [ $? -ne 0 ]; then
         log_error "Librarian rendering failed"
@@ -72,13 +79,13 @@ test_spell() {
     log_section "Step 2: Extracting Application for spell: $spell"
 
     local application
-    application=$(echo "$librarian_output" | yq eval "select(.kind == \"Application\" and .metadata.name == \"$spell\")" - 2>/dev/null)
+    application=$(echo "$librarian_output" | yq eval-all "select(.kind == \"Application\" and .metadata.name == \"$spell\")" - 2>/dev/null)
 
     if [ -z "$application" ] || [ "$application" = "null" ]; then
         log_error "No Application found for spell: $spell"
         echo ""
         log_info "Available spells in book '$book':"
-        echo "$librarian_output" | yq eval 'select(.kind == "Application") | .metadata.name' - | sed 's/^/  - /'
+        echo "$librarian_output" | yq eval-all 'select(.kind == "Application") | .metadata.name' - | sed 's/^/  - /'
         return 1
     fi
 
@@ -117,7 +124,7 @@ test_spell() {
             # Count resources rendered
             local source_output="$OUTPUT_DIR/spell-${spell}-source-$((i+1))-*.yaml"
             if ls $source_output 1> /dev/null 2>&1; then
-                local resources=$(cat $source_output 2>/dev/null | grep -c "^kind:" || echo "0")
+                local resources=$(cat $source_output 2>/dev/null | grep "^kind:" | wc -l | tr -d '\n' | tr -d ' ')
                 total_resources=$((total_resources + resources))
             fi
         fi
@@ -223,7 +230,7 @@ render_source() {
     fi
 
     # Count resources
-    local resource_count=$(echo "$output" | grep -c "^kind:" || echo "0")
+    local resource_count=$(echo "$output" | grep "^kind:" | wc -l | tr -d '\n' | tr -d ' ')
 
     log_success "  Generated $resource_count resource(s)"
 

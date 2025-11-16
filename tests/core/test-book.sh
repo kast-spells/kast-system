@@ -4,9 +4,9 @@
 
 set -euo pipefail
 
-# Source libraries
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$SCRIPT_DIR/../lib"
+# Source libraries (save SCRIPT_DIR before sourcing, as libraries override it)
+BOOK_TEST_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$BOOK_TEST_SCRIPT_DIR/../lib"
 source "$LIB_DIR/utils.sh"
 source "$LIB_DIR/discover.sh"
 source "$LIB_DIR/validate.sh"
@@ -98,34 +98,135 @@ test_covenant_book() {
 }
 
 # Test regular book
+# Iterates through all chapters and spells in a book, testing each spell individually
+# Note: Spell names are read from the YAML 'name' field, not from filename
+# This is because librarian generates Applications using the 'name' field
 test_regular_book() {
     local book="$1"
     local mode="${2:-comprehensive}"
 
     log_header "Testing Regular Book: $book"
 
-    log_warning "Regular book testing not yet fully implemented"
-    log_info "Book structure:"
-
     local book_path=$(get_book_path "$book")
 
-    if [ -f "$book_path/index.yaml" ]; then
-        log_info "  index.yaml: exists"
+    if [ ! -d "$book_path" ]; then
+        log_error "Book path not found: $book_path"
+        increment_failed
+        return 1
     fi
 
-    # List chapters
-    local chapters=($(find "$book_path" -mindepth 1 -maxdepth 1 -type d ! -name "_*" 2>/dev/null))
-    if [ ${#chapters[@]} -gt 0 ]; then
-        log_info "  chapters: ${#chapters[@]}"
-        for chapter_dir in "${chapters[@]}"; do
-            local chapter_name=$(basename "$chapter_dir")
-            local spells=$(find "$chapter_dir" -name "*.yaml" -type f ! -name "index.yaml" 2>/dev/null | wc -l)
-            log_info "    - $chapter_name: $spells spells"
+    # Get all chapters (directories that don't start with _)
+    local chapters=()
+    for chapter_dir in "$book_path"/*/; do
+        [ -d "$chapter_dir" ] || continue
+        local chapter_name=$(basename "$chapter_dir")
+        # Skip special directories (lexicon, etc.)
+        [[ "$chapter_name" =~ ^_ ]] && continue
+        chapters+=("$chapter_name")
+    done
+
+    log_info "Found ${#chapters[@]} chapter(s) in book: $book"
+
+    if [ ${#chapters[@]} -eq 0 ]; then
+        log_warning "No chapters found in book: $book"
+        increment_skipped
+        return 0
+    fi
+
+    # Test each spell in each chapter
+    local total=0
+    local passed=0
+    local failed=0
+    local failed_spells=()
+
+    for chapter in "${chapters[@]}"; do
+        log_section "Chapter: $chapter"
+
+        # Find all spell files (*.yaml but not index.yaml)
+        local spell_files=()
+        for spell_file in "$book_path/$chapter"/*.yaml; do
+            [ -f "$spell_file" ] || continue
+            local file_name=$(basename "$spell_file" .yaml)
+
+            # Skip index files
+            [[ "$file_name" == "index" ]] && continue
+
+            # Read spell name from YAML file (name field)
+            local spell_name
+            if command -v yq &>/dev/null; then
+                spell_name=$(yq eval '.name' "$spell_file" 2>/dev/null)
+                if [ -z "$spell_name" ] || [ "$spell_name" = "null" ]; then
+                    # Fallback to filename if name field not found
+                    spell_name="$file_name"
+                fi
+            else
+                # Fallback to filename if yq not available
+                spell_name="$file_name"
+            fi
+
+            spell_files+=("$file_name|$spell_name")
         done
+
+        if [ ${#spell_files[@]} -eq 0 ]; then
+            log_info "  No spells in chapter: $chapter"
+            continue
+        fi
+
+        log_info "  Testing ${#spell_files[@]} spell(s)"
+        echo ""
+
+        for spell_entry in "${spell_files[@]}"; do
+            total=$((total + 1))
+
+            # Split entry into filename and spell name
+            local file_name="${spell_entry%%|*}"
+            local spell_name="${spell_entry#*|}"
+
+            log_info "  Testing spell: $chapter/$file_name (name: $spell_name)"
+
+            # Call test-spell.sh with book parameter
+            local spell_output
+            if spell_output=$(bash "$BOOK_TEST_SCRIPT_DIR/test-spell.sh" "$spell_name" --book "$book" 2>&1); then
+                log_success "  $chapter/$file_name (PASS)"
+                passed=$((passed + 1))
+            else
+                log_error "  $chapter/$file_name (FAIL)"
+                failed=$((failed + 1))
+                failed_spells+=("$chapter/$file_name")
+
+                # Show error details in verbose mode
+                if [ "$mode" = "debug" ] || [ "$mode" = "verbose" ]; then
+                    echo "$spell_output" | head -20
+                fi
+            fi
+            echo ""
+        done
+    done
+
+    # Print summary
+    echo ""
+    log_header "Book Test Summary: $book"
+    log_info "Total spells tested: $total"
+    log_success "Passed: $passed"
+
+    if [ $failed -gt 0 ]; then
+        log_error "Failed: $failed"
+        log_info "Failed spells:"
+        for failed_spell in "${failed_spells[@]}"; do
+            log_info "  - $failed_spell"
+        done
+    else
+        log_success "All spells passed!"
     fi
 
-    increment_skipped
-    return 0
+    # Update global counters
+    if [ $failed -eq 0 ]; then
+        increment_passed
+        return 0
+    else
+        increment_failed
+        return 1
+    fi
 }
 
 # Test book

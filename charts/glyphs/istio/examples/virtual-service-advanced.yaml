@@ -7,19 +7,19 @@ chapter:
   name: production
 
 lexicon:
-  istio-gw:
-    external-gateway:
-      name: external-gateway
-      gateway: istio-system/external-gateway
-      baseURL: platform.com
-      selector:
-        access: external
-    internal-gateway:
-      name: internal-gateway
-      gateway: istio-system/internal-gateway
-      baseURL: internal.platform.com
-      selector:
-        access: internal
+  - name: external-gateway
+    type: istio-gw
+    gateway: istio-system/external-gateway
+    baseURL: platform.com
+    labels:
+      access: external
+      default: book
+  - name: internal-gateway
+    type: istio-gw
+    gateway: istio-system/internal-gateway
+    baseURL: internal.platform.com
+    labels:
+      access: internal
 
 glyphs:
   istio:

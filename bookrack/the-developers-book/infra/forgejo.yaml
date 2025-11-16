@@ -24,17 +24,6 @@ glyphs:
       type: bucket
       name: forgejo-storage
 
-  # PostgreSQL cluster for Forgejo metadata
-  postgresql:
-    forgejo-pg:
-      type: cluster
-      dbName: forgejo
-      userName: forgejo
-      secret: forgejo-pg-app
-      superuserSecret: forgejo-pg-superuser
-      storage:
-        size: 10Gi
-
   vault:
     prolicy:
       type: prolicy

@@ -7,13 +7,13 @@ chapter:
   name: production
 
 lexicon:
-  istio-gw:
-    external-gateway:
-      name: external-gateway
-      gateway: istio-system/external-gateway
-      baseURL: myapp.com
-      selector:
-        access: external
+  - name: external-gateway
+    type: istio-gw
+    gateway: istio-system/external-gateway
+    baseURL: myapp.com
+    labels:
+      access: external
+      default: book
 
 glyphs:
   istio:

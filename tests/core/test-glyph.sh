@@ -150,6 +150,11 @@ test_glyph_snapshots() {
 
     echo "$output" > "$actual_file"
 
+    # Add K8s schema validation
+    if ! validate_k8s_schema "$actual_file" "$KASTER_DIR" "$example_file"; then
+        log_warning "$glyph/$example_name: K8s schema validation failed"
+    fi
+
     # If expected file doesn't exist, create it (snapshot generation)
     if [ ! -f "$expected_file" ]; then
         cp "$actual_file" "$expected_file"
@@ -180,29 +185,35 @@ test_glyph_all() {
     local test_name="$3"
     local example_name=$(basename "$example_file" .yaml)
 
-    local failed=0
+    # Save current counters to avoid double counting
+    local tests_before=$TESTS_PASSED
+    local failed_before=$TESTS_FAILED
+    local skipped_before=$TESTS_SKIPPED
 
-    # Syntax
-    if ! test_glyph_syntax "$glyph" "$example_file" "$test_name"; then
-        failed=$((failed + 1))
+    local all_passed=true
+
+    # Run all three test phases
+    test_glyph_syntax "$glyph" "$example_file" "$test_name" || all_passed=false
+    test_glyph_comprehensive "$glyph" "$example_file" "$test_name" || all_passed=false
+    test_glyph_snapshots "$glyph" "$example_file" "$test_name" || all_passed=false
+
+    # Reset counters and count this as one test (all modes combined)
+    local net_passed=$((TESTS_PASSED - tests_before))
+    local net_failed=$((TESTS_FAILED - failed_before))
+    local net_skipped=$((TESTS_SKIPPED - skipped_before))
+
+    TESTS_PASSED=$tests_before
+    TESTS_FAILED=$failed_before
+    TESTS_SKIPPED=$skipped_before
+
+    # Increment based on overall result
+    if [ "$all_passed" = true ]; then
+        increment_passed
+        return 0
+    else
+        increment_failed
+        return 1
     fi
-
-    # Comprehensive (don't increment counters again, already done in syntax)
-    TESTS_PASSED=$((TESTS_PASSED - 1))
-    TESTS_FAILED=$((TESTS_FAILED - failed))
-
-    if ! test_glyph_comprehensive "$glyph" "$example_file" "$test_name"; then
-        failed=$((failed + 1))
-    fi
-
-    # Snapshots
-    TESTS_PASSED=$((TESTS_PASSED - 1))
-    TESTS_FAILED=$((TESTS_FAILED - failed + 1))
-    TESTS_SKIPPED=$((TESTS_SKIPPED > 0 ? TESTS_SKIPPED - 1 : 0))
-
-    test_glyph_snapshots "$glyph" "$example_file" "$test_name"
-
-    return $failed
 }
 
 # Test multiple glyphs
