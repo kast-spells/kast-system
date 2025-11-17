@@ -128,11 +128,26 @@ kast-system/
 
 ## Documentation
 
-- [TDD Commands Reference](docs/TDD_COMMANDS.md) - Test-driven development workflow
-- [Coding Standards](CODING_STANDARDS.md) - Template and code conventions
-- [Tarot Workflows](docs/TAROT.md) - Argo Workflows dynamic generation
-- [ApplicationSets Guide](docs/applicationset-guide.md) - ArgoCD ApplicationSet configuration
-- [Claude Code Instructions](CLAUDE.md) - Development with Claude Code
+**Start Here:**
+- [Documentation Navigation](docs/NAVIGATION.md) - Holistic guide with learning paths
+- [Getting Started](docs/GETTING_STARTED.md) - Complete tutorial (zero to production)
+- [Glossary](docs/GLOSSARY.md) - Terminology reference
+
+**Core Components:**
+- [Summon](docs/SUMMON.md) - Workload deployment
+- [Kaster](docs/KASTER.md) - Glyph orchestration
+- [Librarian](docs/LIBRARIAN.md) - ArgoCD Apps of Apps
+- [Bookrack](docs/BOOKRACK.md) - Configuration management
+
+**Development:**
+- [Testing Guide](docs/TESTING.md) - TDD methodology
+- [TDD Commands](docs/TDD_COMMANDS.md) - Command reference
+- [Coding Standards](docs/CODING_STANDARDS.md) - Code conventions
+- [Claude Code](CLAUDE.md) - AI-assisted development
+
+**Online Documentation:** [docs.kast.ing](https://docs.kast.ing)
+
+Documentation is automatically synced to [kast-spells/kast-docs](https://github.com/kast-spells/kast-docs) when tags are pushed (e.g., `docs-v1.0.0`, `v1.0.0`). The kast-docs repository deploys to GitHub Pages at https://docs.kast.ing.
 
 ## Testing
 

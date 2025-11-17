@@ -33,3 +33,6 @@ bookrak/the-yaml-life
 output-test/
 .serena
 
+# MkDocs build files
+site/
+.cache/

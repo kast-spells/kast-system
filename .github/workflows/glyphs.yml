@@ -54,7 +54,7 @@ jobs:
           cd glyphs-repo
           git add .
 
-          # Verifica si hay cambios antes de hacer commit
+          # Check if there are changes before committing
           if git diff --cached --quiet -- . ':(exclude)Chart.yaml'; then
             echo "No changes to commit."
           else

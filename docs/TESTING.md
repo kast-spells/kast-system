@@ -797,12 +797,88 @@ examples/
 make test-all
 ```
 
+## Test System Architecture
+
+kast-system uses a modular dispatcher pattern for scalable, semantic testing:
+
+### Architecture Diagram
+
+```
+User Interface
+    ↓
+Makefile (test target)
+    ↓
+Test Dispatcher (tests/core/test-dispatcher.sh)
+    ├─ Parse: MODE, TYPE, COMPONENTS, FLAGS
+    ├─ Normalize: glyphs→glyph, empty→all
+    └─ Route to appropriate handler
+         ↓
+    ┌────┴────┬─────────┬────────┬────────┐
+    ↓         ↓         ↓        ↓        ↓
+  Glyph   Trinket   Chart    Spell    Book
+ Handler   Handler  Handler  Handler  Handler
+    │         │         │        │        │
+    └─────────┴─────────┴────────┴────────┘
+                     ↓
+            Shared Libraries
+         ├─ utils.sh (logging, counting)
+         ├─ discover.sh (component discovery)
+         └─ validate.sh (rendering, validation)
+```
+
+### Handlers
+
+**Glyph Handler** (`test-glyph.sh`)
+- Tests glyphs through kaster (NEVER directly)
+- Renders with `helm template charts/kaster -f charts/glyphs/<glyph>/examples/<example>.yaml`
+- Validates output against expected snapshots
+
+**Trinket Handler** (`test-trinket.sh`)
+- Tests specialized charts (tarot, microspell)
+- Renders directly from charts/trinkets/
+- Supports comprehensive and syntax modes
+
+**Chart Handler** (`test-chart.sh`)
+- Tests main charts (summon, kaster, librarian)
+- Resource completeness validation
+- Snapshot comparison
+
+**Spell Handler** (`test-spell.sh`)
+- Tests individual spells with full librarian context
+- Renders through librarian to get real ArgoCD Applications
+- Multi-source rendering (summon + kaster + runes)
+
+**Book Handler** (`test-book.sh`)
+- Tests entire books or chapters
+- Detects covenant vs regular books
+- Validates all spells in context
+
+### Discovery System
+
+Automatic component discovery:
+- **Glyphs**: Scans `charts/glyphs/*/examples/*.yaml`
+- **Trinkets**: Scans `charts/trinkets/*/examples/*.yaml`
+- **Charts**: Scans `charts/*/examples/*.yaml`
+- **Books**: Scans `bookrack/*/index.yaml`
+
+No hardcoded lists - system adapts to new components automatically.
+
+### Validation Layers
+
+1. **Syntax** - Helm template renders without errors
+2. **Comprehensive** - Resources generated + completeness checks
+3. **Snapshots** - Output matches expected YAML
+4. **K8s Schema** - `helm install --dry-run` validates against API
+
+---
+
 ## Related Documentation
 
 - [TDD_COMMANDS.md](TDD_COMMANDS.md) - Quick command reference
 - [GLYPH_DEVELOPMENT.md](GLYPH_DEVELOPMENT.md) - Glyph testing specifics
 - [CLAUDE.md](../CLAUDE.md) - TDD development philosophy
 - [README.md](../README.md) - Architecture overview
+- [NAVIGATION.md](NAVIGATION.md) - Documentation guide
 
 ## Summary
 
