@@ -1,0 +1,64 @@
+name: Sync Documentation to kast-docs
+
+on:
+  push:
+    tags:
+      - 'docs-v*'
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kast-system
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout kast-docs
+        uses: actions/checkout@v4
+        with:
+          repository: kast-spells/kast-docs
+          token: ${{ secrets.KAST_DOCS_SYNC_TOKEN }}
+          path: kast-docs
+
+      - name: Sync documentation files
+        run: |
+          # Remove old docs
+          rm -rf kast-docs/docs/
+
+          # Copy documentation
+          cp -r docs/ kast-docs/docs/
+
+          # Copy configuration and root docs
+          cp mkdocs.yml kast-docs/
+          cp CODING_STANDARDS.md kast-docs/
+          cp GOOD_PRACTICES.md kast-docs/
+
+      - name: Commit and push to kast-docs
+        working-directory: kast-docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          # Get tag name
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+
+          git commit -m "docs: sync from kast-system ${TAG_NAME}
+
+Automated sync from kast-spells/kast-system
+Source commit: ${GITHUB_SHA}
+Tag: ${TAG_NAME}"
+
+          git push origin main

@@ -145,6 +145,10 @@ kast-system/
 - [Coding Standards](CODING_STANDARDS.md) - Code conventions
 - [Claude Code](CLAUDE.md) - AI-assisted development
 
+**Online Documentation:** [docs.kast.ing](https://docs.kast.ing)
+
+Documentation is automatically synced to [kast-spells/kast-docs](https://github.com/kast-spells/kast-docs) when tags are pushed (e.g., `docs-v1.0.0`, `v1.0.0`). The kast-docs repository deploys to GitHub Pages at https://docs.kast.ing.
+
 ## Testing
 
 kast-system uses comprehensive TDD testing:

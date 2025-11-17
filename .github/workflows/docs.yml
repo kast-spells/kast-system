@@ -1,4 +1,4 @@
-name: Deploy Documentation
+name: Validate Documentation
 
 on:
   push:
@@ -11,19 +11,24 @@ on:
       - 'README.md'
       - 'CODING_STANDARDS.md'
       - 'GOOD_PRACTICES.md'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'README.md'
+      - 'CODING_STANDARDS.md'
+      - 'GOOD_PRACTICES.md'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history for git-revision-date-localized
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -34,19 +39,22 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-mkdocs
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
+      - name: Install MkDocs and dependencies
         run: |
           pip install --upgrade pip
           pip install mkdocs-material
           pip install mkdocs-git-revision-date-localized-plugin
           pip install pymdown-extensions
 
-      - name: Build documentation
+      - name: Validate documentation
         run: mkdocs build --strict
 
-      - name: Deploy to GitHub Pages
-        run: mkdocs gh-deploy --force
+      - name: Check documentation
+        run: |
+          echo "✅ Documentation validated successfully"
+          echo "📝 Deployment happens via kast-docs repo on tags"
+          echo "🔗 Site: https://docs.kast.ing"
