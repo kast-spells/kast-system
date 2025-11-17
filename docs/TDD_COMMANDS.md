@@ -234,3 +234,185 @@ Output shows:
 - ✅ Examples + Snapshots complete
 - ⚠️  Examples exist, snapshots needed
 - ❌ No examples (needs TDD work)
+
+---
+
+## Modular Test Dispatcher
+
+New semantic testing syntax for precise control:
+
+```bash
+make test [MODE] [TYPE] [COMPONENTS...] [FLAGS]
+```
+
+### Modes
+
+| Mode | What It Does | Speed |
+|------|--------------|-------|
+| `syntax` | Template syntax only | Fast (3s) |
+| `comprehensive` | Rendering + resource checks | Medium (8s) |
+| `snapshots` | Output comparison + K8s validation | Medium (10s) |
+| `all` | All of the above | Slow (20s+) |
+
+**Default:** `comprehensive`
+
+### Types
+
+| Type | Tests | Examples |
+|------|-------|----------|
+| `glyph` | Reusable templates | vault, istio |
+| `trinket` | Specialized charts | tarot, microspell |
+| `chart` | Main charts | summon, kaster |
+| `spell` | Individual deployments | example-api |
+| `book` | Configuration books | covenant-tyl |
+
+**Plural forms OK:** `glyphs`, `trinkets`, `charts` → auto-normalized
+
+### Common Patterns
+
+**Test single component:**
+```bash
+make test glyph vault                    # Comprehensive test
+make test syntax glyph vault             # Syntax only
+make test snapshots trinket tarot        # Snapshot test
+```
+
+**Test multiple components:**
+```bash
+make test glyph vault istio postgresql   # Multiple glyphs
+make test comprehensive chart summon kaster
+```
+
+**Test all (auto-discovery):**
+```bash
+make test all glyph                      # All modes, all glyphs
+make test glyphs                         # Comprehensive, all glyphs
+make test syntax glyphs                  # Syntax, all glyphs
+make test trinkets                       # Comprehensive, all trinkets
+```
+
+**Context-based:**
+```bash
+make test spell example-api --book example-tdd-book
+make test book covenant-tyl --chapter tyl
+```
+
+### Flags Reference
+
+**Spell testing:**
+- `--book <name>` - Specify book (default: example-tdd-book)
+- `--debug` - Show full helm template output
+
+**Book testing:**
+- `--chapter <name>` - Test specific chapter only
+- `--type <type>` - Filter by resource type
+- `--debug` - Show debug output
+
+### Decision Tree
+
+```
+What do you want to test?
+│
+├─ Reusable template (vault, istio)
+│  └─ make test glyph <name>
+│
+├─ Specialized chart (tarot, microspell)
+│  └─ make test trinket <name>
+│
+├─ Main chart (summon, kaster)
+│  └─ make test chart <name>
+│
+├─ Specific deployment (example-api)
+│  └─ make test spell <name> --book <book>
+│
+└─ Entire book (covenant-tyl)
+   └─ make test book <name>
+```
+
+---
+
+## Troubleshooting
+
+### "Glyph not found"
+Check spelling and list available:
+```bash
+ls charts/glyphs/
+make list-glyphs
+```
+
+### "No examples found"
+Create examples directory:
+```bash
+make create-example CHART=<name> EXAMPLE=<example>
+ls charts/glyphs/<name>/examples/
+```
+
+### "Snapshot differs"
+Review diff and update if intentional:
+```bash
+diff output-test/<name>/<example>.yaml \
+     output-test/<name>/<example>.expected.yaml
+make update-snapshot CHART=<name> EXAMPLE=<example>
+```
+
+### "Template rendering failed"
+Check syntax first, then debug:
+```bash
+make test syntax glyph <name>
+make test glyph <name> --debug
+```
+
+### "integer expression expected" (spell tests)
+Known bug in resource counting. Tests still pass, ignore error message.
+
+### "entr not found" (watch command)
+Install entr for file watching:
+```bash
+# Debian/Ubuntu
+apt-get install entr
+
+# macOS
+brew install entr
+```
+
+---
+
+## Quick Reference
+
+**Most common commands:**
+```bash
+# Development cycle
+make tdd-red           # Write test, expect fail
+make tdd-green         # Implement, expect pass
+make tdd-refactor      # Improve, still passing
+
+# Quick validation
+make test syntax glyph vault
+make test chart summon
+
+# Full validation before commit
+make test-all
+
+# Debugging
+make inspect-chart CHART=summon EXAMPLE=basic-deployment
+make test spell example-api --book example-tdd-book --debug
+```
+
+**Performance tips:**
+- Use `syntax` mode during development (fastest)
+- Use `comprehensive` for regular testing (medium)
+- Use `snapshots` before commits (thorough)
+- Use `all` before releases (complete)
+
+**Exit codes:**
+- `0` - All tests passed
+- `1` - Test failures occurred
+- `2` - Tests skipped (no examples)
+
+---
+
+## See Also
+
+- [Testing Guide](TESTING.md) - TDD methodology and architecture
+- [Examples Index](EXAMPLES_INDEX.md) - All examples catalog
+- [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code conventions
