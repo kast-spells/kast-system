@@ -1,0 +1,57 @@
+/* Custom styles for kast-system documentation */
+
+/* Make code blocks more readable */
+.highlight code {
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+/* Improve table styling */
+table {
+  font-size: 0.9em;
+}
+
+/* Make admonitions stand out */
+.admonition {
+  border-left: 4px solid;
+  padding-left: 1rem;
+}
+
+/* Better spacing for navigation */
+.md-nav__item {
+  padding: 0.2rem 0;
+}
+
+/* Code copy button positioning */
+.md-clipboard {
+  color: var(--md-primary-fg-color);
+}
+
+/* Improve inline code visibility */
+code:not(.highlight code) {
+  background-color: var(--md-code-bg-color);
+  padding: 0.1em 0.4em;
+  border-radius: 0.2em;
+  font-size: 0.85em;
+}
+
+/* Better ASCII art/diagram rendering */
+pre code {
+  font-family: "Roboto Mono", "Courier New", monospace;
+  white-space: pre;
+}
+
+/* Responsive tables */
+@media screen and (max-width: 76.1875em) {
+  .md-content table:not([class]) {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* Improve decision tree rendering */
+pre code .tree {
+  font-family: monospace;
+  white-space: pre;
+  line-height: 1.4;
+}

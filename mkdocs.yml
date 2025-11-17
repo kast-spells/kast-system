@@ -1,0 +1,140 @@
+site_name: kast-system
+site_description: Kubernetes Arcane Spelling Technology - TDD framework for Helm deployments
+site_author: kast-spells
+site_url: https://kast-spells.github.io/kast-system
+
+repo_name: kast-spells/kast-system
+repo_url: https://github.com/kast-spells/kast-system
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant      # Fast page loads
+    - navigation.tracking     # URL updates with scroll
+    - navigation.tabs         # Top-level tabs
+    - navigation.sections     # Sections in sidebar
+    - navigation.expand       # Auto-expand sections
+    - navigation.top          # Back to top button
+    - search.suggest          # Search suggestions
+    - search.highlight        # Highlight search terms
+    - search.share           # Share search results
+    - content.code.copy      # Copy code blocks
+    - content.tabs.link      # Link tabs across page
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]+'
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+
+markdown_extensions:
+  - admonition              # Callout boxes
+  - pymdownx.details        # Collapsible admonitions
+  - pymdownx.superfences:   # Code blocks
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:     # Syntax highlighting
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite   # Inline code highlighting
+  - pymdownx.snippets       # Include snippets
+  - pymdownx.tabbed:        # Tabs
+      alternate_style: true
+  - pymdownx.tasklist:      # Task lists
+      custom_checkbox: true
+  - tables                  # Tables support
+  - footnotes               # Footnotes
+  - attr_list               # Attribute lists
+  - md_in_html              # Markdown in HTML
+  - toc:                    # Table of contents
+      permalink: true
+      toc_depth: 3
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kast-spells/kast-system
+      name: kast-system on GitHub
+  version:
+    provider: mike
+    default: latest
+
+extra_css:
+  - stylesheets/extra.css
+
+# Navigation structure
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Navigation Guide: NAVIGATION.md
+    - Tutorial: GETTING_STARTED.md
+    - Glossary: GLOSSARY.md
+  - Core Components:
+    - Overview: README_CORE.md
+    - Summon: SUMMON.md
+    - Kaster: KASTER.md
+    - Librarian: LIBRARIAN.md
+    - Bookrack: BOOKRACK.md
+  - Infrastructure:
+    - Glyphs Overview: GLYPHS.md
+    - Glyph Development: GLYPH_DEVELOPMENT.md
+    - Glyphs Reference: GLYPHS_REFERENCE.md
+    - Lexicon & Discovery: LEXICON.md
+    - Vault Integration: VAULT.md
+    - Hierarchy Systems: HIERARCHY_SYSTEMS.md
+    - Individual Glyphs:
+      - Argo Events: glyphs/argo-events.md
+      - Cert Manager: glyphs/certmanager.md
+      - Common: glyphs/common.md
+      - Crossplane: glyphs/crossplane.md
+      - FreeForm: glyphs/freeform.md
+      - GCP: glyphs/gcp.md
+      - Istio: glyphs/istio.md
+      - Keycloak: glyphs/keycloak.md
+      - PostgreSQL: glyphs/postgresql.md
+      - Runic System: glyphs/runic-system.md
+      - S3: glyphs/s3.md
+      - Summon Glyph: glyphs/summon.md
+      - Trinkets: glyphs/trinkets.md
+      - Vault Glyph: glyphs/vault.md
+  - Trinkets:
+    - Microspell: MICROSPELL.md
+    - Tarot: TAROT.md
+  - Development:
+    - Testing Guide: TESTING.md
+    - TDD Commands: TDD_COMMANDS.md
+    - Examples Index: EXAMPLES_INDEX.md
+    - Coding Standards: ../CODING_STANDARDS.md
+    - Good Practices: ../GOOD_PRACTICES.md
+  - ArgoCD:
+    - ApplicationSet Guide: applicationset-guide.md
+    - Quick Reference: applicationset-quick-reference.md
