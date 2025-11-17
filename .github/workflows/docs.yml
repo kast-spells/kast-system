@@ -9,15 +9,11 @@ on:
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
       - 'README.md'
-      - 'CODING_STANDARDS.md'
-      - 'GOOD_PRACTICES.md'
   pull_request:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'README.md'
-      - 'CODING_STANDARDS.md'
-      - 'GOOD_PRACTICES.md'
   workflow_dispatch:
 
 permissions:

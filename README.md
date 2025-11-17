@@ -142,7 +142,7 @@ kast-system/
 **Development:**
 - [Testing Guide](docs/TESTING.md) - TDD methodology
 - [TDD Commands](docs/TDD_COMMANDS.md) - Command reference
-- [Coding Standards](CODING_STANDARDS.md) - Code conventions
+- [Coding Standards](docs/CODING_STANDARDS.md) - Code conventions
 - [Claude Code](CLAUDE.md) - AI-assisted development
 
 **Online Documentation:** [docs.kast.ing](https://docs.kast.ing)

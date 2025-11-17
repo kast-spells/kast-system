@@ -31,13 +31,11 @@ jobs:
           # Remove old docs
           rm -rf kast-docs/docs/
 
-          # Copy documentation
+          # Copy documentation (includes CODING_STANDARDS.md and GOOD_PRACTICES.md)
           cp -r docs/ kast-docs/docs/
 
-          # Copy configuration and root docs
+          # Copy configuration
           cp mkdocs.yml kast-docs/
-          cp CODING_STANDARDS.md kast-docs/
-          cp GOOD_PRACTICES.md kast-docs/
 
       - name: Commit and push to kast-docs
         working-directory: kast-docs

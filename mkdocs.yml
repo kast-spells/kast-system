@@ -133,8 +133,8 @@ nav:
     - Testing Guide: TESTING.md
     - TDD Commands: TDD_COMMANDS.md
     - Examples Index: EXAMPLES_INDEX.md
-    - Coding Standards: ../CODING_STANDARDS.md
-    - Good Practices: ../GOOD_PRACTICES.md
+    - Coding Standards: CODING_STANDARDS.md
+    - Good Practices: GOOD_PRACTICES.md
   - ArgoCD:
     - ApplicationSet Guide: applicationset-guide.md
     - Quick Reference: applicationset-quick-reference.md
