@@ -3,12 +3,8 @@ name: Sync Documentation to kast-docs
 on:
   push:
     tags:
-      - 'docs-v*'
-      - 'v*'
+      - 'docs-*'
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   sync-docs:
@@ -19,12 +15,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout kast-docs
-        uses: actions/checkout@v4
-        with:
-          repository: kast-spells/kast-docs
-          token: ${{ secrets.KAST_DOCS_SYNC_TOKEN }}
-          path: kast-docs
+      - name: Clone kast-docs repository
+        run: |
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/kast-docs.git kast-docs
+          cd kast-docs
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Sync documentation files
         run: |
@@ -40,9 +36,6 @@ jobs:
       - name: Commit and push to kast-docs
         working-directory: kast-docs
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add -A
 
           if git diff --staged --quiet; then
