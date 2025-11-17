@@ -45,8 +45,8 @@ jobs:
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'
         run: |
-          CHART_VERSION=$(echo $TAG_NAME | sed 's/glyphs-//')
-          sed -i "s/^version:.*/version: ${CHART_VERSION}/" glyphs-repo/Chart.yaml
+          # Glyphs is a collection of sub-charts, no root Chart.yaml to update
+          echo "Tag $TAG_NAME detected. Files already copied in branch step."
 
       - name: Commit and push changes (branch)
         if: steps.event_type.outputs.is_tag == 'false'
