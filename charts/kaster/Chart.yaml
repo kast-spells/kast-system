@@ -1,6 +1,6 @@
 apiVersion: v2
 name: kaster
-version: 1.0.1
+version: 1.4.3
 description: a kaster for the glyphs system.
 home: https://github.com/kast-spells
 sources:
