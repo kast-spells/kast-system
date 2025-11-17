@@ -62,3 +62,7 @@ Source commit: ${GITHUB_SHA}
 Tag: ${TAG_NAME}"
 
           git push origin main
+
+          # Create and push tag to trigger deployment
+          git tag "${TAG_NAME}" || echo "Tag ${TAG_NAME} already exists"
+          git push origin "${TAG_NAME}" || echo "Tag push failed or already exists"
