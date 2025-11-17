@@ -223,7 +223,7 @@ $ make test-status
 Testing Status Report
 
 Main Charts:
-  [COMPLETE] summon: 17 examples (17 snapshots)
+  [COMPLETE] summon: 20 examples (20 snapshots)
   [PARTIAL]  kaster: 1 examples (no snapshots)
   [MISSING]  librarian: NO examples/
 
@@ -1216,7 +1216,7 @@ The testing system automatically discovers all charts, glyphs, and trinkets. Use
 
 ### Fully Tested ([COMPLETE] Examples + Snapshots)
 **Main Charts:**
-- summon: 17 examples with full snapshot coverage
+- summon: 20 examples with full snapshot coverage
 
 **Glyphs:**
 - argo-events: 5 examples

@@ -230,7 +230,7 @@ test-tarot: ## Test Tarot trinket system (all modes: syntax, execution, cards, s
 # COVENANT BOOK TESTING
 # =============================================================================
 
-.PHONY: test-covenant list-covenant-books
+.PHONY: test-covenant test-covenant-book test-covenant-chapter test-covenant-all-chapters test-covenant-debug list-covenant-books
 
 test-covenant: ## Test all covenant books (Usage: make test-covenant or make test-covenant BOOK=covenant-tyl)
 	@if [ -z "$(BOOK)" ]; then \
@@ -241,6 +241,42 @@ test-covenant: ## Test all covenant books (Usage: make test-covenant or make tes
 		echo "$(BLUE)📖 Testing covenant book: $(BOOK)...$(RESET)"; \
 		tests/scripts/test-covenant-book.sh $(BOOK); \
 	fi
+
+test-covenant-book: ## Test specific covenant book (Usage: make test-covenant-book BOOK=covenant-tyl)
+	@if [ -z "$(BOOK)" ]; then \
+		echo "$(RED)❌ BOOK parameter required$(RESET)"; \
+		echo "Usage: make test-covenant-book BOOK=covenant-tyl"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant book (main): $(BOOK)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK)
+
+test-covenant-chapter: ## Test specific covenant chapter (Usage: make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl)
+	@if [ -z "$(BOOK)" ] || [ -z "$(CHAPTER)" ]; then \
+		echo "$(RED)❌ BOOK and CHAPTER parameters required$(RESET)"; \
+		echo "Usage: make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant chapter: $(BOOK) / $(CHAPTER)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK) --chapter-filter $(CHAPTER)
+
+test-covenant-all-chapters: ## Test covenant main + all chapters (Usage: make test-covenant-all-chapters BOOK=covenant-tyl)
+	@if [ -z "$(BOOK)" ]; then \
+		echo "$(RED)❌ BOOK parameter required$(RESET)"; \
+		echo "Usage: make test-covenant-all-chapters BOOK=covenant-tyl"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant book with all chapters: $(BOOK)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK) --all-chapters
+
+test-covenant-debug: ## Test covenant with debug output (Usage: make test-covenant-debug BOOK=covenant-tyl)
+	@if [ -z "$(BOOK)" ]; then \
+		echo "$(RED)❌ BOOK parameter required$(RESET)"; \
+		echo "Usage: make test-covenant-debug BOOK=covenant-tyl"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)📖 Testing covenant book (debug mode): $(BOOK)...$(RESET)"
+	@tests/scripts/test-covenant-book.sh $(BOOK) --debug
 
 list-covenant-books: ## List all available covenant books
 	@echo "$(BLUE)📚 Available Covenant Books:$(RESET)"
