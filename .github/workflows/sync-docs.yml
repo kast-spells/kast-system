@@ -46,11 +46,10 @@ jobs:
           # Get tag name
           TAG_NAME="${GITHUB_REF#refs/tags/}"
 
-          git commit -m "docs: sync from kast-system ${TAG_NAME}
-
-Automated sync from kast-spells/kast-system
-Source commit: ${GITHUB_SHA}
-Tag: ${TAG_NAME}"
+          git commit -m "docs: sync from kast-system ${TAG_NAME}" \
+            -m "Automated sync from kast-spells/kast-system" \
+            -m "Source commit: ${GITHUB_SHA}" \
+            -m "Tag: ${TAG_NAME}"
 
           git push origin main
 
