@@ -70,8 +70,12 @@ jobs:
             echo "Tag $TAG_NAME already exists. Skipping..."
           else
             git add .
-            git commit -m "Release - Tag: $TAG_NAME"
-            git push origin master
+            if git diff --cached --quiet; then
+              echo "No changes to commit for tag $TAG_NAME"
+            else
+              git commit -m "Release - Tag: $TAG_NAME"
+              git push origin master
+            fi
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME"
           fi
