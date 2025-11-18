@@ -40,7 +40,7 @@ jobs:
       - name: Copy files to destination repository (branch)
         run: |
           rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' covenant/ covenant-repo/
-          rsync -avL --exclude='Chart.yaml' covenant/ covenant-repo/
+          rsync -avL --exclude='Chart.yaml' --exclude='bookrack' covenant/ covenant-repo/
 
 
       - name: Copy files to destination repository (tag)
