@@ -1,0 +1,150 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+
+Covenant ApplicationSet Generator
+Generates an ApplicationSet that creates a covenant instance per chapter
+Only renders if covenant.chapterFilter is NOT set (main covenant instance)
+*/}}
+
+{{- $root := . }}
+{{- $covenant := .Values.covenant }}
+
+{{/* Only generate ApplicationSet if we're in "main" mode (no chapterFilter) */}}
+{{- if not $covenant.chapterFilter }}
+
+{{/* Use .Values.name (from librarian) as bookPath */}}
+{{- $bookPath := default .Release.Name .Values.name }}
+
+{{/* Scan bookrack to find all chapters with members */}}
+{{- $chaptersWithMembers := list }}
+{{- $covenantIndexPath := printf "bookrack/%s/index.yaml" $bookPath }}
+
+{{- if .Files.Glob $covenantIndexPath }}
+
+{{/* Scan for chapters (directories with index.yaml or member files) */}}
+{{- range $chapterPath, $_ := .Files.Glob (printf "bookrack/%s/*/index.yaml" $bookPath) }}
+  {{- $chapterName := base (dir $chapterPath) }}
+
+  {{/* Skip conventions directory */}}
+  {{- if ne $chapterName "conventions" }}
+    {{/* Check if chapter has member files */}}
+    {{- $memberGlob := printf "bookrack/%s/%s/*/*.yaml" $bookPath $chapterName }}
+    {{- if $.Files.Glob $memberGlob }}
+      {{- $chaptersWithMembers = append $chaptersWithMembers $chapterName }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/* If we found chapters with members, generate ApplicationSet */}}
+{{- if $chaptersWithMembers }}
+
+{{/* Use direct repo path (covenant should be in same repo as bookrack) */}}
+{{- $repoURL := "git@github.com:the-yaml-life/proto-the-yaml-life.git" }}
+{{- $path := "./covenant" }}
+{{- $revision := "main" }}
+
+{{/* Use runicIndexer to find Keycloak instance from lexicon */}}
+{{- $keycloakInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (dict "labels" (dict "chapter" $root.Values.chapter.name)) "keycloak" $root.Values.chapter.name) | fromJson) "results" }}
+{{- $keycloakInstance := dict }}
+{{- range $keycloakInstances }}
+  {{- $keycloakInstance = . }}
+{{- end }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: {{ $bookPath }}-chapters
+  namespace: {{ default "argocd" .Values.spellbook.argocdNamespace }}
+  labels:
+    app.kubernetes.io/name: {{ $bookPath }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    covenant.kast.io/type: applicationset
+  annotations:
+    argocd.argoproj.io/sync-wave: "{{ default "6" ($covenant.appParams).syncWave }}"
+spec:
+  goTemplate: true
+
+  generators:
+    - list:
+        elements:
+        {{- range $chapterName := $chaptersWithMembers }}
+        - chapter: {{ $chapterName }}
+        {{- end }}
+
+  template:
+    metadata:
+      name: '{{ $bookPath }}-{{`{{.chapter}}`}}'
+      namespace: {{ default "argocd" .Values.spellbook.argocdNamespace }}
+      labels:
+        app.kubernetes.io/managed-by: applicationset
+        covenant.kast.io/book: {{ $bookPath }}
+        covenant.kast.io/chapter: '{{`{{.chapter}}`}}'
+      {{- $appParams := default dict .Values.appParams }}
+      {{- with $appParams.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      project: {{ default .Values.spellbook.name (.Values.spellbook).projectName }}
+
+      sources:
+        # Covenant chart source
+        - repoURL: {{ $repoURL }}
+          path: {{ $path }}
+          targetRevision: {{ $revision }}
+          helm:
+            values: |
+              name: {{ $bookPath }}-{{`{{.chapter}}`}}
+
+              covenant:
+                chapterFilter: {{`{{.chapter}}`}}
+
+              {{/* Always pass complete book context to chapter apps - they need lexicon for runicIndexer */}}
+              {{- $cleanSpellbook := dict }}
+              {{- $_ := set $cleanSpellbook "spellbook" (deepCopy .Values.spellbook) }}
+              {{- $_ := unset $cleanSpellbook.spellbook "appParams" }}
+              {{- toYaml $cleanSpellbook | nindent 14 }}
+
+              chapter:
+                {{- toYaml .Values.chapter | nindent 16 }}
+
+              lexicon:
+                {{- toYaml .Values.lexicon | nindent 16 }}
+
+              {{- if .Values.cards }}
+              cards:
+                {{- toYaml .Values.cards | nindent 16 }}
+              {{- end }}
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: {{ default "keycloak" .Release.Namespace }}
+
+      syncPolicy:
+        {{- $appParams := default dict .Values.appParams }}
+        {{- if $appParams.managedNamespaceMetadata }}
+          {{- with $appParams.managedNamespaceMetadata }}
+        managedNamespaceMetadata:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- end }}
+        {{- if not $appParams.disableAutoSync }}
+          {{- with ($appParams.syncPolicy).automated }}
+        automated:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- end }}
+        {{- with ($appParams.syncPolicy).syncOptions }}
+        syncOptions:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with ($appParams.syncPolicy).retry }}
+        retry:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

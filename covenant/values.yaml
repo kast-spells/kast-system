@@ -1,0 +1,158 @@
+# Covenant Trinket - Complete Identity Management System
+# Generates Keycloak realms, users, groups, clients, IDPs, auth flows, and integrates with Vault
+
+# ===========================================================================
+# IMPORTANT: Covenant is a DATA-DRIVEN trinket
+# ===========================================================================
+# Covenant does NOT use values.yaml for configuration. Instead, it reads
+# directly from the bookrack/ directory structure.
+#
+# The librarian passes these values automatically:
+#   - name: The book name (used as bookPath to read from bookrack/)
+#   - spellbook: Book metadata and trinket definitions
+#   - chapter: Current chapter context
+#   - lexicon: Consolidated resource references (vault, keycloak instances)
+#
+# Configuration is done via bookrack files, NOT via values.yaml.
+
+# ===========================================================================
+# BOOKRACK STRUCTURE
+# ===========================================================================
+# Covenant reads from: bookrack/{name}/
+#
+# bookrack/{name}/
+# ├── index.yaml                              # Realm configuration + global roles
+# │   ├── name: book-name
+# │   ├── realm:                              # KeycloakRealm configuration
+# │   │   ├── name: realm-name
+# │   │   ├── displayName: "Display Name"
+# │   │   ├── passwordPolicy: [...]
+# │   │   ├── tokenSettings: {...}
+# │   │   └── eventConfig: {...}
+# │   └── roles:                              # Global realm roles
+# │       ├── user: {...}
+# │       ├── admin: {...}
+# │       └── ...
+# │
+# ├── conventions/                            # Global configurations
+# │   ├── post-provisioning/                  # Post-provisioning jobs
+# │   │   └── stalwart-email.yaml
+# │   ├── client-scopes/                      # Custom OIDC scopes
+# │   │   ├── custom-roles.yaml
+# │   │   └── groups.yaml
+# │   ├── identity-providers/                 # External IDPs (optional)
+# │   │   ├── google.yaml
+# │   │   └── github.yaml
+# │   ├── auth-flows/                         # Custom auth flows (optional)
+# │   │   └── link-existing-user.yaml
+# │   └── integrations/                       # OIDC clients
+# │       ├── argocd.yaml
+# │       ├── vault.yaml
+# │       └── ...
+# │
+# └── {chapter}/                              # Organization chapters (areas)
+#     ├── index.yaml                          # Chapter configuration
+#     │   ├── name: chapter-name
+#     │   ├── roles:                          # Chapter-specific roles
+#     │   │   └── chapter-role: {...}
+#     │   ├── memberDefaults:                 # Defaults for all members
+#     │   │   ├── status: active
+#     │   │   └── realmRoles: [user]
+#     │   └── realmRoles: [...]               # Roles assigned to chapter group
+#     │
+#     └── {chapel}/                           # Teams/sub-groups
+#         └── {member}.yaml                   # Individual user files
+#             ├── email: user@example.com
+#             ├── firstName: First
+#             ├── lastName: Last
+#             ├── username: username
+#             ├── status: active
+#             ├── realmRoles: [role1, role2]
+#             └── groups: [...]               # Auto-assigned if not specified
+
+# ===========================================================================
+# EXAMPLES
+# ===========================================================================
+
+# Example: bookrack/covenant-tyl/index.yaml
+# ----------------------------------------
+# name: covenant-tyl
+# realm:
+#   name: tyl
+#   displayName: "The YAML Life"
+#   passwordPolicy:
+#     - type: length
+#       value: "12"
+# roles:
+#   user:
+#     description: "Base user role"
+#   admin:
+#     description: "Administrator"
+
+# Example: bookrack/covenant-tyl/conventions/integrations/argocd.yaml
+# -------------------------------------------------------------------
+# enabled: true
+# clientId: argocd
+# webUrl: https://argocd.example.com
+# redirectUris:
+#   - https://argocd.example.com/auth/callback
+# defaultClientScopes:
+#   - profile
+#   - email
+# secret: keycloak-client-argocd  # Vault will generate this
+
+# Example: bookrack/covenant-tyl/conventions/client-scopes/custom-roles.yaml
+# -------------------------------------------------------------------------
+# description: "Custom roles scope"
+# protocol: openid-connect
+# default: true
+# protocolMappers:
+#   - name: realm-roles-mapper
+#     protocol: openid-connect
+#     protocolMapper: oidc-usermodel-realm-role-mapper
+
+# Example: bookrack/covenant-tyl/conventions/post-provisioning/stalwart-email.yaml
+# -------------------------------------------------------------------------------
+# enabled: true
+# conditions:
+#   groups:
+#     - fwck
+#     - tyl
+# job:
+#   backoffLimit: 3
+#   activeDeadlineSeconds: 300
+#   restartPolicy: OnFailure
+# container:
+#   name: stalwart-provisioner
+#   image:
+#     name: curlimages/curl
+#     tag: latest
+
+# Example: bookrack/covenant-tyl/fwck/index.yaml
+# ---------------------------------------------
+# name: fwck
+# description: "FWCK organization"
+# roles:
+#   fwck-admin:
+#     description: "FWCK administrator"
+# memberDefaults:
+#   status: active
+#   realmRoles: [user, admin]
+
+# Example: bookrack/covenant-tyl/fwck/namenica/namen.yaml
+# ------------------------------------------------------
+# email: namen@the.yaml.life
+# firstName: Namen
+# lastName: Malkav
+# username: namen
+# status: active
+# realmRoles:
+#   - admin
+#   - fwck-admin
+# # Groups auto-assigned: [fwck, fwck/namenica]
+
+# ===========================================================================
+# NO CONFIGURATION NEEDED IN values.yaml
+# ===========================================================================
+# All configuration is read from bookrack/ structure.
+# This file exists only for documentation purposes.

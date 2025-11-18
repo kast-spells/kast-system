@@ -1,14 +1,14 @@
-name: librarian-sync
+name: covenant-sync
 
 on:
   push:
     branches:
       - master
     tags:
-      - "librarian-*"
+      - "covenant-*"
 
 jobs:
-  sync-librarian:
+  sync-covenant:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,26 +32,27 @@ jobs:
 
       - name: Clone destination repository
         run: |
-          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/librarian.git librarian-repo
-          cd librarian-repo
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/covenant.git covenant-repo
+          cd covenant-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Copy files to destination repository (branch)
         run: |
-          rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' librarian/ librarian-repo/
-          rsync -avL --exclude='Chart.yaml' librarian/ librarian-repo/
+          rsync -avL --ignore-existing --include='*/' --include='Chart.yaml' --exclude='*' covenant/ covenant-repo/
+          rsync -avL --exclude='Chart.yaml' covenant/ covenant-repo/
+
 
       - name: Copy files to destination repository (tag)
         if: steps.event_type.outputs.is_tag == 'true'
         run: |
-          CHART_VERSION=$(echo $TAG_NAME | sed 's/librarian-//')
-          sed -i "s/^version:.*/version: ${CHART_VERSION}/" librarian-repo/Chart.yaml
+          CHART_VERSION=$(echo $TAG_NAME | sed 's/covenant-//')
+          sed -i "s/^version:.*/version: ${CHART_VERSION}/" covenant-repo/Chart.yaml
 
       - name: Commit and push changes (branch)
         if: steps.event_type.outputs.is_tag == 'false'
         run: |
-          cd librarian-repo
+          cd covenant-repo
           git add .
 
           # Check if there are changes before committing
@@ -65,7 +66,7 @@ jobs:
       - name: Commit, tag and push changes (tag)
         if: steps.event_type.outputs.is_tag == 'true'
         run: |
-          cd librarian-repo
+          cd covenant-repo
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
             echo "Tag $TAG_NAME already exists. Skipping..."
           else

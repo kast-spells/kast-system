@@ -1,0 +1,129 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+{{- $covenant := .Values.covenant | default dict }}
+{{/* Only create ConfigMap in main covenant (without chapterFilter) */}}
+{{/* This prevents duplication when ApplicationSet creates chapter-specific instances */}}
+{{- if not $covenant.chapterFilter }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-email-templates
+  namespace: {{ .Values.namespace | default "keycloak" }}
+  labels:
+    covenant.kast.io/component: post-provisioning
+    covenant.kast.io/type: email-templates
+data:
+  welcome-email.txt: |
+    Subject: Bienvenido a The YAML Life - Tu cuenta de correo esta lista
+    From: The YAML Life <noreply@the.yaml.life>
+    To: {{`{{EMAIL}}`}}
+
+    Hola {{`{{USERNAME}}`}},
+
+    ¡Bienvenido a The YAML Life!
+
+    Tu cuenta de correo electrónico ha sido creada exitosamente.
+
+    ═══════════════════════════════════════════════════
+    📧 INFORMACIÓN DE TU CUENTA
+    ═══════════════════════════════════════════════════
+
+    Email: {{`{{EMAIL}}`}}
+
+    🔐 CONTRASEÑAS INICIALES (debes cambiarlas en el primer login):
+
+    Keycloak SSO:       {{`{{KEYCLOAK_PASSWORD}}`}}
+      → Usa esta password para login en https://sso.the.yaml.life
+      → Tendrás que cambiarla en el primer inicio de sesión
+      → Válida para todas las aplicaciones (Roundcube, ArgoCD, Harbor, etc.)
+
+    Email (Stalwart):   {{`{{STALWART_PASSWORD}}`}}
+      → Usa esta password para IMAP/SMTP en clientes de email
+      → También para login en Roundcube (después del SSO de Keycloak)
+
+    ⚠️  IMPORTANTE:
+    - Ambas contraseñas son temporales
+    - Keycloak te forzará a cambiar la password SSO en el primer login
+    - Stalwart password puedes cambiarla desde el webmail
+
+    ═══════════════════════════════════════════════════
+    🌐 ACCESO A TUS SERVICIOS
+    ═══════════════════════════════════════════════════
+
+    Webmail (Roundcube):
+    → https://mail.int.the.yaml.life
+      Accede a tu correo desde el navegador con todas las funcionalidades:
+      - Lectura y envío de correos
+      - Contactos sincronizados (CardDAV)
+      - Calendario sincronizado (CalDAV)
+      - Filtros de correo (Sieve)
+
+    Portal SSO (Single Sign-On):
+    → https://sso.the.yaml.life
+      Gestiona tu cuenta y accede a todas las aplicaciones integradas.
+
+    ═══════════════════════════════════════════════════
+    📱 CONFIGURACIÓN DE CLIENTES DE CORREO
+    ═══════════════════════════════════════════════════
+
+    Si prefieres usar un cliente de correo (Thunderbird, Outlook, etc.):
+
+    IMAP (Recibir correos):
+    - Servidor: mail.the.yaml.life
+    - Puerto:   993
+    - Seguridad: SSL/TLS
+    - Usuario:  {{`{{EMAIL}}`}}
+
+    SMTP (Enviar correos):
+    - Servidor: mail.the.yaml.life
+    - Puerto:   587
+    - Seguridad: STARTTLS
+    - Usuario:  {{`{{EMAIL}}`}}
+
+    CardDAV (Contactos):
+    - URL: https://mail.the.yaml.life/dav/addressbook/{{`{{EMAIL}}`}}/
+
+    CalDAV (Calendario):
+    - URL: https://mail.the.yaml.life/dav/calendar/{{`{{EMAIL}}`}}/
+
+    ═══════════════════════════════════════════════════
+    🔐 SEGURIDAD Y BUENAS PRÁCTICAS
+    ═══════════════════════════════════════════════════
+
+    1. Cambia tu contraseña inmediatamente después del primer inicio de sesión
+    2. Usa una contraseña fuerte (mínimo 12 caracteres, con mayúsculas, minúsculas, números y símbolos)
+    3. Habilita autenticación de dos factores (2FA) en el portal SSO
+    4. No compartas tu contraseña con nadie
+    5. Revisa regularmente la actividad de tu cuenta
+
+    ═══════════════════════════════════════════════════
+    💡 PRIMEROS PASOS
+    ═══════════════════════════════════════════════════
+
+    1. Accede a https://mail.int.the.yaml.life
+    2. Inicia sesión con tu email y contraseña inicial
+    3. El sistema te redirigirá a SSO para autenticarte
+    4. Cambia tu contraseña en el portal SSO
+    5. ¡Listo! Ya puedes usar tu correo
+
+    ═══════════════════════════════════════════════════
+    ❓ NECESITAS AYUDA?
+    ═══════════════════════════════════════════════════
+
+    Si tienes algún problema o pregunta, contacta al equipo de soporte.
+
+    Documentación: https://the.yaml.life/docs
+    Soporte: support@the.yaml.life
+
+    ═══════════════════════════════════════════════════
+
+    Saludos,
+    El equipo de The YAML Life
+
+    ---
+    Este es un mensaje automático generado por el sistema de aprovisionamiento.
+    Por favor no respondas a este correo.
+{{- end }}

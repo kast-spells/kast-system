@@ -108,8 +108,10 @@ BOOKRACK_PATH="${COVENANT_BOOKRACK_PATH:-}"
 
 # Auto-detect if not set
 if [ -z "$COVENANT_CHART_PATH" ]; then
-    # Try relative path first (if working in proto-the-yaml-life repo)
-    if [ -d "../proto-the-yaml-life/covenant" ]; then
+    # Try kast-system first (new location), then proto-the-yaml-life (legacy)
+    if [ -d "covenant" ]; then
+        COVENANT_CHART_PATH="covenant"
+    elif [ -d "../proto-the-yaml-life/covenant" ]; then
         COVENANT_CHART_PATH="../proto-the-yaml-life/covenant"
     elif [ -d "$HOME/_home/the.yaml.life/proto-the-yaml-life/covenant" ]; then
         COVENANT_CHART_PATH="$HOME/_home/the.yaml.life/proto-the-yaml-life/covenant"
@@ -117,8 +119,10 @@ if [ -z "$COVENANT_CHART_PATH" ]; then
 fi
 
 if [ -z "$BOOKRACK_PATH" ]; then
-    # Try relative path first
-    if [ -d "../proto-the-yaml-life/bookrack" ]; then
+    # Try kast-system first, then proto-the-yaml-life
+    if [ -d "bookrack" ]; then
+        BOOKRACK_PATH="bookrack"
+    elif [ -d "../proto-the-yaml-life/bookrack" ]; then
         BOOKRACK_PATH="../proto-the-yaml-life/bookrack"
     elif [ -d "$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack" ]; then
         BOOKRACK_PATH="$HOME/_home/the.yaml.life/proto-the-yaml-life/bookrack"

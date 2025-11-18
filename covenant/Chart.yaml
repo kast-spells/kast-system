@@ -1,0 +1,12 @@
+apiVersion: v2
+name: covenant
+version: 0.1.0
+description: Identity and access management system using mystical covenant architecture
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-system
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: laaledesiempre
+    email: laaledesiempre@disroot.org
