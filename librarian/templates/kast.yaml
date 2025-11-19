@@ -276,6 +276,14 @@ spec:
           {{- if $rune.values }}
           {{- toYaml $rune.values | nindent 10 }}
           {{- end }}
+          {{- toYaml $cleanSpellbook | nindent 10 }}
+          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
+          lexicon:
+          {{- toYaml $lexicon | nindent 12 }}
+          {{- if $cards }}
+          cards:
+          {{- toYaml $cards | nindent 12 }}
+          {{- end }}
     {{- end }}
     {{- else }}
       {{/* defaultTrinket (summon) - rune fallback, uses merged chapterDefaultTrinket */}}
@@ -291,6 +299,14 @@ spec:
         values: |
           {{- if $rune.values }}
           {{- toYaml $rune.values | nindent 10 }}
+          {{- end }}
+          {{- toYaml $cleanSpellbook | nindent 10 }}
+          {{- toYaml (dict "chapter" $chapter) | nindent 10 }}
+          lexicon:
+          {{- toYaml $lexicon | nindent 12 }}
+          {{- if $cards }}
+          cards:
+          {{- toYaml $cards | nindent 12 }}
           {{- end }}
     {{- end }}
   {{- end }}
