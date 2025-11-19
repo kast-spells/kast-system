@@ -1,0 +1,8 @@
+firstName: Bob
+lastName: Jones
+overrideUsername: bob.jones
+status: active
+emailVerified: true
+
+realmRoles: []
+# Sales role would be defined if needed

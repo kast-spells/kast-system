@@ -22,30 +22,48 @@ Only renders if covenant.chapterFilter is NOT set (main covenant instance)
 
 {{- if .Files.Glob $covenantIndexPath }}
 
-{{/* Scan for chapters (directories with index.yaml or member files) */}}
-{{- range $chapterPath, $_ := .Files.Glob (printf "bookrack/%s/*/index.yaml" $bookPath) }}
+{{/* Scan for chapters - try new structure first (covenant/ subdir), fallback to old */}}
+{{- $chapterIndexGlob := printf "bookrack/%s/covenant/*/index.yaml" $bookPath }}
+{{- if not (.Files.Glob $chapterIndexGlob) }}
+  {{- $chapterIndexGlob = printf "bookrack/%s/*/index.yaml" $bookPath }}
+{{- end }}
+
+{{- range $chapterPath, $_ := .Files.Glob $chapterIndexGlob }}
   {{- $chapterName := base (dir $chapterPath) }}
 
-  {{/* Skip conventions directory */}}
-  {{- if ne $chapterName "conventions" }}
-    {{/* Check if chapter has member files */}}
-    {{- $memberGlob := printf "bookrack/%s/%s/*/*.yaml" $bookPath $chapterName }}
+  {{/* Skip conventions, realm, and covenant directories */}}
+  {{- if and (ne $chapterName "conventions") (ne $chapterName "realm") (ne $chapterName "covenant") }}
+    {{/* Check if chapter has member files - try new structure first */}}
+    {{- $memberGlob := printf "bookrack/%s/covenant/%s/*/*.yaml" $bookPath $chapterName }}
+    {{- if not ($.Files.Glob $memberGlob) }}
+      {{- $memberGlob = printf "bookrack/%s/%s/*/*.yaml" $bookPath $chapterName }}
+    {{- end }}
     {{- if $.Files.Glob $memberGlob }}
       {{- $chaptersWithMembers = append $chaptersWithMembers $chapterName }}
     {{- end }}
   {{- end }}
 {{- end }}
 
-{{/* If we found chapters with members, generate ApplicationSet */}}
-{{- if $chaptersWithMembers }}
+{{/* If we found chapters with members AND trinkets available, generate ApplicationSet */}}
+{{- if and $chaptersWithMembers .Values.spellbook.trinkets }}
 
-{{/* Use direct repo path (covenant should be in same repo as bookrack) */}}
-{{- $repoURL := "git@github.com:the-yaml-life/proto-the-yaml-life.git" }}
-{{- $path := "./covenant" }}
-{{- $revision := "main" }}
+{{/* Get covenant trinket definition from spellbook */}}
+{{- $covenantTrinket := get .Values.spellbook.trinkets "covenant" }}
+{{- if not $covenantTrinket }}
+  {{- fail "covenant trinket not found in spellbook.trinkets - ensure covenant is registered in book index.yaml" }}
+{{- end }}
+{{- $repoURL := required "covenant trinket repository is required" $covenantTrinket.repository }}
+{{- $path := required "covenant trinket path is required" $covenantTrinket.path }}
+{{- $revision := required "covenant trinket revision is required" $covenantTrinket.revision }}
 
 {{/* Use runicIndexer to find Keycloak instance from lexicon */}}
-{{- $keycloakInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (dict "labels" (dict "chapter" $root.Values.chapter.name)) "keycloak" $root.Values.chapter.name) | fromJson) "results" }}
+{{- $chapterName := "" }}
+{{- $chapterLabels := dict }}
+{{- if $root.Values.chapter }}
+  {{- $chapterName = $root.Values.chapter.name }}
+  {{- $chapterLabels = dict "chapter" $chapterName }}
+{{- end }}
+{{- $keycloakInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon $chapterLabels "keycloak" $chapterName) | fromJson) "results" }}
 {{- $keycloakInstance := dict }}
 {{- range $keycloakInstances }}
   {{- $keycloakInstance = . }}
@@ -98,6 +116,7 @@ spec:
           helm:
             values: |
               name: {{ $bookPath }}-{{`{{.chapter}}`}}
+              namespace: {{ printf "%s-{{.chapter}}" $bookPath }}
 
               covenant:
                 chapterFilter: {{`{{.chapter}}`}}
@@ -121,7 +140,7 @@ spec:
 
       destination:
         server: https://kubernetes.default.svc
-        namespace: {{ default "keycloak" .Release.Namespace }}
+        namespace: {{ printf "%s-{{.chapter}}" $bookPath }}
 
       syncPolicy:
         {{- $appParams := default dict .Values.appParams }}

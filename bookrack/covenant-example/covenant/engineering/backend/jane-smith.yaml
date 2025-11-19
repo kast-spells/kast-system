@@ -1,0 +1,8 @@
+firstName: Jane
+lastName: Smith
+overrideUsername: jane.smith
+status: active
+emailVerified: true
+
+realmRoles:
+  - developer

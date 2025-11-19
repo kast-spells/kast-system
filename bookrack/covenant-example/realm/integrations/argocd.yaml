@@ -1,0 +1,16 @@
+enabled: true
+clientId: argocd
+webUrl: https://argocd.example.org
+redirectUris:
+  - https://argocd.example.org/auth/callback
+secret: keycloak-client-argocd
+passPolicyName: simple-password-policy
+
+# Post-provisioning for this integration
+postProvisioning:
+  enabled: true
+  scriptFile: scripts/setup-argocd.sh
+  container:
+    image:
+      name: bitnami/kubectl
+      tag: latest

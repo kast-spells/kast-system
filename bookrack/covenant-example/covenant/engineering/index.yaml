@@ -1,0 +1,16 @@
+displayName: "Engineering Chapter"
+
+# List of chapels (subdirectories)
+chapels:
+  - platform
+  - backend
+
+# Chapter-level post-provisioning (runs once per chapter)
+chapterPostProvisioning:
+  - name: setup-namespace
+    enabled: true
+    script: |
+      #!/bin/bash
+      echo "Setting up namespace for engineering chapter"
+      echo "Chapter: ${CHAPTER_NAME}"
+      echo "Namespace: ${NAMESPACE}"
