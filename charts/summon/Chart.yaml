@@ -1,6 +1,6 @@
 apiVersion: v2
 name: summon
-version: 1.2.3
+version: 1.2.4
 description: Kubernetes workload deployment chart for Deployments, StatefulSets, Jobs, CronJobs, and DaemonSets
 home: https://github.com/kast-spells
 sources:
