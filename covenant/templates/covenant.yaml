@@ -30,22 +30,40 @@ Capabilities:
 {{/* Get chapterFilter if specified (for chapter-specific rendering) */}}
 {{- $chapterFilter := $covenant.chapterFilter }}
 
-{{/* Use runicIndexer to find Keycloak instance from lexicon */}}
-{{- $keycloakInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (dict "labels" (dict "chapter" $root.Values.chapter.name)) "keycloak" $root.Values.chapter.name) | fromJson) "results" }}
+{{/* Generate unique ServiceAccount name for post-provisioning jobs */}}
+{{- $postProvisionSA := printf "%s-post-provision" $bookPath }}
+
+{{/* Read covenant book index first to get realm name */}}
+{{- $covenantIndexPath := printf "bookrack/%s/index.yaml" $bookPath }}
+{{- if not (.Files.Glob $covenantIndexPath) }}
+  {{- fail (printf "covenant/index.yaml not found in bookrack/%s" $bookPath) }}
+{{- end }}
+{{- $covenantIndex := .Files.Get $covenantIndexPath | fromYaml }}
+{{- $finalRealm := $covenantIndex.realm }}
+
+{{/* Set chapter name: use chapterFilter if provided, else use "identity" for main covenant */}}
+{{- $chapterName := "" }}
+{{- $chapterLabels := dict }}
+{{- if $root.Values.chapter }}
+  {{- $chapterName = $root.Values.chapter.name }}
+  {{- $chapterLabels = dict "chapter" $chapterName }}
+{{- else }}
+  {{/* Main covenant (no chapterFilter): use "identity" as internal chapter for vault paths */}}
+  {{- $chapterName = "identity" }}
+{{- end }}
+
+{{/* Ensure chapter context exists in $root.Values for vault/glyph templates */}}
+{{- if not $root.Values.chapter }}
+  {{- $_ := set $root.Values "chapter" (dict "name" $chapterName) }}
+{{- end }}
+
+{{- $keycloakInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon $chapterLabels "keycloak" $chapterName) | fromJson) "results" }}
 {{- $keycloakInstance := dict }}
 {{- range $keycloakInstances }}
   {{- $keycloakInstance = . }}
 {{- end }}
 {{/* Extract Keycloak server CRD name from lexicon */}}
 {{- $keycloakRef := required "keycloakInstance.keycloakCrdName is required in lexicon" $keycloakInstance.keycloakCrdName }}
-
-{{/* Read covenant book index */}}
-{{- $covenantIndexPath := printf "bookrack/%s/index.yaml" $bookPath }}
-{{- if .Files.Glob $covenantIndexPath }}
-{{- $covenantIndex := .Files.Get $covenantIndexPath | fromYaml }}
-
-{{/* Use realm from index.yaml */}}
-{{- $finalRealm := $covenantIndex.realm }}
 {{/* Construct KeycloakRealm resource name from realm name in covenant index */}}
 {{- $realmRef := printf "realm-%s" (required "covenant realm.name is required" $finalRealm.name) }}
 
@@ -69,33 +87,17 @@ Capabilities:
   {{- end }}
 {{- end }}
 
-{{/* CONSOLIDATION: Read client scopes from conventions/client-scopes/*.yaml */}}
-{{- range $scopePath, $_ := .Files.Glob (printf "bookrack/%s/conventions/client-scopes/*.yaml" $bookPath) }}
-  {{- $scopeName := trimSuffix ".yaml" (base $scopePath) }}
-  {{- $scopeDef := ($.Files.Get $scopePath | fromYaml) }}
-  {{- $_ := set $consolidatedClientScopes $scopeName $scopeDef }}
-{{- end }}
+{{/* CONSOLIDATION: Read client scopes using scan helper */}}
+{{- $consolidatedClientScopes = include "covenant.scanRealmClientScopes" . | fromJson }}
 
-{{/* CONSOLIDATION: Read identity providers from conventions/identity-providers/*.yaml */}}
-{{- range $idpPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/identity-providers/*.yaml" $bookPath) }}
-  {{- $idpName := trimSuffix ".yaml" (base $idpPath) }}
-  {{- $idpDef := ($.Files.Get $idpPath | fromYaml) }}
-  {{- $_ := set $consolidatedIDPs $idpName $idpDef }}
-{{- end }}
+{{/* CONSOLIDATION: Read identity providers using scan helper */}}
+{{- $consolidatedIDPs = include "covenant.scanRealmIDPs" . | fromJson }}
 
-{{/* CONSOLIDATION: Read auth flows from conventions/auth-flows/*.yaml */}}
-{{- range $flowPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/auth-flows/*.yaml" $bookPath) }}
-  {{- $flowName := trimSuffix ".yaml" (base $flowPath) }}
-  {{- $flowDef := ($.Files.Get $flowPath | fromYaml) }}
-  {{- $_ := set $consolidatedAuthFlows $flowName $flowDef }}
-{{- end }}
+{{/* CONSOLIDATION: Read auth flows using scan helper */}}
+{{- $consolidatedAuthFlows = include "covenant.scanRealmAuthFlows" . | fromJson }}
 
-{{/* CONSOLIDATION: Read integrations from conventions/integrations/*.yaml */}}
-{{- range $integrationPath, $_ := .Files.Glob (printf "bookrack/%s/conventions/integrations/*.yaml" $bookPath) }}
-  {{- $integrationName := trimSuffix ".yaml" (base $integrationPath) }}
-  {{- $integrationDef := ($.Files.Get $integrationPath | fromYaml) }}
-  {{- $_ := set $consolidatedIntegrations $integrationName $integrationDef }}
-{{- end }}
+{{/* CONSOLIDATION: Read integrations using scan helper */}}
+{{- $consolidatedIntegrations = include "covenant.scanRealmIntegrations" . | fromJson }}
 
 {{/* PASS 1: Scan all chapters (or filter by chapterFilter if specified) */}}
 {{- range $chapterPath, $_ := .Files.Glob (printf "bookrack/%s/*/index.yaml" $bookPath) }}
@@ -113,6 +115,17 @@ Capabilities:
       {{- $chapterRoleKey := printf "%s-%s" $chapterName $roleName }}
       {{- if not (hasKey $consolidatedRoles $chapterRoleKey) }}
         {{- $_ := set $consolidatedRoles $chapterRoleKey $roleDef }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+  {{/* Consolidate chapter-level post-provisioning */}}
+  {{- if $chapterDef.chapterPostProvisioning }}
+    {{- range $postProv := $chapterDef.chapterPostProvisioning }}
+      {{- if not (eq $postProv.enabled false) }}
+        {{- $chapterPostProvKey := printf "%s-%s" $chapterName $postProv.name }}
+        {{- $postProvWithContext := merge (deepCopy $postProv) (dict "chapter" $chapterName) }}
+        {{- $_ := set $consolidatedPostProvisioning $chapterPostProvKey $postProvWithContext }}
       {{- end }}
     {{- end }}
   {{- end }}
@@ -193,11 +206,12 @@ metadata:
 {{- $_ := set $vaultGlyphs $stalwartAdminKey (dict
   "type" "vaultSecret"
   "name" "stalwart-admin"
-  "namespace" "keycloak"
+  "namespace" .Release.Namespace
   "format" "plain"
   "randomKey" "password"
   "random" false
-  "path" "chapter"
+  "path" "book"
+  "private" "admintools"
 ) }}
 {{- $realmKey := print "realm-" (default "kast" $finalRealm.name) }}
 {{- $_ := set $keycloakGlyphs $realmKey (dict
@@ -324,7 +338,7 @@ metadata:
   "type" "vaultSecret"
   "name" $idpDef.secret
   "randomKey" "client_secret"
-  "path" (default "chapter" $idpDef.vaultPath)
+  "path" (default "book" $idpDef.vaultPath)
   "private" (default $fullName $idpDef.vaultPrivate)
   "passPolicyName" (default "simple-password-policy" $idpDef.passPolicyName)
   "selector" (default dict $idpDef.vaultSelector)
@@ -439,7 +453,20 @@ metadata:
     {{- if $postProv.enabled }}
 
 {{/* Generate ConfigMap with the script */}}
-{{- $scriptContent := $postProv.script }}
+{{- $scriptContent := "" }}
+{{- if $postProv.scriptFile }}
+  {{/* Read script from file in bookrack/{book}/scripts/ */}}
+  {{- $scriptPath := printf "bookrack/%s/scripts/%s" $bookPath $postProv.scriptFile }}
+  {{- if not ($.Files.Glob $scriptPath) }}
+    {{- fail (printf "Post-provisioning scriptFile not found: %s" $scriptPath) }}
+  {{- end }}
+  {{- $scriptContent = $.Files.Get $scriptPath }}
+{{- else if $postProv.script }}
+  {{/* Use inline script */}}
+  {{- $scriptContent = $postProv.script }}
+{{- else }}
+  {{- fail (printf "Integration %s postProvisioning requires either 'script' or 'scriptFile'" $clientName) }}
+{{- end }}
 {{- $configMapName := printf "%s-post-provision-script" $clientName }}
 ---
 apiVersion: v1
@@ -460,7 +487,7 @@ data:
 {{- $scriptChecksum := $scriptContent | sha256sum }}
 
 {{/* Get Vault instance from lexicon for template vars */}}
-{{- $vaultInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (dict "labels" (dict "chapter" $root.Values.chapter.name)) "vault" $root.Values.chapter.name) | fromJson) "results" }}
+{{- $vaultInstances := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon $chapterLabels "vault" $chapterName) | fromJson) "results" }}
 {{- $vaultInstance := dict }}
 {{- range $vaultInstances }}
   {{- $vaultInstance = . }}
@@ -537,7 +564,7 @@ data:
 {{- $_ := set $summonValues "secrets" $summonSecrets }}
 {{- $_ := set $summonValues "volumes" $summonVolumes }}
 {{- $_ := set $summonValues "service" (dict "enabled" false) }}
-{{- $_ := set $summonValues "serviceAccount" (dict "enabled" true "name" "covenant-post-provisioning") }}
+{{- $_ := set $summonValues "serviceAccount" (dict "enabled" true "name" $postProvisionSA) }}
 
 {{/* Resources: use postProv.resources if provided, else use defaults */}}
 {{- $defaultResources := dict
@@ -579,7 +606,7 @@ data:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: covenant-post-provisioning
+  name: {{ $postProvisionSA }}
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
@@ -588,7 +615,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: covenant-post-provisioning
+  name: {{ $postProvisionSA }}
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
@@ -601,7 +628,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: covenant-post-provisioning
+  name: {{ $postProvisionSA }}
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
@@ -609,14 +636,99 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: covenant-post-provisioning
+  name: {{ $postProvisionSA }}
 subjects:
   - kind: ServiceAccount
-    name: covenant-post-provisioning
+    name: {{ $postProvisionSA }}
     namespace: {{ $root.Release.Namespace }}
 {{- end }}
 
-{{/* STEP 10: Generate Post-Provisioning Jobs for members */}}
+{{/* STEP 10: Generate Chapter-level Post-Provisioning Jobs - run once per chapter */}}
+{{- range $postProvKey, $postProvDef := $consolidatedPostProvisioning }}
+  {{/* Only process chapter-level post-provisioning (has .chapter context) */}}
+  {{- if $postProvDef.chapter }}
+    {{- $jobName := printf "%s-%s-%s" $bookPath $postProvDef.chapter $postProvDef.name }}
+
+    {{/* Support both inline script and scriptFile */}}
+    {{- $scriptContent := "" }}
+    {{- if $postProvDef.scriptFile }}
+      {{/* Read script from file in bookrack/{book}/scripts/ */}}
+      {{- $scriptPath := printf "bookrack/%s/scripts/%s" $bookPath $postProvDef.scriptFile }}
+      {{- if not ($.Files.Glob $scriptPath) }}
+        {{- fail (printf "Chapter post-provisioning scriptFile not found: %s" $scriptPath) }}
+      {{- end }}
+      {{- $scriptContent = $.Files.Get $scriptPath }}
+    {{- else if $postProvDef.script }}
+      {{/* Use inline script */}}
+      {{- $scriptContent = $postProvDef.script }}
+    {{- else }}
+      {{- fail (printf "Chapter %s postProvisioning '%s' requires either 'script' or 'scriptFile'" $postProvDef.chapter $postProvDef.name) }}
+    {{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $jobName }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $postProvDef.name }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $root.Release.Service }}
+    covenant.kast.io/chapter: {{ $postProvDef.chapter }}
+    covenant.kast.io/post-provisioning: chapter
+  annotations:
+    covenant.kast.io/post-prov-name: {{ $postProvDef.name }}
+spec:
+  {{- if $postProvDef.backoffLimit }}
+  backoffLimit: {{ $postProvDef.backoffLimit }}
+  {{- else }}
+  backoffLimit: 3
+  {{- end }}
+  {{- if $postProvDef.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ $postProvDef.activeDeadlineSeconds }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $postProvDef.name }}
+        app.kubernetes.io/instance: {{ $root.Release.Name }}
+        covenant.kast.io/chapter: {{ $postProvDef.chapter }}
+    spec:
+      serviceAccountName: {{ $postProvisionSA }}
+      {{- if $postProvDef.restartPolicy }}
+      restartPolicy: {{ $postProvDef.restartPolicy }}
+      {{- else }}
+      restartPolicy: Never
+      {{- end }}
+      containers:
+        - name: {{ $postProvDef.name }}
+          image: {{ default "bitnami/kubectl:latest" $postProvDef.image }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+{{ $scriptContent | nindent 14 }}
+          env:
+            - name: CHAPTER_NAME
+              value: {{ $postProvDef.chapter | quote }}
+            - name: BOOK_PATH
+              value: {{ $bookPath | quote }}
+            - name: NAMESPACE
+              value: {{ $root.Release.Namespace | quote }}
+            - name: KEYCLOAK_URL
+              value: {{ $keycloakInstance.url | quote }}
+            - name: KEYCLOAK_REALM
+              value: {{ $finalRealm.name | quote }}
+            {{- if $postProvDef.env }}
+            {{- toYaml $postProvDef.env | nindent 12 }}
+            {{- end }}
+          {{- if $postProvDef.resources }}
+          resources:
+            {{- toYaml $postProvDef.resources | nindent 12 }}
+          {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/* STEP 11: Generate Member-level Post-Provisioning Jobs */}}
 {{- range $memberKey, $member := $consolidatedMembers }}
   {{- $memberName := $member.username | default $member.email }}
   {{- $memberRoles := default list $member.realmRoles }}
@@ -676,7 +788,7 @@ spec:
         app.kubernetes.io/instance: {{ $root.Release.Name }}
         covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
     spec:
-      serviceAccountName: covenant-post-provisioning
+      serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProvDef.job.restartPolicy }}
       restartPolicy: {{ $postProvDef.job.restartPolicy }}
       {{- else }}
@@ -763,4 +875,3 @@ spec:
   {{- end }}
 {{- end }}
 
-{{- end }}

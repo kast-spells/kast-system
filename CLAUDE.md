@@ -1275,3 +1275,4 @@ make generate-snapshots CHART=kaster
 # 4. Verify everything works
 make test-all
 ```
+- prolicy is the correct name IS NOT A TYPO (is a role and a policy)

@@ -1,0 +1,11 @@
+firstName: John
+lastName: Doe
+overrideUsername: john.doe
+status: active
+emailVerified: true
+
+realmRoles:
+  - platform-engineer
+  - developer
+
+# Groups auto-assigned: engineering, engineering/platform

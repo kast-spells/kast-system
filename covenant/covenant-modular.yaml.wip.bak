@@ -1,0 +1,104 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+
+Covenant Chart - Orchestrator
+Coordinates realm configuration and organizational structure
+*/}}
+
+{{- $root := . }}
+{{- $covenant := .Values.covenant }}
+{{- $bookPath := default .Release.Name .Values.name }}
+{{- $chapterFilter := $covenant.chapterFilter }}
+
+{{/* Initialize glyph dicts */}}
+{{- $keycloakGlyphs := dict }}
+{{- $vaultGlyphs := dict }}
+{{- $certManagerGlyphs := dict }}
+
+{{/* Main covenant mode: Generate realm infrastructure */}}
+{{- if not $chapterFilter }}
+
+  {{/* Render ServiceAccount directly */}}
+  {{- include "covenant.realm.serviceAccount.sa" . }}
+
+  {{/* Collect vault glyphs */}}
+  {{- $saVaultGlyphs := include "covenant.realm.serviceAccount.vaultGlyphs" . | fromJson }}
+  {{- $vaultGlyphs = merge $vaultGlyphs $saVaultGlyphs }}
+
+  {{/* Collect realm glyphs */}}
+  {{- $realmGlyphs := include "covenant.realm.keycloakRealm.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs (get $realmGlyphs "keycloak") }}
+  {{- $vaultGlyphs = merge $vaultGlyphs (get $realmGlyphs "vault") }}
+
+  {{/* Collect roles glyphs */}}
+  {{- $rolesKeycloak := include "covenant.realm.roles.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs $rolesKeycloak }}
+
+  {{/* Collect client scopes glyphs */}}
+  {{- $scopesKeycloak := include "covenant.realm.clientScopes.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs $scopesKeycloak }}
+
+  {{/* Collect IDPs glyphs */}}
+  {{- $idpsGlyphs := include "covenant.realm.idps.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs (get $idpsGlyphs "keycloak") }}
+  {{- $vaultGlyphs = merge $vaultGlyphs (get $idpsGlyphs "vault") }}
+
+  {{/* Collect auth flows glyphs */}}
+  {{- $flowsKeycloak := include "covenant.realm.authFlows.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs $flowsKeycloak }}
+
+  {{/* Collect integrations glyphs */}}
+  {{- $integrationsGlyphs := include "covenant.realm.integrations.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs (get $integrationsGlyphs "keycloak") }}
+  {{- $vaultGlyphs = merge $vaultGlyphs (get $integrationsGlyphs "vault") }}
+  {{- $certManagerGlyphs = merge $certManagerGlyphs (get $integrationsGlyphs "certManager") }}
+
+{{- else }}
+
+  {{/* Chapter covenant mode: Collect chapter glyphs */}}
+  {{- $chapterGlyphs := include "covenant.chapter.glyphs" . | fromJson }}
+  {{- $keycloakGlyphs = merge $keycloakGlyphs $chapterGlyphs }}
+
+  {{/* Render post-provisioning RBAC directly */}}
+  {{- include "covenant.postProvisioning.rbac" . }}
+
+{{- end }}
+
+{{/* Render all collected glyphs */}}
+{{- range $glyphName, $glyph := $vaultGlyphs }}
+  {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+  {{- if eq $glyph.type "vaultSecret" }}
+    {{- include "vault.vaultSecret" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "vaultPolicy" }}
+    {{- include "vault.vaultPolicy" (list $root $glyphWithName) }}
+  {{- end }}
+{{- end }}
+
+{{- range $glyphName, $glyph := $certManagerGlyphs }}
+  {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+  {{- if eq $glyph.type "certificate" }}
+    {{- include "certManager.certificate" (list $root $glyphWithName) }}
+  {{- end }}
+{{- end }}
+
+{{- range $glyphName, $glyph := $keycloakGlyphs }}
+  {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
+  {{- if eq $glyph.type "realm" }}
+    {{- include "keycloak.realm" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "realmRole" }}
+    {{- include "keycloak.realmRole" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "clientScope" }}
+    {{- include "keycloak.clientScope" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "idp" }}
+    {{- include "keycloak.identityProvider" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "flow" }}
+    {{- include "keycloak.authenticationFlow" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "client" }}
+    {{- include "keycloak.client" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "group" }}
+    {{- include "keycloak.group" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "user" }}
+    {{- include "keycloak.user" (list $root $glyphWithName) }}
+  {{- end }}
+{{- end }}
