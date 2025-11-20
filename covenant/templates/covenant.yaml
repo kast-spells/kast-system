@@ -64,6 +64,11 @@ Capabilities:
 {{- end }}
 {{/* Extract Keycloak server CRD name from lexicon */}}
 {{- $keycloakRef := required "keycloakInstance.keycloakCrdName is required in lexicon" $keycloakInstance.keycloakCrdName }}
+{{/* Determine keycloakRef kind: use ClusterKeycloak if covenant is in different namespace than keycloak */}}
+{{- $keycloakRefKind := "Keycloak" }}
+{{- if ne $root.Release.Namespace $keycloakInstance.namespace }}
+  {{- $keycloakRefKind = "ClusterKeycloak" }}
+{{- end }}
 {{/* Construct KeycloakRealm resource name from realm name in covenant index */}}
 {{- $realmRef := printf "realm-%s" (required "covenant realm.name is required" $finalRealm.name) }}
 
@@ -219,6 +224,7 @@ metadata:
   "realmName" (default "kast" $finalRealm.name)
   "displayName" (default "Kast Organization" $finalRealm.displayName)
   "keycloakRef" (default $keycloakRef $finalRealm.keycloakRef)
+  "keycloakRefKind" $keycloakRefKind
   "enabled" (default true $finalRealm.enabled)
   "passwordPolicy" $finalRealm.passwordPolicy
   "themes" $finalRealm.themes
