@@ -47,10 +47,10 @@ Only renders if covenant.chapterFilter is NOT set (main covenant instance)
 {{/* If we found chapters with members, generate ApplicationSet */}}
 {{- if $chaptersWithMembers }}
 
-{{/* Use spellbook repository (covenant lives in same repo as book, not in trinkets) */}}
-{{- $repoURL := required "spellbook.repository is required for ApplicationSet" .Values.spellbook.repository }}
-{{- $path := required "spellbook.path is required for ApplicationSet" .Values.spellbook.path }}
-{{- $revision := required "spellbook.revision is required for ApplicationSet" .Values.spellbook.revision }}
+{{/* Use applicationset.* if provided (spell override), otherwise fallback to spellbook.* (book context) */}}
+{{- $repoURL := required "applicationset.repository OR spellbook.repository is required for ApplicationSet" (default .Values.spellbook.repository .Values.applicationset.repository) }}
+{{- $path := required "applicationset.path OR spellbook.path is required for ApplicationSet" (default .Values.spellbook.path .Values.applicationset.path) }}
+{{- $revision := required "applicationset.revision OR spellbook.revision is required for ApplicationSet" (default .Values.spellbook.revision .Values.applicationset.revision) }}
 
 {{/* Use runicIndexer to find Keycloak instance from lexicon */}}
 {{- $chapterName := "" }}
