@@ -39,7 +39,7 @@ metadata:
 spec:
   realmRef:
     name: {{ required "glyphDefinition.realmRef is required" $glyphDefinition.realmRef }}
-    kind: {{ default "KeycloakRealm" $glyphDefinition.realmRefKind }}
+    kind: {{ default "ClusterKeycloakRealm" $glyphDefinition.realmRefKind }}
   name: {{ required "glyphDefinition.roleName is required" $glyphDefinition.roleName }}
   {{- if $glyphDefinition.description }}
   description: {{ $glyphDefinition.description }}

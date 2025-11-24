@@ -233,11 +233,10 @@ metadata:
 ) }}
 {{- $realmKey := print "realm-" (default "kast" $finalRealm.name) }}
 {{- $_ := set $keycloakGlyphs $realmKey (dict
-  "type" "realm"
+  "type" "clusterRealm"
   "realmName" (default "kast" $finalRealm.name)
   "displayName" (default "Kast Organization" $finalRealm.displayName)
-  "keycloakRef" (default $keycloakRef $finalRealm.keycloakRef)
-  "keycloakRefKind" $keycloakRefKind
+  "clusterKeycloakRef" (default "keycloak" $finalRealm.clusterKeycloakRef)
   "enabled" (default true $finalRealm.enabled)
   "passwordPolicy" $finalRealm.passwordPolicy
   "themes" $finalRealm.themes
@@ -858,6 +857,8 @@ spec:
   {{- $glyphWithName := merge $glyph (dict "name" $glyphName) }}
   {{- if eq $glyph.type "realm" }}
     {{- include "keycloak.realm" (list $root $glyphWithName) }}
+  {{- else if eq $glyph.type "clusterRealm" }}
+    {{- include "keycloak.clusterRealm" (list $root $glyphWithName) }}
   {{- else if eq $glyph.type "realmRole" }}
     {{- include "keycloak.realmRole" (list $root $glyphWithName) }}
   {{- else if eq $glyph.type "clientScope" }}

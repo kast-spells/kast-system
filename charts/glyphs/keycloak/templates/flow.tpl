@@ -49,7 +49,7 @@ spec:
   topLevel: {{ default true $glyphDefinition.topLevel }}
   realmRef:
     name: {{ required "glyphDefinition.realmRef is required" $glyphDefinition.realmRef }}
-    kind: {{ default "KeycloakRealm" $glyphDefinition.realmRefKind }}
+    kind: {{ default "ClusterKeycloakRealm" $glyphDefinition.realmRefKind }}
   {{- if $glyphDefinition.authenticationExecutions }}
   authenticationExecutions:
   {{- range $glyphDefinition.authenticationExecutions }}
