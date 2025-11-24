@@ -105,8 +105,16 @@ Capabilities:
 {{- $consolidatedIntegrations = include "covenant.scanRealmIntegrations" . | fromJson }}
 
 {{/* PASS 1: Scan all chapters (or filter by chapterFilter if specified) */}}
-{{- range $chapterPath, $_ := .Files.Glob (printf "bookrack/%s/*/index.yaml" $bookPath) }}
+{{/* Try new structure first (covenant/ subdir), fallback to old */}}
+{{- $chapterIndexGlob := printf "bookrack/%s/covenant/*/index.yaml" $bookPath }}
+{{- if not (.Files.Glob $chapterIndexGlob) }}
+  {{- $chapterIndexGlob = printf "bookrack/%s/*/index.yaml" $bookPath }}
+{{- end }}
+{{- range $chapterPath, $_ := .Files.Glob $chapterIndexGlob }}
   {{- $chapterName := base (dir $chapterPath) }}
+  
+  {{/* Skip conventions, realm, and covenant directories */}}
+  {{- if and (ne $chapterName "conventions") (ne $chapterName "realm") (ne $chapterName "covenant") }}
 
   {{/* Skip if chapterFilter is set and doesn't match */}}
   {{- if or (not $chapterFilter) (eq $chapterFilter $chapterName) }}
@@ -136,7 +144,11 @@ Capabilities:
   {{- end }}
 
   {{/* PASS 2: Scan all chapels (subdirectories) */}}
-  {{- $chapelGlob := printf "bookrack/%s/%s/*/*.yaml" $bookPath $chapterName }}
+  {{/* Try new structure first (covenant/ subdir), fallback to old */}}
+  {{- $chapelGlob := printf "bookrack/%s/covenant/%s/*/*.yaml" $bookPath $chapterName }}
+  {{- if not ($.Files.Glob $chapelGlob) }}
+    {{- $chapelGlob = printf "bookrack/%s/%s/*/*.yaml" $bookPath $chapterName }}
+  {{- end }}
   {{- range $memberPath, $_ := $.Files.Glob $chapelGlob }}
     {{- $memberFileName := base $memberPath }}
     {{- $chapelName := base (dir $memberPath) }}
@@ -170,6 +182,7 @@ Capabilities:
     {{- $_ := set $consolidatedMembers $fullMemberKey $merged }}
   {{- end }}
   {{- end }}  {{/* Close chapterFilter if */}}
+  {{- end }}  {{/* Close skip directories if */}}
 {{- end }}  {{/* Close chapter range */}}
 
 {{/* Now generate glyphs for kaster to process */}}
