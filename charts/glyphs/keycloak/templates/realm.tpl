@@ -42,7 +42,6 @@ metadata:
     {{- toYaml . | nindent 4}}
   {{- end }}
 spec:
-  id: {{ default (uuidv4) $glyphDefinition.id }}
   realmName: {{ required "glyphDefinition.realmName is required" $glyphDefinition.realmName }}
   {{- if $glyphDefinition.displayName }}
   displayName: {{ $glyphDefinition.displayName }}

@@ -152,8 +152,11 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
         {{- end }}
-        {{- with ($appParams.syncPolicy).syncOptions }}
         syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        {{- with ($appParams.syncPolicy).syncOptions }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
         {{- with ($appParams.syncPolicy).retry }}
