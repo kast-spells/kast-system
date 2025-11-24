@@ -58,9 +58,9 @@ spec:
   protocol: {{ $glyphDefinition.protocol }}
   {{- end }}
   {{- if $glyphDefinition.secret }}
-  secret: {{ printf "%s:clientSecret" $glyphDefinition.secret }}
+  secret: {{ printf "$%s:client_secret" $glyphDefinition.secret }}
   {{- else }}
-  secret: {{ printf "keycloak-client-%s:clientSecret" (default (include "common.name" $root) $glyphDefinition.name) }}
+  secret: {{ printf "$keycloak-client-%s:client_secret" (default (include "common.name" $root) $glyphDefinition.name) }}
   {{- end }}
   webUrl: {{ required "glyphDefinition.webUrl is required" $glyphDefinition.webUrl }}
   standardFlowEnabled: {{ default true $glyphDefinition.stdFlow }}
