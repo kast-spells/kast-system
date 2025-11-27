@@ -1,0 +1,27 @@
+# Example: Enabling Covenant labels for identity and access management
+# This example shows how to enable covenant-specific labels for IAM tracking
+
+name: user-portal
+component: frontend
+
+spellbook:
+  name: identity-platform
+
+chapter:
+  name: production
+
+# Enable Covenant labels for identity & access management
+labels:
+  covenant:
+    enabled: true
+    team: identity-team
+    owner: jane.smith@company.com
+    department: security
+    member: jane-smith
+    organization: acme-corp
+
+description: "User authentication and authorization portal"
+
+annotations:
+  covenant.kast.io/integration: keycloak
+  covenant.kast.io/realm: production

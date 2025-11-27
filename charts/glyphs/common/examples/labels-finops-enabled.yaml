@@ -1,0 +1,32 @@
+# Example: Enabling FinOps labels for cost allocation
+# This example shows how to enable Kubecost-compatible labels for cost tracking
+
+name: my-application
+component: backend  # Adds app.kubernetes.io/component label
+
+spellbook:
+  name: my-platform  # Adds app.kubernetes.io/part-of label
+
+chapter:
+  name: production
+
+# Enable FinOps labels for cost allocation and tracking
+labels:
+  finops:
+    enabled: true
+    team: platform-engineering
+    owner: john.doe
+    costCenter: engineering-dept
+    department: platform
+    project: core-platform
+    # environment is optional - defaults to chapter.name if not set
+    environment: production
+
+# Optional: Add human-readable description
+description: "Backend API service for customer management"
+
+# Optional: Custom annotations for external tools
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"

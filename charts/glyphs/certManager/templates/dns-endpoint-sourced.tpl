@@ -51,6 +51,16 @@ kind: DNSEndpoint
 metadata:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
   namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   endpoints:
     - dnsName: {{ $glyphDefinition.dnsName }}
@@ -184,6 +194,16 @@ kind: Role
 metadata:
   name: {{ printf "%s-updater" (default (include "common.name" $root) $glyphDefinition.name) }}
   namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
@@ -197,6 +217,16 @@ kind: RoleBinding
 metadata:
   name: {{ printf "%s-updater" (default (include "common.name" $root) $glyphDefinition.name) }}
   namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 subjects:
 - kind: ServiceAccount
   name: {{ printf "%s-updater" (default (include "common.name" $root) $glyphDefinition.name) }}

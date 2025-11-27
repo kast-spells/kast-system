@@ -28,10 +28,14 @@ kind: Service
 metadata:
   name: {{ $resourceName }}
   labels:
-    {{- include "common.labels" $root | nindent 4 }}
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $serviceConfig.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- with $serviceConfig.annotations }}
   annotations:
-    {{- . | toYaml | nindent 4 }}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   type: {{ default "ClusterIP" $serviceConfig.type }}

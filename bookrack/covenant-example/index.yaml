@@ -4,5 +4,10 @@
 name: covenant-example
 description: "Example covenant book demonstrating modular realm structure"
 
+# Repository where covenant chart lives
+repository: https://github.com/kast-spells/kast-system.git
+path: ./covenant
+revision: main
+
 # This is a covenant book - configuration is in covenant/ subdirectory
 # The covenant/index.yaml contains realm config and chapter list

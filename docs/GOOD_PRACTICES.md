@@ -764,14 +764,20 @@ helm template charts/glyphs/vault
 #### 5. Covenant Book Testing
 
 ```bash
-# Test main covenant (ApplicationSet generation)
-make test-covenant-book BOOK=covenant-tyl
+# Covenant books render with the dedicated covenant chart (not librarian)
+# Main ApplicationSet (stage 1)
+make test-covenant BOOK=covenant-tyl
 
-# Test specific chapter
-make test-covenant-chapter BOOK=covenant-tyl CHAPTER=tyl
+# Chapter filters (stage 2) — matches ApplicationSet app names
+make test-covenant BOOK=covenant-tyl CHAPTER=tyl
+make test-covenant BOOK=covenant-tyl CHAPTER=fwck
+make test-covenant BOOK=covenant-tyl CHAPTER=radio-pirata
 
-# Test all chapters (RECOMMENDED)
-make test-covenant-all-chapters BOOK=covenant-tyl
+# Full walk (main + chapters)
+make test-covenant BOOK=covenant-tyl --all-chapters
+
+# Point to external bookrack when the repo is symlinked
+export COVENANT_BOOKRACK_PATH=/path/to/proto-the-yaml-life/bookrack
 ```
 
 ### Testing Anti-Patterns (AVOID THESE)
@@ -1260,6 +1266,286 @@ image:
 image:
   name: myapp
   tag: latest  # Unpredictable
+```
+
+---
+
+## Labels and Annotations Strategy
+
+### Label Categories
+
+Kast implements a multi-tier labeling system following Kubernetes best practices and supporting cost allocation tools like Kubecost.
+
+#### Official Kubernetes Labels (Always Applied)
+
+```yaml
+# Automatically applied via common.labels
+app.kubernetes.io/name: {{ name }}
+app.kubernetes.io/instance: {{ Release.Name }}
+app.kubernetes.io/version: {{ Chart.AppVersion }}
+app.kubernetes.io/component: {{ component }}      # Optional
+app.kubernetes.io/part-of: {{ spellbook.name }}   # Optional
+app.kubernetes.io/managed-by: Helm
+```
+
+**Best Practice:** Always set `.Values.component` to identify the role:
+- `frontend` - User-facing web applications
+- `backend` - API services and backend logic
+- `database` - Database workloads
+- `cache` - Caching layers
+- `queue` - Message queue workers
+- `scheduler` - Scheduled job runners
+
+#### Infrastructure Labels (Always Applied)
+
+```yaml
+# Kast-specific infrastructure tracking
+spelbook: {{ spellbook.name }}
+chapter: {{ chapter.name }}
+spell: {{ spell.name }}
+```
+
+#### FinOps Labels (Toggleable for Cost Allocation)
+
+Enable for Kubecost and cloud cost tracking:
+
+```yaml
+labels:
+  finops:
+    enabled: true
+    team: platform-engineering
+    owner: john.doe
+    costCenter: engineering-dept
+    department: platform
+    project: core-services
+    environment: production  # Defaults to chapter.name
+```
+
+**When to Enable:**
+- Production environments requiring cost tracking
+- Multi-tenant clusters with chargeback requirements
+- Resource usage analytics and optimization
+- Budget allocation and forecasting
+
+**Book-Level Configuration:**
+```yaml
+# In bookrack/my-book/index.yaml
+appendix:
+  labels:
+    finops:
+      enabled: true
+      team: platform-team
+      costCenter: engineering
+      department: platform
+      project: my-platform
+```
+
+#### Covenant Labels (Toggleable for IAM)
+
+Enable for identity and access management tracking:
+
+```yaml
+labels:
+  covenant:
+    enabled: true
+    team: identity-team
+    owner: security@company.com
+    department: security
+    member: service-account
+    organization: acme-corp
+```
+
+**When to Enable:**
+- Services using Keycloak integration
+- Identity and access management resources
+- Compliance and audit requirements
+- User and member tracking
+
+### Annotation Best Practices
+
+#### Use Annotations for Non-Identifying Metadata
+
+```yaml
+# [GOOD]: Annotations for metadata
+description: "Payment processing API with PCI compliance"
+annotations:
+  kubernetes.io/description: "Human-readable description"
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  compliance.company.com/pci-dss: "required"
+  sla.company.com/tier: "platinum"
+  contact.company.com/oncall: "team@company.com"
+```
+
+```yaml
+# [BAD]: Using labels for large/structured data
+labels:
+  description: "Very long description..."  # Should be annotation
+  contact-email: "team@company.com"        # Should be annotation
+```
+
+#### Standard Annotation: kubernetes.io/description
+
+Always provide a human-readable description:
+
+```yaml
+description: "Core authentication service handling OAuth2 and SAML flows"
+```
+
+This generates:
+```yaml
+annotations:
+  kubernetes.io/description: "Core authentication service handling OAuth2 and SAML flows"
+```
+
+### Label Configuration Hierarchy
+
+Labels can be configured at three levels with proper inheritance:
+
+```
+Book (index.yaml)
+  ↓ (inherited by all chapters)
+Chapter (values.yaml)
+  ↓ (inherited by all spells)
+Spell (values.yaml)
+  ↓ (final values)
+```
+
+#### Example: Book-Level Labels
+
+```yaml
+# bookrack/my-platform/index.yaml
+appendix:
+  labels:
+    finops:
+      enabled: true
+      team: platform-engineering
+      costCenter: engineering
+      department: platform
+      project: platform-services
+      # owner is spell-specific, not set here
+```
+
+#### Example: Chapter-Level Override
+
+```yaml
+# bookrack/my-platform/production/values.yaml
+labels:
+  finops:
+    enabled: true
+    environment: production  # Override for production
+    # Inherits team, costCenter, department, project from book
+```
+
+#### Example: Spell-Level Override
+
+```yaml
+# bookrack/my-platform/production/payment-api/values.yaml
+component: backend  # Adds app.kubernetes.io/component
+
+labels:
+  finops:
+    enabled: true
+    owner: payments-team-lead  # Spell-specific owner
+    # Inherits other values from book/chapter
+
+  covenant:
+    enabled: true  # Enable only for this spell
+    member: payment-service
+    owner: compliance@company.com
+
+description: "Payment processing API with PCI-DSS compliance"
+```
+
+### Using Combined Labels
+
+Use `common.all.labels` to include all enabled label categories:
+
+```go
+{{- define "myglyph.resource" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.name" $root }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+{{- end }}
+```
+
+This automatically includes:
+- Official Kubernetes labels
+- Infrastructure labels
+- FinOps labels (if enabled)
+- Covenant labels (if enabled)
+
+### Label Dos and Don'ts
+
+#### DO:
+
+```yaml
+# [GOOD]: Use component to identify role
+component: backend
+
+# [GOOD]: Enable FinOps for cost tracking in production
+labels:
+  finops:
+    enabled: true
+    team: my-team
+
+# [GOOD]: Inherit common labels from book
+# (configured in index.yaml)
+
+# [GOOD]: Use annotations for metadata
+description: "Service description here"
+annotations:
+  contact.company.com/team: "team@company.com"
+```
+
+#### DON'T:
+
+```yaml
+# [BAD]: Custom labels without namespace
+labels:
+  myapp-team: engineering  # Should use covenant.kast.io/team
+
+# [BAD]: Duplicating information in labels and annotations
+labels:
+  team: engineering
+annotations:
+  team: engineering  # Duplicate!
+
+# [BAD]: Using labels for non-identifying data
+labels:
+  contact-email: "long-email@company.com"  # Should be annotation
+  description: "Very long text..."          # Should be annotation
+```
+
+### Label Validation
+
+Consider using Kyverno policies to enforce label requirements:
+
+```yaml
+# Example Kyverno policy (not included in kast)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+spec:
+  validationFailureAction: enforce
+  rules:
+    - name: check-for-labels
+      match:
+        resources:
+          kinds:
+            - Pod
+      validate:
+        message: "Label 'app.kubernetes.io/name' is required"
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
 ```
 
 ---

@@ -9,12 +9,18 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: container.cnrm.cloud.google.com/v1beta1
 kind: ContainerCluster
 metadata:
-  labels:
-    {{- include "common.infra.labels" $root | nindent 4}}
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
   annotations:
     cnrm.cloud.google.com/remove-default-node-pool: "true"
-    {{- include "common.infra.annotations" $root | nindent 4}}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   description: {{ default $glyphDefinition.name $glyphDefinition.description }}
   location: {{ $glyphDefinition.region }}

@@ -32,6 +32,16 @@ kind: AuthEngineMount
 metadata:
   name: oidc
   namespace: {{ $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "vault" $glyphDefinition.serviceAccount) | nindent 2 }}
   type: oidc
@@ -41,6 +51,16 @@ kind: JWTOIDCAuthEngineConfig
 metadata:
   name: {{ $glyphDefinition.name }}
   namespace: {{ $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "vault" $glyphDefinition.serviceAccount) | nindent 2 }}
   OIDCCredentials:
@@ -57,6 +77,16 @@ kind: JWTOIDCAuthEngineRole
 metadata:
   name: {{ $glyphDefinition.name }}-admins
   namespace: {{ $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "vault" $glyphDefinition.serviceAccount) | nindent 2 }}
   name: admin
@@ -78,6 +108,16 @@ kind: JWTOIDCAuthEngineRole
 metadata:
   name: {{ $glyphDefinition.name }}-devs
   namespace: {{ $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "vault" $glyphDefinition.serviceAccount) | nindent 2 }}
   path: oidc
@@ -98,6 +138,16 @@ kind: Policy
 metadata:
   name: developer
   namespace: {{ $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "vault" $glyphDefinition.serviceAccount) | nindent 2 }}
   policy: |

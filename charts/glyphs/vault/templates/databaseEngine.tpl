@@ -35,6 +35,16 @@ apiVersion: redhatcop.redhat.io/v1alpha1
 kind: DatabaseSecretEngineConfig
 metadata:
   name: {{ $pgConf.name }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
   pluginName: postgresql-database-plugin
@@ -60,6 +70,16 @@ apiVersion: redhatcop.redhat.io/v1alpha1
 kind: DatabaseSecretEngineRole
 metadata:
   name: {{ $pgConf.name }}-read-write
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
   path: {{ $databaseMount }}
@@ -71,6 +91,16 @@ apiVersion: redhatcop.redhat.io/v1alpha1
 kind: DatabaseSecretEngineRole
 metadata:
   name: {{ $pgConf.name }}-read-only
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "" $glyphDefinition.serviceAccount) | nindent 2 }}
   path: {{ $databaseMount }}

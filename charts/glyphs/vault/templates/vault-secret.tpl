@@ -76,6 +76,16 @@ metadata:
   {{- if $glyphDefinition.namespace }}
   namespace: {{ $glyphDefinition.namespace }}
   {{- end }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   refreshPeriod: {{ default "3m0s" $glyphDefinition.refreshPeriod }}
   vaultSecretDefinitions:
@@ -110,6 +120,16 @@ spec:
   {{- end }}
   output:
     name: {{ default $glyphDefinition.name $glyphDefinition.nameOverwrite }}
+    labels:
+      {{- include "common.all.labels" $root | nindent 6 }}
+      {{- with $glyphDefinition.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+    annotations:
+      {{- include "common.annotations" $root | nindent 6 }}
+      {{- with $glyphDefinition.annotations }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
     stringData:
     {{- $format := default "plain" $glyphDefinition.format }}
     {{- if eq $format "env" }} #tiene q haber una forma de hacer q esto funcione con un range del lado del operator para q no hagan falta las keys
@@ -156,13 +176,5 @@ spec:
       {{- end }}
     {{- end }}
     type: {{ default "Opaque" $glyphDefinition.secretType }}
-    {{- with $glyphDefinition.annotations }}
-    annotations:
-      {{- toYaml . | nindent 6 }}
-    {{- end }}
-    {{- with $glyphDefinition.labels }}
-    labels:
-      {{- toYaml . | nindent 6 }}
-    {{- end }}
 {{- end }}
 {{- end }}

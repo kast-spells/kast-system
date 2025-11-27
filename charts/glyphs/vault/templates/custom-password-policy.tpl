@@ -59,9 +59,15 @@ kind: PasswordPolicy
 metadata:
   name: {{ required "Password policy name is required" $glyphDefinition.name }}
   namespace: {{ $vaultConf.namespace }}
-  {{- if $glyphDefinition.annotations }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
   annotations:
-    {{- toYaml $glyphDefinition.annotations | nindent 4 }}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "vault" $glyphDefinition.serviceAccount) | nindent 2 }}

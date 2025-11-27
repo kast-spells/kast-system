@@ -78,8 +78,16 @@ metadata:
   {{- end }}
   name: {{ $pvName }}
   labels:
-    {{- include "common.labels" $root | nindent 4 }}
+    {{- include "common.all.labels" $root | nindent 4 }}
     volume: {{ $name }}
+    {{- with $volume.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $volume.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if hasKey $volume "storageClass" }}
   storageClassName: {{ $volume.storageClass | quote }}

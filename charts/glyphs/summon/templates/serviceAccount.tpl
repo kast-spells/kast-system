@@ -39,13 +39,13 @@ metadata:
   namespace: {{ $saConfig.namespace }}
   {{- end }}
   labels:
-    {{- include "common.labels" $root | nindent 4 }}
-  {{- with $saConfig.labels }}
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $saConfig.labels }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
+  {{- with $saConfig.annotations }}
   annotations:
     {{- include "common.annotations" $root | nindent 4 }}
-  {{- with $saConfig.annotations }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- if $saConfig.secret }}

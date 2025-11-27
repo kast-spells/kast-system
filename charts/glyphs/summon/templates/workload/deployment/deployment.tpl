@@ -10,9 +10,15 @@ kind: Deployment
 metadata:
   name: {{ include "common.name" $root }}
   labels:
-    {{- include "common.labels" $root | nindent 4}}
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $root.Values.workload.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $root.Values.workload.annotations }}
   annotations:
-    {{- include "common.annotations" $root | nindent 4}}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if not $root.Values.autoscaling.enabled }}
   replicas: {{ default 1 $root.Values.workload.replicas }}

@@ -10,9 +10,15 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "common.name" $root }}
   labels:
-    {{- include "common.labels" $root | nindent 4}}
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $root.Values.autoscaling.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $root.Values.autoscaling.annotations }}
   annotations:
-    {{- include "common.annotations" $root | nindent 4}}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

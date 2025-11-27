@@ -11,9 +11,15 @@ kind: DNSRecordSet
 metadata:
   name: {{ default  ( $glyphDefinition.url | lower | replace "." "-" | trimSuffix "-" ) $glyphDefinition.name  }}
   labels:
-    {{- include "common.infra.labels" $root | nindent 4 }}
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
   annotations:
-    {{- include "common.infra.annotations" $root | nindent 4}}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   name: {{ default  ( $glyphDefinition.name | lower | replace "-" "." | trimSuffix "." ) $glyphDefinition.url  }}.
   type: {{ default "A" $glyphDefinition.dnsType }}

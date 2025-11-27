@@ -33,6 +33,16 @@ kind: Vault
 metadata:
   name: {{ default "vault" $glyphDefinition.name }}
   namespace: {{ default "vault" $glyphDefinition.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   size: {{ default 2 $glyphDefinition.size }}
   image: {{ default "hashicorp/vault:1.19" $glyphDefinition.image }}

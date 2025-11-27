@@ -48,9 +48,21 @@ Only renders if covenant.chapterFilter is NOT set (main covenant instance)
 {{- if $chaptersWithMembers }}
 
 {{/* Use applicationset.* if provided (spell override), otherwise fallback to spellbook.* (book context) */}}
-{{- $repoURL := required "applicationset.repository OR spellbook.repository is required for ApplicationSet" (default .Values.spellbook.repository .Values.applicationset.repository) }}
-{{- $path := required "applicationset.path OR spellbook.path is required for ApplicationSet" (default .Values.spellbook.path .Values.applicationset.path) }}
-{{- $revision := required "applicationset.revision OR spellbook.revision is required for ApplicationSet" (default .Values.spellbook.revision .Values.applicationset.revision) }}
+{{- $repoURL := "" }}
+{{- $path := "" }}
+{{- $revision := "" }}
+{{- if .Values.applicationset }}
+  {{- $repoURL = .Values.applicationset.repository | default .Values.spellbook.repository }}
+  {{- $path = .Values.applicationset.path | default .Values.spellbook.path }}
+  {{- $revision = .Values.applicationset.revision | default .Values.spellbook.revision }}
+{{- else }}
+  {{- $repoURL = .Values.spellbook.repository }}
+  {{- $path = .Values.spellbook.path }}
+  {{- $revision = .Values.spellbook.revision }}
+{{- end }}
+{{- $repoURL = required "applicationset.repository OR spellbook.repository is required for ApplicationSet" $repoURL }}
+{{- $path = required "applicationset.path OR spellbook.path is required for ApplicationSet" $path }}
+{{- $revision = required "applicationset.revision OR spellbook.revision is required for ApplicationSet" $revision }}
 
 {{/* Use runicIndexer to find Keycloak instance from lexicon */}}
 {{- $chapterName := "" }}

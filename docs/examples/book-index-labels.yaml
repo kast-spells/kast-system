@@ -1,0 +1,94 @@
+# Example: Book index.yaml with label configuration
+# This shows how to configure labels at the book level that propagate to all spells
+
+name: my-platform
+projectName: platform-services
+
+# Chapters (environments)
+chapters:
+  - development
+  - staging
+  - production
+
+# Default trinket for spells
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: main
+
+# Book-wide appendix with shared configuration
+appendix:
+  # Shared FinOps labels for all spells in this book
+  # Individual spells can override these values
+  labels:
+    finops:
+      enabled: true
+      team: platform-engineering
+      costCenter: engineering
+      department: platform
+      project: platform-services
+      # owner can be overridden per spell
+
+  # Shared Covenant labels (if using identity management)
+  # labels:
+  #   covenant:
+  #     enabled: true
+  #     organization: acme-corp
+  #     department: engineering
+
+  # Shared description template
+  # Individual spells should override with specific descriptions
+  description: "Platform service managed by engineering team"
+
+  # Shared annotations for all resources
+  annotations:
+    contact.company.com/team: "platform-engineering@company.com"
+    documentation.company.com/wiki: "https://wiki.company.com/platform"
+
+  # Shared lexicon (infrastructure registry)
+  lexicon:
+    - name: production-gateway
+      type: istio-gw
+      labels:
+        environment: production
+        default: book
+
+---
+# Example: Chapter-specific overrides (in production/values.yaml)
+# This would override book-level settings for production chapter
+
+labels:
+  finops:
+    enabled: true
+    environment: production
+    # Inherits team, costCenter, department, project from book
+    # Can add chapter-specific values:
+    owner: production-team-lead
+
+annotations:
+  sla.company.com/tier: "gold"  # Production-specific SLA
+
+---
+# Example: Spell-specific overrides (in production/my-service/values.yaml)
+# This would override both book and chapter settings
+
+name: payment-api
+component: backend  # Adds app.kubernetes.io/component
+
+labels:
+  finops:
+    enabled: true
+    # Inherits most from book/chapter
+    owner: jane.doe  # Spell-specific owner
+    project: payments  # Override book's project
+
+  covenant:
+    enabled: true  # Enable covenant only for this spell
+    member: payment-service
+    owner: security-team@company.com
+
+description: "Payment processing API with PCI-DSS compliance"
+
+annotations:
+  compliance.company.com/pci-dss: "required"
+  # Inherits book/chapter annotations and adds specific ones

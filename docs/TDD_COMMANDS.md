@@ -264,7 +264,7 @@ make test [MODE] [TYPE] [COMPONENTS...] [FLAGS]
 | `trinket` | Specialized charts | tarot, microspell |
 | `chart` | Main charts | summon, kaster |
 | `spell` | Individual deployments | example-api |
-| `book` | Configuration books | covenant-tyl |
+| `book` | Configuration books | fwck, example-tdd-book |
 
 **Plural forms OK:** `glyphs`, `trinkets`, `charts` → auto-normalized
 
@@ -291,10 +291,27 @@ make test syntax glyphs                  # Syntax, all glyphs
 make test trinkets                       # Comprehensive, all trinkets
 ```
 
-**Context-based:**
+**Context-based (regular books):**
 ```bash
 make test spell example-api --book example-tdd-book
-make test book covenant-tyl --chapter tyl
+make test book fwck --chapter intro
+```
+
+**Covenant books (special type, uses covenant chart instead of librarian):**
+```bash
+# Main ApplicationSet view
+make test-covenant BOOK=covenant-tyl
+
+# Specific chapter filters (ApplicationSet children)
+make test-covenant BOOK=covenant-tyl CHAPTER=tyl
+make test-covenant BOOK=covenant-tyl CHAPTER=fwck
+make test-covenant BOOK=covenant-tyl CHAPTER=radio-pirata
+
+# Test main + all chapters
+make test-covenant BOOK=covenant-tyl --all-chapters
+
+# Use external bookrack path if symlinked
+export COVENANT_BOOKRACK_PATH=/path/to/proto-the-yaml-life/bookrack
 ```
 
 ### Flags Reference

@@ -213,8 +213,19 @@ fi
 echo -e "  Chapter Context: ${YELLOW}$CHAPTER${RESET}"
 echo ""
 
-# Read book index to get realm info
+# Read book index to get realm info and repository settings
 REALM_NAME=$(yq '.realm.name // "kast"' "$BOOKRACK_PATH/$COVENANT_BOOK/index.yaml")
+
+# Read repository settings from covenant book index (required for ApplicationSet)
+BOOK_REPOSITORY=$(yq '.repository // ""' "$BOOKRACK_PATH/$COVENANT_BOOK/index.yaml")
+BOOK_PATH=$(yq '.path // ""' "$BOOKRACK_PATH/$COVENANT_BOOK/index.yaml")
+BOOK_REVISION=$(yq '.revision // ""' "$BOOKRACK_PATH/$COVENANT_BOOK/index.yaml")
+
+# Fallback to defaults if not specified in book
+BOOK_REPOSITORY=${BOOK_REPOSITORY:-"https://github.com/kast-spells/kast-system.git"}
+BOOK_PATH=${BOOK_PATH:-"./covenant"}
+BOOK_REVISION=${BOOK_REVISION:-"main"}
+
 echo -e "${BLUE}📋 Covenant Configuration${RESET}"
 echo -e "  Realm: ${YELLOW}$REALM_NAME${RESET}"
 
@@ -268,6 +279,9 @@ HELM_ARGS=(
     --set name="$COVENANT_NAME"
     --set spellbook.name="$COVENANT_BOOK"
     --set spellbook.argocdNamespace="argocd"
+    --set spellbook.repository="$BOOK_REPOSITORY"
+    --set spellbook.path="$BOOK_PATH"
+    --set spellbook.revision="$BOOK_REVISION"
     --set chapter.name="$CHAPTER"
     --set-json "lexicon[0]=$LEXICON_VAULT"
     --set-json "lexicon[1]=$LEXICON_KEYCLOAK"
@@ -330,7 +344,8 @@ case $MODE in
 
         # Show specific Keycloak resources
         echo -e "${BLUE}Keycloak Resources:${RESET}"
-        KEYCLOAK_REALM=$(grep -c "kind: KeycloakRealm$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
+        # Count both KeycloakRealm and ClusterKeycloakRealm
+        KEYCLOAK_REALM=$(grep -cE "kind: (KeycloakRealm|ClusterKeycloakRealm)$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
         KEYCLOAK_CLIENTS=$(grep -c "kind: KeycloakClient$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
         KEYCLOAK_GROUPS=$(grep -c "kind: KeycloakRealmGroup$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
         KEYCLOAK_USERS=$(grep -c "kind: KeycloakRealmUser$" "$TEMP_OUTPUT" 2>/dev/null || echo "0")
@@ -357,7 +372,7 @@ case $MODE in
             USERS_NUM=$(echo "$KEYCLOAK_USERS" | tr -d '\n')
             GROUPS_NUM=$(echo "$KEYCLOAK_GROUPS" | tr -d '\n')
             if [ "${REALM_NUM:-0}" -eq 0 ]; then
-                echo -e "  ${RED}⚠ Warning: No KeycloakRealm generated in main mode${RESET}"
+                echo -e "  ${RED}⚠ Warning: No KeycloakRealm or ClusterKeycloakRealm generated in main mode${RESET}"
             fi
             if [ "${USERS_NUM:-0}" -gt 0 ]; then
                 echo -e "  ${RED}⚠ Warning: KeycloakUsers should not be in main covenant${RESET}"

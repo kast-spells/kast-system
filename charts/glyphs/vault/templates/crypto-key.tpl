@@ -247,8 +247,17 @@ kind: VaultSecret
 metadata:
   name: {{ $glyphDefinition.name }}
   namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
     argocd.argoproj.io/sync-options: Prune=false
+    {{- with $glyphDefinition.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   refreshPeriod: {{ default "3m0s" $glyphDefinition.refreshPeriod }}
   vaultSecretDefinitions:

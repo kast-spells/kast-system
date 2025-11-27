@@ -1,0 +1,44 @@
+# Example: Enabling all label categories
+# This example shows a comprehensive configuration with all label types enabled
+
+name: payment-service
+component: backend
+
+spellbook:
+  name: ecommerce-platform
+
+chapter:
+  name: production
+
+# Enable FinOps labels for cost tracking
+labels:
+  finops:
+    enabled: true
+    team: payments-team
+    owner: finance-lead
+    costCenter: payments-dept
+    department: finance
+    project: payment-gateway
+    environment: production
+
+  # Enable Covenant labels for IAM
+  covenant:
+    enabled: true
+    team: payments-team
+    owner: security-admin@company.com
+    department: finance
+    member: payment-service-account
+    organization: payment-processing-unit
+
+description: "Critical payment processing service with PCI compliance requirements"
+
+annotations:
+  # Prometheus monitoring
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+  # Custom business metadata
+  compliance.company.com/pci-dss: "required"
+  sla.company.com/tier: "platinum"
+  contact.company.com/oncall: "payments-team@company.com"

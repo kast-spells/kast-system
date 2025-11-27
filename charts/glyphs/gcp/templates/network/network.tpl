@@ -9,11 +9,17 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeSubnetwork
 metadata:
-  name: {{ $glyphDefinition.name  }}
+  name: {{ $glyphDefinition.name }}
   labels:
-    {{- include "common.infra.labels" $root | nindent 4 }}
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
   annotations:
-    {{- include "common.infra.annotations" $root | nindent 4}}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   routingMode: {{ default "REGIONAL" $glyphDefinition.routingMode }}
   autoCreateSubnetworks: {{ default false $glyphDefinition.autoCreateSubnetworks }}

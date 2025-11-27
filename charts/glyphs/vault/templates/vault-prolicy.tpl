@@ -54,6 +54,16 @@ kind: Policy
 metadata:
   name:  {{ default ( include "common.name" $root ) $glyph.nameOverride }}
   namespace: {{ default "vault" $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyph.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyph.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
 {{- include "vault.connect" (list $root $vaultConf  "True")  |nindent 2}}
   policy: |
@@ -151,6 +161,16 @@ kind: KubernetesAuthEngineRole
 metadata:
   name: {{ default ( include "common.name" $root ) $glyph.nameOverride }}
   namespace: {{ default "vault" $vaultConf.namespace }}
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyph.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyph.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf  "True") |nindent 2 }}
   path: {{ default $root.Values.spellbook.name $vaultConf.path }}

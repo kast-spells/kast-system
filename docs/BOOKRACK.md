@@ -59,6 +59,26 @@ bookrack/
 - Contains: Application configuration
 - Defines: Workload-specific configuration
 
+## Special Book Types: Covenant
+
+Some books render identity/IAM realms with the `covenant` chart instead of the librarian + summon/kaster flow. Example: `bookrack/covenant-tyl/`.
+
+Structure:
+```
+bookrack/covenant-tyl/
+├── index.yaml                  # Realm config (name/displayName/password policy)
+├── realm/                      # Client scopes, integrations (Argocd, Vault, etc.)
+├── conventions/                # Post-provisioning helpers (passwords, email)
+└── covenant/                   # ApplicationSet chapter filters (tyl, fwck, radio-pirata)
+    ├── tyl/index.yaml
+    ├── fwck/index.yaml
+    └── radio-pirata/index.yaml
+```
+
+Testing:
+- Use `make test-covenant BOOK=covenant-tyl` for the main ApplicationSet and `--chapter` for chapter filters.
+- If the covenant book is symlinked out of repo, set `COVENANT_BOOKRACK_PATH` to the external bookrack root.
+
 ## Book index.yaml
 
 **Purpose:** Define book-wide configuration inherited by all chapters and spells.

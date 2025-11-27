@@ -32,6 +32,16 @@ kind: Certificate
 apiVersion: cert-manager.io/v1
 metadata:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}-{{ $issuer.name }}-cert
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $glyphDefinition.annotations }}
+  annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   commonName: {{ index $glyphDefinition.dnsNames 0 }}
   dnsNames:

@@ -44,15 +44,15 @@ metadata:
   {{- end }}
   name: {{ $pvcName }}
   labels:
-    {{- include "common.labels" $root | nindent 4}}
+    {{- include "common.all.labels" $root | nindent 4 }}
     {{- with $volume.labels }}
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
+  {{- with $volume.annotations }}
   annotations:
-    {{- include "common.annotations" $root | nindent 4}}
-    {{- with $volume.annotations }}
-    {{ toYaml . | nindent 4 }}
-    {{- end }}
+    {{- include "common.annotations" $root | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{/* Handle PV creation - use same naming logic as PV template */}}
   {{- if $volume.pv }}

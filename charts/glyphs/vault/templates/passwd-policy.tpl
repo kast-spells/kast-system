@@ -14,8 +14,17 @@ apiVersion: redhatcop.redhat.io/v1alpha1
 kind: PasswordPolicy
 metadata:
   name: simple-password-policy
+  labels:
+    {{- include "common.all.labels" $root | nindent 4 }}
+    {{- with $glyphDefinition.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   annotations:
+    {{- include "common.annotations" $root | nindent 4 }}
     argocd.argoproj.io/sync-wave: "5"
+    {{- with $glyphDefinition.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   {{- include "vault.connect" (list $root $vaultConf "") | nindent 2 }}
   passwordPolicy: |

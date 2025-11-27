@@ -1,6 +1,37 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
+
+runicIndexer.runicIndexer - Infrastructure discovery via lexicon label matching
+
+The runic indexer enables dynamic resource discovery in templates by querying
+infrastructure definitions stored in the lexicon (bookrack/<book>/_lexicon/).
+
+Usage:
+  {{- $results := get (include "runicIndexer.runicIndexer" (list $lexicon $selectors $type $chapter) | fromJson) "results" }}
+
+Parameters:
+  $lexicon: Lexicon dictionary from bookrack appendix
+  $selectors: Label selectors (AND logic, empty = any)
+  $type: Infrastructure type to filter by (e.g., istio-gw, vault, database)
+  $chapter: Current chapter name (for chapter-level defaults)
+
+Selection Priority:
+  1. Exact match: ALL selectors match labels (AND logic)
+  2. Book default: label with default: book (no selectors matched)
+  3. Chapter default: label with default: chapter in same chapter (fallback)
+
+Example lexicon entry:
+  - name: external-gateway
+    type: istio-gw
+    labels:
+      access: external
+      environment: production
+      default: book
+    gateway: istio-system/external-gateway
+
+Example usage in glyph:
+  {{- $gateways := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon $glyphDefinition.selector "istio-gw" $root.Values.chapter.name) | fromJson) "results" }}
 */}}
 {{- define "runicIndexer.runicIndexer" -}}
 {{- $glyphs := index . 0 -}}

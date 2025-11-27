@@ -141,7 +141,7 @@ Process of determining card implementation. Methods: registered name lookup, sel
 ## Covenant (Identity Management)
 
 **Covenant**
-Trinket for identity and access management using Keycloak and Vault OIDC. Manages realms, clients, users, groups, and secrets. Located in `proto-the-yaml-life` repository. Uses two-stage deployment: main covenant generates ApplicationSet, per-chapter covenants render actual resources.
+Trinket for identity and access management using Keycloak and Vault OIDC. Manages realms, clients, users, groups, and secrets. Located in `kast-system/covenant/`. Uses two-stage deployment: main covenant generates ApplicationSet, per-chapter covenants render actual resources.
 
 **Integration**
 Configuration in covenant for OIDC client. Defines clientId, redirect URIs, web URL, and secret generation. One integration = one KeycloakClient + one VaultSecret.
