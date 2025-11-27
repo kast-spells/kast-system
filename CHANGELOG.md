@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.0] - 2025-11-27
+
+### Features
+
+- add clusterkeycloakrealm support and chart updates (keycloak) [`994397e`] 
+- update keycloak chart version feat(covenant): update covenant chart version docs: add new books and getting started guides docs: add glossary and good practices documentation refactor(covenant/templates/applicationset.yaml): improve applicationset yaml style: update chart yaml formatting (charts/glyphs/keycloak) [`8876ebd`] 
+- bump version to 1.1.2 and update client secret formatting (charts/glyphs/keycloak) [`6967825`] 
+- improve applicationset template with fallbacks for repository, path and revision (covenant) [`46648a6`] 
+- generate ApplicationSet when chapters with members are found (covenant/templates) [`7ec0b9f`] 
+
+### Bug Fixes
+
+- fix chart versions and covenant template (charts,covenant) [`90fa2ac`] 
+
+### Chore
+
+- bump version to v1.1.0  [`3aa388e`] 
+- bump version to v1.1.0  [`b915594`] 
+- bump version to v0.3.1  [`a495b5a`] 
+- bump version to v0.3.0  [`c436ccb`] 
+- bump version to v0.2.5  [`ac9a808`] 
+- bump version to v0.2.4  [`09ca0ff`] 
+- bump version to v0.2.3  [`a1a6d47`] 
+- bump version to v0.2.2  [`0e23d9c`] 
+
+### Other
+
+- Here is a conventional commit message based on the provided change summaries:  [`d572f85`] 
+
+
 ## [v1.1.0] - 2025-11-27
 
 ### Features
