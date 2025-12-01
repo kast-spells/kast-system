@@ -1,0 +1,34 @@
+# AWS ClusterIssuer with IRSA Autodiscovery
+# Shows minimal configuration for AWS Route53 with IRSA
+# cert-manager autodiscovers the hosted zone from certificate domains
+
+spellbook:
+  name: infrastructure
+chapter:
+  name: production
+
+glyphs:
+  certManager:
+    # Minimal AWS configuration - uses IRSA autodiscovery
+    letsencrypt-prod-aws:
+      type: clusterIssuer
+      issuerType: aws
+      email: devops@example.com
+      # That's it! IRSA handles auth, Route53 autodiscovers hosted zone
+
+    # Optional: specify region if not us-east-1
+    letsencrypt-prod-aws-eu:
+      type: clusterIssuer
+      issuerType: aws
+      email: devops@example.com
+      aws:
+        region: eu-west-1
+
+    # Optional: specify hosted zone if you have multiple zones
+    letsencrypt-prod-aws-specific:
+      type: clusterIssuer
+      issuerType: aws
+      email: devops@example.com
+      aws:
+        region: us-east-1
+        hostedZoneID: Z1234567890ABC

@@ -43,7 +43,19 @@ spec:
           {{- end }}
         {{- else if eq "aws" $glyphDefinition.issuerType }}
           route53:
-            region: us-east-1
+            region: {{ default "us-east-1" (dig "aws" "region" "" $glyphDefinition) }}
+            {{- if dig "aws" "hostedZoneID" "" $glyphDefinition }}
+            hostedZoneID: {{ $glyphDefinition.aws.hostedZoneID }}
+            {{- end }}
+            {{- if dig "aws" "role" "" $glyphDefinition }}
+            role: {{ $glyphDefinition.aws.role }}
+            {{- end }}
+            {{- if dig "aws" "accessKeyID" "" $glyphDefinition }}
+            accessKeyID: {{ $glyphDefinition.aws.accessKeyID }}
+            secretAccessKeySecretRef:
+              name: {{ $glyphDefinition.aws.secret.name }}
+              key: {{ default "secret-access-key" (dig "aws" "secret" "key" "" $glyphDefinition) }}
+            {{- end }}
         {{- end }}
 {{- end }}
 {{- end }}
