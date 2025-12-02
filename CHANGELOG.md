@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.0] - 2025-12-01
+
+### Features
+
+- add common name template and update kast.yaml (librarian) [`e9904ab`] 
+- add AWS ClusterIssuer with IRSA Autodiscovery example (charts/glyphs/certManager) [`b6d70eb`] 
+- add clusterkeycloakrealm support and chart updates (keycloak) [`994397e`] 
+- update keycloak chart version feat(covenant): update covenant chart version docs: add new books and getting started guides docs: add glossary and good practices documentation refactor(covenant/templates/applicationset.yaml): improve applicationset yaml style: update chart yaml formatting (charts/glyphs/keycloak) [`8876ebd`] 
+- bump version to 1.1.2 and update client secret formatting (charts/glyphs/keycloak) [`6967825`] 
+- improve applicationset template with fallbacks for repository, path and revision (covenant) [`46648a6`] 
+- generate ApplicationSet when chapters with members are found (covenant/templates) [`7ec0b9f`] 
+- update version numbers (charts/kaster, charts/summon) [`d1bbe68`] 
+- add ClusterKeycloak template and update covenant template to reference cluster-scoped Keycloak instance connection resource (glyphs/keycloak) [`c09d6a6`] 
+
+### Bug Fixes
+
+- fix chart versions and covenant template (charts,covenant) [`90fa2ac`] 
+
+### Chore
+
+- bump version to v1.4.0  [`8067647`] 
+- bump version to v1.6.0  [`4741d46`] 
+- bump version to v1.3.0  [`5b36048`] 
+- bump version to v1.5.0  [`599ae16`] 
+- bump version to v1.1.0  [`3aa388e`] 
+- bump version to v1.1.0  [`b915594`] 
+- bump version to v0.3.1  [`a495b5a`] 
+- bump version to v0.3.0  [`c436ccb`] 
+- bump version to v0.2.5  [`ac9a808`] 
+- bump version to v0.2.4  [`09ca0ff`] 
+- bump version to v0.2.3  [`a1a6d47`] 
+- bump version to v0.2.2  [`0e23d9c`] 
+- bump chart versions for keycloak and covenant  [`4b8a7f5`] 
+
+### Other
+
+- Here is a conventional commit message based on the provided change summaries:  [`d572f85`] 
+- Merge pull request #27 from kast-spells/refactor/covenant  [`b5ee8ba`]  (#27)
+- Here are the commit messages for each part:  [`a5dce25`] 
+
+
 ## [v1.4.0] - 2025-12-01
 
 ### Features
