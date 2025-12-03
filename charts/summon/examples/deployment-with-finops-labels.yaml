@@ -1,0 +1,47 @@
+# Deployment with FinOps Labels Example
+# Shows how to use FinOps labels for cost allocation and tracking (Kubecost-compatible)
+
+name: api-service
+component: backend
+
+spellbook:
+  name: ecommerce-platform
+chapter:
+  name: production
+
+# FinOps labels for cost allocation
+labels:
+  finops:
+    enabled: true
+    team: platform-team
+    owner: john.doe
+    costCenter: engineering
+    department: platform
+    project: core-api
+    environment: production
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+service:
+  enabled: true
+  ports:
+    - port: 8080
+      name: http
+
+image:
+  repository: myorg/api-service
+  tag: v1.2.3
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+serviceAccount:
+  enabled: true
