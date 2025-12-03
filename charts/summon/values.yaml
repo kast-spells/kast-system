@@ -1,29 +1,15 @@
-################################################################################
-# Summon - Kubernetes Workload Deployment Chart
-################################################################################
-# Summon is a flexible Helm chart for deploying containerized workloads on
-# Kubernetes. It supports 5 workload types and includes comprehensive features
-# for production deployments.
-#
-# Supported Workload Types:
-#   - Deployment:  Stateless applications with rolling updates
-#   - StatefulSet: Stateful applications with persistent identity
-#   - Job:         One-time batch processing tasks
-#   - CronJob:     Scheduled recurring jobs
-#   - DaemonSet:   One pod per node (monitoring, log collectors)
-#
-# Examples: See charts/summon/examples/ for comprehensive usage examples
-################################################################################
 
-################################################################################
-# WORKLOAD CONFIGURATION
-################################################################################
-# Controls the type and behavior of the Kubernetes workload resource.
-# The workload type determines which Kubernetes resource is created.
+# Summon - Kubernetes Workload Deployment Chart
+
+# Supports: Deployment, StatefulSet, Job, CronJob, DaemonSet
+# Examples: See charts/summon/examples/
+
+# WORKLOAD
+
 workload:
-  enabled: true         # Create workload resource (Deployment/StatefulSet/Job/etc.)
-  type: deployment      # Options: deployment, statefulset, job, cronjob, daemonset
-  replicas: 1           # Number of pod replicas (ignored for daemonset and jobs)
+  enabled: true
+  type: deployment  # Options: deployment, statefulset, job, cronjob, daemonset
+  replicas: 1
 
   # StatefulSet-specific: Volume Claim Templates
   # Creates persistent volumes that follow pod lifecycle
@@ -48,62 +34,41 @@ workload:
   # backoffLimit: 3            # Number of retries before marking job as failed
   # activeDeadlineSeconds: 600 # Maximum time in seconds for job to complete
 
-################################################################################
 # CONTAINER IMAGE
-################################################################################
-# Specifies the container image to deploy
-image:
-  repository: ""       # Image repository (e.g., nginx, myorg/app, ghcr.io/org/app)
-  pullPolicy: IfNotPresent  # Options: Always, IfNotPresent, Never
-  name: ""             # Optional: Custom container name (defaults to chart name)
-  tag: ""              # Optional: Image tag (overrides chart appVersion if specified)
 
-# Secrets for pulling images from private registries
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  name: ""
+  tag: ""
+
 imagePullSecrets: []
 # - name: regcred
-# - name: dockerhub-secret
 
-################################################################################
-# RESOURCE NAMING
-################################################################################
-# Override default naming behavior
-nameOverride: ""      # Override the chart name in resource names
-fullnameOverride: ""  # Override the full generated name (chart + release)
+nameOverride: ""
+fullnameOverride: ""
 
-################################################################################
 # SERVICE ACCOUNT
-################################################################################
-# Kubernetes ServiceAccount for pod identity and RBAC
+
 serviceAccount:
-  enabled: true       # Create a ServiceAccount for the workload
-  automount: true     # Automatically mount ServiceAccount token in pods
-  annotations: {}     # Annotations for the ServiceAccount (e.g., IAM roles)
+  enabled: true
+  automount: true
+  annotations: {}
   # vault.hashicorp.com/role: my-app
   # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/my-role
-  labels: {}          # Additional labels for the ServiceAccount
-  name: ""            # Custom ServiceAccount name (auto-generated if empty)
+  labels: {}
+  name: ""
 
-################################################################################
-# POD CONFIGURATION
-################################################################################
-# Pod-level annotations and labels
+# POD
 
-# Annotations applied to pod template (e.g., for monitoring, service mesh)
 podAnnotations: {}
 # prometheus.io/scrape: "true"
 # prometheus.io/port: "8080"
-# prometheus.io/path: "/metrics"
 
-# Additional labels applied to pod template
 podLabels: {}
 # version: "1.0.0"
-# environment: "production"
 
-################################################################################
-# SECURITY CONTEXT
-################################################################################
-# Container-level security settings
-# NOTE: Pod-level security context (podSecurityContext) is not implemented
+# Container security (podSecurityContext not implemented)
 securityContext: {}
 # capabilities:
 #   drop:
@@ -115,81 +80,49 @@ securityContext: {}
 # runAsUser: 1000
 # allowPrivilegeEscalation: false
 
-################################################################################
 # SERVICE
-################################################################################
-# Kubernetes Service for network access to pods
-service:
-  enabled: true       # Create a Service resource
-  type: ClusterIP     # Options: ClusterIP, NodePort, LoadBalancer
-  annotations: {}     # Service annotations (e.g., for load balancers)
-  # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-  # cloud.google.com/neg: '{"ingress": true}'
-  labels: {}          # Additional labels for the Service
-  ports: []           # List of ports to expose
-  # - port: 80            # Service port
-  #   targetPort: 8080    # Container port (defaults to port if not specified)
-  #   protocol: TCP       # Protocol: TCP or UDP
-  #   name: http          # Port name (used by Istio, monitoring)
-  # - port: 443
-  #   targetPort: 8443
-  #   protocol: TCP
-  #   name: https
-  #   nodePort: 30443     # Static node port (NodePort type only)
 
-################################################################################
+service:
+  enabled: true
+  type: ClusterIP  # Options: ClusterIP, NodePort, LoadBalancer
+  annotations: {}
+  labels: {}
+  ports: []
+  # - port: 80
+  #   targetPort: 8080
+  #   protocol: TCP
+  #   name: http
+  #   nodePort: 30443  # NodePort only
+
 # RESOURCES
-################################################################################
-# CPU and memory limits/requests for the container
+
 resources: {}
 # limits:
-#   cpu: 500m         # Maximum CPU (0.5 cores)
-#   memory: 512Mi     # Maximum memory
+#   cpu: 500m
+#   memory: 512Mi
 # requests:
-#   cpu: 250m         # Requested CPU (0.25 cores)
-#   memory: 256Mi     # Requested memory
+#   cpu: 250m
+#   memory: 256Mi
 
-################################################################################
 # HEALTH CHECKS
-################################################################################
-# Liveness, readiness, and startup probes for container health monitoring
-# Example: See charts/summon/examples/complex-production.yaml
 # probes:
 #   liveness:
-#     type: httpGet              # Probe type: httpGet, tcpSocket, exec
-#     path: /healthz             # HTTP path to check
-#     port: 8080                 # Port to probe
-#     initialDelaySeconds: 30    # Wait before first probe
-#     periodSeconds: 10          # Interval between probes
-#     timeoutSeconds: 5          # Probe timeout
-#     successThreshold: 1        # Consecutive successes to mark healthy
-#     failureThreshold: 3        # Consecutive failures to mark unhealthy
-#     httpHeaders:
-#     - name: X-Custom-Header
-#       value: "HealthCheck"
-#   readiness:
-#     type: tcpSocket            # Check if port is open
+#     type: httpGet
+#     path: /healthz
 #     port: 8080
-#     initialDelaySeconds: 5
-#     periodSeconds: 5
-#     timeoutSeconds: 1
-#     successThreshold: 1
-#     failureThreshold: 3
-#   startup:
-#     type: exec                 # Run command in container
-#     command:
-#     - /bin/sh
-#     - -c
-#     - "test -f /app/ready"
-#     initialDelaySeconds: 0
+#     initialDelaySeconds: 30
 #     periodSeconds: 10
-#     timeoutSeconds: 1
-#     successThreshold: 1
-#     failureThreshold: 30       # Allow up to 5 minutes for startup
+#     failureThreshold: 3
+#   readiness:
+#     type: tcpSocket
+#     port: 8080
+#   startup:
+#     type: exec
+#     command: ["/bin/sh", "-c", "test -f /app/ready"]
+#     failureThreshold: 30
 
-################################################################################
 # AUTOSCALING
-################################################################################
+
 # Horizontal Pod Autoscaler for automatic scaling based on metrics
 autoscaling:
   enabled: false                        # Enable HPA
@@ -203,9 +136,8 @@ autoscaling:
   #   scaleUp:
   #     stabilizationWindowSeconds: 60   # Wait before scaling up
 
-################################################################################
 # POD SCHEDULING
-################################################################################
+
 # Control which nodes pods are scheduled on
 
 # Node selector: Simple key-value node selection
@@ -243,37 +175,18 @@ affinity: {}
 #         values:
 #         - "true"
 
-################################################################################
 # INIT CONTAINERS
-################################################################################
-# Containers that run before the main container starts
-# Use cases: Database migrations, wait-for-dependencies, setup tasks
+
 initContainers: {}
 # db-migration:
 #   image:
 #     repository: migrate/migrate
 #     tag: latest
-#   command:
-#   - migrate
-#   args:
-#   - -path=/migrations
-#   - -database=postgres://user:pass@db/mydb
-#   - up
-#   resources:
-#     limits:
-#       cpu: 200m
-#       memory: 256Mi
-# wait-for-db:
-#   image:
-#     repository: busybox
-#     tag: latest
-#   command: ['sh', '-c', 'until nc -z db 5432; do sleep 1; done']
+#   command: [migrate]
+#   args: [-path=/migrations, -database=postgres://user:pass@db/mydb, up]
 
-################################################################################
 # SIDECAR CONTAINERS
-################################################################################
-# Additional containers that run alongside the main container
-# Use cases: Logging, monitoring, proxies, adapters
+
 sideCars: {}
 # prometheus-exporter:
 #   image:
@@ -291,9 +204,8 @@ sideCars: {}
 #   - /cloud_sql_proxy
 #   - -instances=project:region:instance=tcp:5432
 
-################################################################################
 # SECRETS
-################################################################################
+
 # Kubernetes Secrets configuration with unified contentType system
 # Secrets can be referenced (location: local) or created (location: create)
 # Example: See charts/summon/examples/deployment-with-secrets-env.yaml
@@ -321,9 +233,8 @@ secrets: {}
 #       host: postgres.local
 #       password: secretpass
 
-################################################################################
 # CONFIGMAPS
-################################################################################
+
 # Kubernetes ConfigMaps configuration with unified contentType system
 # ConfigMaps can be referenced (location: local) or created (location: create)
 # Example: See charts/summon/examples/configmap-unified-contenttype.yaml
@@ -365,9 +276,8 @@ configMaps: {}
 #     timeout: 30
 #     retries: 3
 
-################################################################################
 # VOLUMES
-################################################################################
+
 # Persistent and ephemeral storage volumes
 # Supports: PVC, hostPath, NFS, emptyDir
 # Example: See charts/summon/examples/deployment-with-storage.yaml
@@ -409,9 +319,8 @@ volumes: {}
 #   sizeLimit: 1Gi
 #   medium: Memory  # Optional: Use tmpfs (RAM) instead of disk
 
-################################################################################
 # ENVIRONMENT VARIABLES
-################################################################################
+
 # Container environment variables with multiple sources
 envs: {}
 # # Simple key-value pairs
@@ -430,9 +339,8 @@ envs: {}
 #   name: app-config
 #   key: api.endpoint
 
-################################################################################
 # CONTAINER LIFECYCLE
-################################################################################
+
 # Override container command and arguments
 # command: ["nginx"]
 # args: ["-g", "daemon off;"]
@@ -447,10 +355,8 @@ envs: {}
 #       path: /healthz
 #       port: 8080
 
-
-################################################################################
 # KUBERNETES LABELS
-################################################################################
+
 # Optional label systems for cost tracking and identity management
 
 # FinOps Labels: Cost allocation and tracking (Kubecost-compatible)
@@ -476,9 +382,8 @@ envs: {}
 #     member: ""            # Member identifier (username/service account)
 #     organization: ""      # Organization name
 
-################################################################################
 # KAST SYSTEM CONFIGURATION
-################################################################################
+
 # Kast-specific configuration for GitOps integration and labeling
 
 # Spellbook: Top-level grouping (platform/project name)
