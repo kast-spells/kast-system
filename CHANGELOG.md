@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.0] - 2025-12-03
+
+### Features
+
+- add finops labels for cost allocation and tracking (summon) [`f7a3171`] 
+- add common name template and update kast.yaml (librarian) [`e9904ab`] 
+
+### Bug Fixes
+
+- update namePrefix and nameSuffix logic (kast.yaml) [`b9de205`] 
+
+### Refactoring
+
+- simplify values.yaml for summon chart (charts) [`905bc85`] 
+
+### Chore
+
+- bump version to v1.3.1  [`8b0b871`] 
+- bump version to v1.3.0  [`0a9ead2`] 
+
+
 ## [v1.3.1] - 2025-12-01
 
 ### Bug Fixes
