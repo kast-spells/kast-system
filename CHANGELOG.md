@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.6.0] - 2025-12-04
+
+### Features
+
+- update gateway and virtualService templates (charts/glyphs/istio/templates) [`407a2d5`] 
+
+### Chore
+
+- bump version to v1.7.0  [`0d2b818`] 
+- bump version to v1.2.0  [`9ba8c9e`] 
+
+
 ## [v1.7.0] - 2025-12-04
 
 ### Features
