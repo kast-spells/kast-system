@@ -6,7 +6,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1 }}
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}

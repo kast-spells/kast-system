@@ -32,7 +32,7 @@ Usage: {{- include "istio.virtualService" (list $root $glyph) }}
 {{- $gateways := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "istio-gw" $root.Values.chapter.name ) | fromJson) "results" }}
 {{- range $gateway := $gateways }}
 ---
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: {{ default (include "common.name" $root ) $glyphDefinition.nameOverride }}-{{ $gateway.name }}
