@@ -1,0 +1,27 @@
+# Test: Port Name Defaults
+# Tests automatic port name - only port 80 defaults to "http", rest needs explicit names
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  name: multiport-app
+  tag: latest
+
+containers:
+  main:
+    ports:
+      - containerPort: 80      # Auto-name: http (only default)
+      - containerPort: 9090    # Auto-name: port-9090
+        name: metrics          # Explicit name
+      - containerPort: 8080    # Auto-name: port-8080
+        name: admin            # Explicit name
+
+service:
+  enabled: true
+  type: ClusterIP
+
+serviceAccount:
+  enabled: false

@@ -1,0 +1,21 @@
+# Test: Old Single Port Style (Backward Compatibility)
+# Using service.port instead of service.ports[] array
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  name: nginx
+  tag: alpine
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80            # Old style: single port value
+  protocol: TCP
+  name: http
+
+serviceAccount:
+  enabled: false

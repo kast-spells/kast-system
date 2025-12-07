@@ -1,0 +1,33 @@
+# Test: Mixed Numeric and Named targetPort
+# Service with both numeric and named targetPort references
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  name: myapp
+  tag: v1.0.0
+
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+      - containerPort: 9090
+        name: metrics
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http      # Named reference
+      name: public-http
+    - port: 9090
+      targetPort: 9090      # Numeric reference
+      name: prometheus
+
+serviceAccount:
+  enabled: false

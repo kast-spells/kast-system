@@ -34,7 +34,11 @@ containers:
   {{- include "summon.common.container" (list $root $root.Values.sideCars ) | nindent 2 }}
   {{- end }}
   #main Container
+  {{- if $root.Values.containers }}
+  {{- include "summon.common.container" (list $root $root.Values.containers ) | nindent 2  }}
+  {{- else }}
   {{- include "summon.common.container" (list $root (list $root.Values) ) | nindent 2  }}
+  {{- end }}
   {{- with $root.Values.nodeSelector }}
 nodeSelector:
     {{- toYaml . | nindent 2 }}
@@ -85,7 +89,11 @@ containers:
   {{- include "summon.common.container" (list $root $root.Values.sideCars ) | nindent 2 }}
   {{- end }}
   #main Container
+  {{- if $root.Values.containers }}
+  {{- include "summon.common.container" (list $root $root.Values.containers ) | nindent 2  }}
+  {{- else }}
   {{- include "summon.common.container" (list $root (list $root.Values) ) | nindent 2  }}
+  {{- end }}
   {{- with $root.Values.nodeSelector }}
 nodeSelector:
     {{- toYaml . | nindent 2 }}

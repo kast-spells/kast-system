@@ -1,0 +1,38 @@
+# Test: Named Port References
+# Service references container ports by name for cleaner mapping
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  name: myapp
+  tag: v1.0.0
+
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      - containerPort: 9090
+        name: metrics
+        protocol: TCP
+      - containerPort: 8081
+        name: admin
+        protocol: TCP
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http  # Reference by name!
+      name: public-http
+    - port: 9090
+      targetPort: metrics
+      name: prometheus
+
+serviceAccount:
+  enabled: false

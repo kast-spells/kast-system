@@ -1,0 +1,28 @@
+# Test: Container-First with Auto-Service Generation
+# Container ports defined, service auto-generates to expose all ports
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  name: nginx
+  tag: alpine
+
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      - containerPort: 9090
+        name: metrics
+        protocol: TCP
+
+service:
+  enabled: true
+  type: ClusterIP
+
+serviceAccount:
+  enabled: false

@@ -1,0 +1,54 @@
+# Test: Multiple Services
+# Multiple independent services exposing different container ports
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+image:
+  name: myapp
+  tag: v1.0.0
+
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      - containerPort: 9090
+        name: metrics
+        protocol: TCP
+      - containerPort: 8081
+        name: admin
+        protocol: TCP
+
+services:
+  public:
+    type: LoadBalancer
+    ports:
+      - port: 80
+        targetPort: http
+        name: public-http
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+  monitoring:
+    type: ClusterIP
+    ports:
+      - port: 9090
+        targetPort: metrics
+        name: prometheus
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+
+  admin:
+    type: ClusterIP
+    ports:
+      - port: 8081
+        targetPort: admin
+        name: admin-console
+
+serviceAccount:
+  enabled: false

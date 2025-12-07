@@ -1,0 +1,26 @@
+# Test: Container Ports Without Service
+# Containers with ports but no service should render container ports only
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  name: nginx
+  tag: alpine
+
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+      - containerPort: 9090
+        name: metrics
+
+# No service defined - should only create container ports
+service:
+  enabled: false
+
+serviceAccount:
+  enabled: false

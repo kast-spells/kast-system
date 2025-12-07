@@ -1,0 +1,34 @@
+# Test: Headless Service (StatefulSet pattern)
+# Service with clusterIP: None for StatefulSet pod discovery
+
+workload:
+  enabled: true
+  type: statefulset
+  replicas: 3
+
+image:
+  name: cassandra
+  tag: latest
+
+containers:
+  main:
+    ports:
+      - containerPort: 9042
+        name: cql
+      - containerPort: 7000
+        name: intra-node
+
+service:
+  enabled: true
+  type: ClusterIP
+  clusterIP: None  # Headless service
+  ports:
+    - port: 9042
+      targetPort: cql
+      name: cql-port
+    - port: 7000
+      targetPort: intra-node
+      name: intra-node-port
+
+serviceAccount:
+  enabled: false

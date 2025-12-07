@@ -1,0 +1,35 @@
+# Test: NodePort Service with Explicit Node Ports
+# Service with type: NodePort and explicit nodePort values
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+image:
+  name: nginx
+  tag: alpine
+
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+      - containerPort: 8443
+        name: https
+
+service:
+  enabled: true
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: http
+      nodePort: 30080
+      name: http-nodeport
+    - port: 443
+      targetPort: https
+      nodePort: 30443
+      name: https-nodeport
+
+serviceAccount:
+  enabled: false

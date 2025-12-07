@@ -125,14 +125,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- include "summon.common.volumeMounts" $root | nindent 2 }}
   {{- include "summon.common.envs.envFrom" $root | nindent 2 }}
   {{- include "summon.common.envs.env" $root | nindent 2 }}
-    {{- end }}
-  {{- if $root.Values.service.enabled }}
-  ports:
-    {{- range $root.Values.service.ports }}
-    - name: {{ default "http" .name }}
-      containerPort: {{ default 80 .targetPort }}
-      protocol: {{ default "TCP" .protocol }}
-    {{- end }}
+  {{- include "summon.container.ports" (list $root $container) | nindent 2 }}
 {{- end }}
 
 {{- end -}}
