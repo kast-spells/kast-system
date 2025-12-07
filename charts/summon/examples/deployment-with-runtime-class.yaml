@@ -1,0 +1,35 @@
+# Deployment with Runtime Class Example
+# Shows how to specify a container runtime class (e.g., gVisor, Kata Containers)
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+# Specify the runtime class for enhanced isolation
+runtimeClassName: gvisor
+
+image:
+  name: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+
+serviceAccount:
+  enabled: true
+
+# Basic resource limits
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

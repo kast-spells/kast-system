@@ -18,6 +18,9 @@ Usage:
 {{- define "summon.common.podSpec" -}}
 {{- $root := . -}}
 serviceAccountName: {{ include "common.serviceAccountName" $root }}
+{{- with $root.Values.runtimeClassName }}
+runtimeClassName: {{ . }}
+{{- end }}
 {{- with $root.Values.securityContext }}
 securityContext:
   {{- toYaml . | nindent 2 }}
@@ -66,6 +69,9 @@ Usage:
 */}}
 {{- define "summon.common.podSpec.body" -}}
 {{- $root := . -}}
+{{- with $root.Values.runtimeClassName }}
+runtimeClassName: {{ . }}
+{{- end }}
 {{- with $root.Values.securityContext }}
 securityContext:
   {{- toYaml . | nindent 2 }}

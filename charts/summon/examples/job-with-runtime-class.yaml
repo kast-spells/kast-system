@@ -1,0 +1,28 @@
+# Job with Runtime Class Example
+# Shows runtime class works with Job workload type
+
+workload:
+  enabled: true
+  type: job
+  restartPolicy: Never
+
+# Specify the runtime class for enhanced isolation
+runtimeClassName: kata-containers
+
+image:
+  name: busybox
+  tag: latest
+  pullPolicy: IfNotPresent
+  command: ["echo"]
+  args: ["Hello from kata containers runtime"]
+
+serviceAccount:
+  enabled: true
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
