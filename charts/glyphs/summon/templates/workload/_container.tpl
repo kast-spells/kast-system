@@ -118,6 +118,10 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   resources:
     {{- toYaml . | nindent 4 }}
     {{- end }}
+  {{- with $container.securityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- include "summon.common.volumeMounts" $root | nindent 2 }}
   {{- include "summon.common.envs.envFrom" $root | nindent 2 }}
   {{- include "summon.common.envs.env" $root | nindent 2 }}
