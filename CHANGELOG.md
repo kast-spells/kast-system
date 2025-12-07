@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+- add comprehensive port handling and multi-service support (summon) [`b661529`] 
+- bump version to 1.8.0 and update changelog  [`998dc57`] 
+- add security context to workload container template (charts/glyphs/summon/templates/workload) [`5e0df5f`] 
+
+
+## [v1.8.0] - 2025-12-07
+
+### Features
+
 - add security context to workload container template (charts/glyphs/summon/templates/workload) [`5e0df5f`] 
 
 
