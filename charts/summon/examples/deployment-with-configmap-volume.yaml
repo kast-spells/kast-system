@@ -1,0 +1,39 @@
+# Deployment with ConfigMap Volume Example
+# Shows how to mount configMaps as directories where each key becomes a file
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+service:
+  enabled: true
+  ports:
+    - port: 80
+      name: http
+
+# Mount configMaps as volumes - each key in the configMap becomes a file
+volumes:
+  app-config:
+    type: configmap
+    configMapName: application-config
+    destinationPath: /etc/config
+  nginx-conf:
+    type: configmap
+    configMapName: nginx-config
+    destinationPath: /etc/nginx
+    defaultMode: 0644  # Optional: set file permissions
+  selective-mount:
+    type: configmap
+    configMapName: app-settings
+    destinationPath: /etc/settings
+    items:
+      - key: config.json
+        path: application.json
+      - key: logging.yaml
+        path: log-config.yaml
+        mode: 0600
+
+image:
+  name: nginx
+  tag: latest

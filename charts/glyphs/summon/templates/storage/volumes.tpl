@@ -46,6 +46,40 @@ volumes:
     {{- end }}
     claimName: {{ $pvcName }}
   {{- end }}
+  {{- if eq $volume.type "secret" }}
+  secret:
+    secretName: {{ $volume.secretName }}
+    {{- if $volume.defaultMode }}
+    defaultMode: {{ $volume.defaultMode }}
+    {{- end }}
+    {{- if $volume.items }}
+    items:
+      {{- range $volume.items }}
+      - key: {{ .key }}
+        path: {{ .path }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if eq $volume.type "configmap" }}
+  configMap:
+    name: {{ $volume.configMapName }}
+    {{- if $volume.defaultMode }}
+    defaultMode: {{ $volume.defaultMode }}
+    {{- end }}
+    {{- if $volume.items }}
+    items:
+      {{- range $volume.items }}
+      - key: {{ .key }}
+        path: {{ .path }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}
 
