@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.0] - 2025-12-11
+
+### Features
+
+- add chapter configmap and ownership to spells  [`5bd2665`] 
+- add support for secret and configmap volumes (charts) [`b38f8f6`] 
+- add comprehensive port handling and multi-service support (summon) [`b661529`] 
+- bump version to 1.8.0 and update changelog  [`998dc57`] 
+- add security context to workload container template (charts/glyphs/summon/templates/workload) [`5e0df5f`] 
+- add runtime class support to pod spec templates (glyphs/summon/templates) [`ff36ac3`] 
+- update gateway and virtualService templates (charts/glyphs/istio/templates) [`407a2d5`] 
+- add finops labels for cost allocation and tracking (summon) [`f7a3171`] 
+
+### Refactoring
+
+- simplify values.yaml for summon chart (charts) [`905bc85`] 
+
+### Chore
+
+- bump version to v1.9.0  [`5b1e074`] 
+- bump version to v1.8.0  [`1865733`] 
+- bump version to v1.7.0  [`c95e379`] 
+- bump version to v1.6.0  [`25ff64f`] 
+- bump version to v1.7.0  [`0d2b818`] 
+- bump version to v1.2.0  [`9ba8c9e`] 
+- bump version to v1.5.0  [`d3d5d08`] 
+
+
 ## [v1.9.0] - 2025-12-10
 
 ### Features
