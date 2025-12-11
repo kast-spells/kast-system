@@ -94,6 +94,73 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
       {{- end }}
     {{- end }}
   {{- end }}
+  {{/* Build effective chapter configuration (book < chapter merges) */}}
+  {{- $chapterEffective := deepCopy $chapter }}
+  {{/* Add effective projectName (chapter > book > spellbook.name) */}}
+  {{- if not (hasKey $chapterEffective "projectName") }}
+    {{- $_ := set $chapterEffective "projectName" (default $spellbook.name $spellbook.projectName) }}
+  {{- end }}
+  {{/* Add effective appParams if chapter has custom ones */}}
+  {{- if $chapter.appParams }}
+    {{- $effectiveAppParams := deepCopy $spellbook.appParams }}
+    {{- $_ := mergeOverwrite $effectiveAppParams (deepCopy $chapter.appParams) }}
+    {{- $_ := set $chapterEffective "appParams" $effectiveAppParams }}
+  {{- end }}
+  {{/* Add effective clusterSelector (chapter > book) */}}
+  {{- if not (hasKey $chapterEffective "clusterSelector") }}
+    {{- if $spellbook.clusterSelector }}
+      {{- $_ := set $chapterEffective "clusterSelector" $spellbook.clusterSelector }}
+    {{- end }}
+  {{- end }}
+  {{/* Add effective namePrefix/nameSuffix if not in chapter */}}
+  {{- if not (hasKey $chapterEffective "namePrefix") }}
+    {{- if $spellbook.namePrefix }}
+      {{- $_ := set $chapterEffective "namePrefix" $spellbook.namePrefix }}
+    {{- else if and $spellbook.global (hasKey $spellbook.global "namePrefix") }}
+      {{- $_ := set $chapterEffective "namePrefix" $spellbook.global.namePrefix }}
+    {{- end }}
+  {{- end }}
+  {{- if not (hasKey $chapterEffective "nameSuffix") }}
+    {{- if $spellbook.nameSuffix }}
+      {{- $_ := set $chapterEffective "nameSuffix" $spellbook.nameSuffix }}
+    {{- else if and $spellbook.global (hasKey $spellbook.global "nameSuffix") }}
+      {{- $_ := set $chapterEffective "nameSuffix" $spellbook.global.nameSuffix }}
+    {{- end }}
+  {{- end }}
+  {{/* Chapter ConfigMap for ownership hierarchy */}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chapter-{{ $spellbook.name }}-{{ $chapterName }}
+  namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+  labels:
+    kast.spells/book: {{ $spellbook.name }}
+    kast.spells/chapter: {{ $chapterName }}
+    kast.spells/resource-type: chapter-marker
+data:
+  # Basic metadata
+  chapter: {{ $chapterName }}
+  book: {{ $spellbook.name }}
+  # Chapter definition (effective configuration after book < chapter merge)
+  definition.yaml: |
+    {{- toYaml $chapterEffective | nindent 4 }}
+  # Trinkets configured for this chapter (effective after merge)
+  trinkets.yaml: |
+    defaultTrinket:
+      {{- toYaml $chapterDefaultTrinket | nindent 6 }}
+    trinketsByKey:
+      {{- toYaml $chapterTrinketsByKey | nindent 6 }}
+  # Book context (for reference)
+  book-metadata.yaml: |
+    name: {{ $spellbook.name }}
+    projectName: {{ default $spellbook.name $spellbook.projectName }}
+    argocdNamespace: {{ default "argocd" $spellbook.argocdNamespace }}
+    {{- if $spellbook.description }}
+    description: {{ $spellbook.description }}
+    {{- end }}
   {{- $path := print "bookrack/" $spellbook.name "/" $chapterName "/*.y*ml"}}
   {{- range $spellPath, $_ := $.Files.Glob $path }}
   {{- if not (eq $spellPath (print "bookrack/" $spellbook.name "/" $chapterName "/index.yaml")) }}
@@ -151,6 +218,16 @@ metadata:
   {{- $nameContext := dict "Values" (dict "name" $spellDefinition.name "namePrefix" $namePrefix "nameSuffix" $nameSuffix) "Release" (dict "Name" $spellDefinition.name) }}
   name: {{ include "common.name" $nameContext }}
   namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  labels:
+    kast.spells/book: {{ $spellbook.name }}
+    kast.spells/chapter: {{ $chapterName }}
+  ownerReferences:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: chapter-{{ $spellbook.name }}-{{ $chapterName }}
+      uid: ""
+      controller: false
+      blockOwnerDeletion: true
   {{- with ($spellDefinition.appParams).customFinalizers }}
   finalizers:
   {{- toYaml . | nindent 4 }}
