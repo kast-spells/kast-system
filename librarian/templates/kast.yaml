@@ -221,12 +221,14 @@ metadata:
   labels:
     kast.spells/book: {{ $spellbook.name }}
     kast.spells/chapter: {{ $chapterName }}
+    app.kubernetes.io/part-of: chapter-{{ $spellbook.name }}-{{ $chapterName }}
+  annotations:
+    kast.spells/chapter-configmap: chapter-{{ $spellbook.name }}-{{ $chapterName }}
+  {{- with ($spellDefinition.appParams).annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- with ($spellDefinition.appParams).customFinalizers }}
   finalizers:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with ($spellDefinition.appParams).annotations }}
-  annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
@@ -334,6 +336,9 @@ spec:
   {{- end }}
   {{- /* runes */}}
   {{- $ignoreDiff := (default list $appParams.ignoreDifferences) }}
+  {{- /* Ignore ownerReferences added by hook */}}
+  {{- $ownerRefIgnore := dict "group" "argoproj.io" "kind" "Application" "jsonPointers" (list "/metadata/ownerReferences") }}
+  {{- $ignoreDiff = append $ignoreDiff $ownerRefIgnore }}
   {{- range $rune := $spellDefinition.runes }}
     {{- $ignoreDiff = concat $ignoreDiff (default list ($rune.appParams).ignoreDifferences) }}
     {{- if not ($rune.appParams).noOverite }}
