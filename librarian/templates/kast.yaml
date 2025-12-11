@@ -221,12 +221,6 @@ metadata:
   labels:
     kast.spells/book: {{ $spellbook.name }}
     kast.spells/chapter: {{ $chapterName }}
-  ownerReferences:
-    - apiVersion: v1
-      kind: ConfigMap
-      name: chapter-{{ $spellbook.name }}-{{ $chapterName }}
-      controller: false
-      blockOwnerDeletion: true
   {{- with ($spellDefinition.appParams).customFinalizers }}
   finalizers:
   {{- toYaml . | nindent 4 }}

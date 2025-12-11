@@ -1,0 +1,215 @@
+{{/*kast - Kubernetes arcane spelling technology
+Copyright (C) 2023 namenmalkv@gmail.com
+Licensed under the GNU GPL v3. See LICENSE file for details.
+*/}}
+
+{{- $spellbook :=  dict "appParams" $.Values.appParams  }}
+{{- $_ := set $spellbook "name" (default $.Release.Name $.Values.name) }}
+
+{{- $path := printf "bookrack/%s/index.yaml" (default .Release.Name .Values.name) }}
+{{- if .Files.Glob $path }}
+  {{- $default := .Files.Get $path | fromYaml }}
+  {{- $_ := mergeOverwrite $spellbook $default }}
+{{- end }}
+
+{{/* RBAC Resources - created once for all chapters */}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chapter-ownership-hook
+  namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chapter-ownership-hook
+  namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chapter-ownership-hook
+  namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chapter-ownership-hook
+subjects:
+  - kind: ServiceAccount
+    name: chapter-ownership-hook
+    namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+
+{{/* Hook Job - one per chapter */}}
+{{ range $chapterName := $spellbook.chapters }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: set-ownership-{{ $spellbook.name }}-{{ $chapterName }}-{{ now | date "20060102-150405" }}
+  namespace: {{ default "argocd" $spellbook.argocdNamespace }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "10"
+  labels:
+    kast.spells/book: {{ $spellbook.name }}
+    kast.spells/chapter: {{ $chapterName }}
+    kast.spells/hook-type: ownership
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        kast.spells/book: {{ $spellbook.name }}
+        kast.spells/chapter: {{ $chapterName }}
+    spec:
+      serviceAccountName: chapter-ownership-hook
+      restartPolicy: OnFailure
+      containers:
+      - name: set-ownership
+        image: bitnami/kubectl:1.28
+        command: ["/bin/bash"]
+        args:
+          - -c
+          - |
+            set -e
+
+            CHAPTER="{{ $chapterName }}"
+            BOOK="{{ $spellbook.name }}"
+            NAMESPACE="{{ default "argocd" $spellbook.argocdNamespace }}"
+            CONFIGMAP_NAME="chapter-${BOOK}-${CHAPTER}"
+
+            echo "================================"
+            echo "Chapter Ownership Hook"
+            echo "================================"
+            echo "Book:    $BOOK"
+            echo "Chapter: $CHAPTER"
+            echo "ConfigMap: $CONFIGMAP_NAME"
+            echo ""
+
+            # Wait for ConfigMap to exist (should already exist with sync-wave -10)
+            echo "Waiting for ConfigMap to exist..."
+            MAX_WAIT=30
+            WAITED=0
+            while [ $WAITED -lt $MAX_WAIT ]; do
+              if kubectl get configmap "$CONFIGMAP_NAME" -n "$NAMESPACE" &>/dev/null; then
+                echo "✓ ConfigMap exists"
+                break
+              fi
+              sleep 2
+              WAITED=$((WAITED + 2))
+            done
+
+            if [ $WAITED -ge $MAX_WAIT ]; then
+              echo "ERROR: ConfigMap $CONFIGMAP_NAME not found after ${MAX_WAIT}s"
+              exit 1
+            fi
+
+            # Get ConfigMap UID
+            echo ""
+            echo "Getting ConfigMap UID..."
+            CM_UID=$(kubectl get configmap "$CONFIGMAP_NAME" -n "$NAMESPACE" -o jsonpath='{.metadata.uid}')
+
+            if [ -z "$CM_UID" ]; then
+              echo "ERROR: Failed to get ConfigMap UID"
+              exit 1
+            fi
+
+            echo "✓ ConfigMap UID: $CM_UID"
+
+            # Find all Applications for this chapter
+            echo ""
+            echo "Finding Applications in chapter..."
+            APPS=$(kubectl get applications -n "$NAMESPACE" -l "kast.spells/chapter=${CHAPTER}" -o name 2>/dev/null || true)
+
+            if [ -z "$APPS" ]; then
+              echo "⚠ No Applications found for chapter $CHAPTER"
+              echo "This is OK if chapter has no spells yet"
+              exit 0
+            fi
+
+            APP_COUNT=$(echo "$APPS" | wc -l)
+            echo "✓ Found $APP_COUNT Application(s)"
+
+            # Patch each Application with ownerReference
+            echo ""
+            echo "Adding ownerReferences to Applications..."
+
+            SUCCESS=0
+            FAILED=0
+            SKIPPED=0
+
+            while IFS= read -r APP; do
+              APP_NAME=$(echo "$APP" | cut -d'/' -f2)
+              echo ""
+              echo "Processing: $APP_NAME"
+
+              # Check if ownerReference already exists
+              EXISTING_OWNER=$(kubectl get "$APP" -n "$NAMESPACE" -o jsonpath='{.metadata.ownerReferences[?(@.kind=="ConfigMap")].name}' 2>/dev/null || true)
+
+              if [ "$EXISTING_OWNER" = "$CONFIGMAP_NAME" ]; then
+                echo "  ⊙ Already has correct ownerReference - skipping"
+                SKIPPED=$((SKIPPED + 1))
+                continue
+              fi
+
+              # Create ownerReference patch
+              PATCH_JSON=$(cat <<EOF
+            [{
+              "op": "add",
+              "path": "/metadata/ownerReferences",
+              "value": [{
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "name": "$CONFIGMAP_NAME",
+                "uid": "$CM_UID",
+                "controller": false,
+                "blockOwnerDeletion": true
+              }]
+            }]
+            EOF
+            )
+
+              # Apply patch
+              if kubectl patch "$APP" -n "$NAMESPACE" --type=json -p "$PATCH_JSON" 2>&1; then
+                echo "  ✓ ownerReference added"
+                SUCCESS=$((SUCCESS + 1))
+              else
+                echo "  ✗ Failed to patch"
+                FAILED=$((FAILED + 1))
+              fi
+            done <<< "$APPS"
+
+            # Summary
+            echo ""
+            echo "================================"
+            echo "Summary"
+            echo "================================"
+            echo "Total Applications: $APP_COUNT"
+            echo "Success:  $SUCCESS"
+            echo "Skipped:  $SKIPPED (already had ownerReference)"
+            echo "Failed:   $FAILED"
+            echo ""
+
+            if [ $FAILED -gt 0 ]; then
+              echo "⚠ Some Applications failed to patch"
+              exit 1
+            fi
+
+            echo "✓ All Applications processed successfully"
+{{- end }}
