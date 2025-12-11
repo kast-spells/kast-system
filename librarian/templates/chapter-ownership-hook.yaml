@@ -83,7 +83,7 @@ spec:
       containers:
       - name: set-ownership
         image: alpine/k8s:1.31.4
-        command: ["/bin/bash"]
+        command: ["/bin/sh"]
         args:
           - -c
           - |
@@ -154,7 +154,7 @@ spec:
             FAILED=0
             SKIPPED=0
 
-            while IFS= read -r APP; do
+            echo "$APPS" | while IFS= read -r APP; do
               APP_NAME=$(echo "$APP" | cut -d'/' -f2)
               echo ""
               echo "Processing: $APP_NAME"
@@ -193,7 +193,7 @@ spec:
                 echo "  ✗ Failed to patch"
                 FAILED=$((FAILED + 1))
               fi
-            done <<< "$APPS"
+            done
 
             # Summary
             echo ""
