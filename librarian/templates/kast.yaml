@@ -225,7 +225,6 @@ metadata:
     - apiVersion: v1
       kind: ConfigMap
       name: chapter-{{ $spellbook.name }}-{{ $chapterName }}
-      uid: ""
       controller: false
       blockOwnerDeletion: true
   {{- with ($spellDefinition.appParams).customFinalizers }}
