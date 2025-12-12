@@ -63,7 +63,7 @@ metadata:
   namespace: {{ default "argocd" $spellbook.argocdNamespace }}
   annotations:
     argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    # argocd.argoproj.io/hook-delete-policy: HookSucceeded  # Disabled to keep jobs for log inspection
     argocd.argoproj.io/sync-wave: "10"
   labels:
     kast.spells/book: {{ $spellbook.name }}
