@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.9.1] - 2025-12-12
+
+### Features
+
+- add chapter ownership hook functionality (librarian/templates) [`0955884`] 
+- add annotations for chapter configmap and owner references (kast.yaml) [`13ba11a`] 
+- add chapter ownership hook and RBAC resources for chapter ownership management (kast) [`feddcdc`] 
+- add chapter configmap and ownership to spells  [`5bd2665`] 
+
+### Bug Fixes
+
+- fix chapter ownership hook script (ownership-hook) [`73c7555`] 
+- update kubectl image to alpine/k8s (librarian/templates/chapter-ownership-hook.yaml) [`f5fa01a`] 
+
+### Refactoring
+
+- remove uid from configmap metadata (kast) [`aa340f2`] 
+
+### Chore
+
+- bump version to v1.6.1  [`54c92f0`] 
+- bump version to v1.6.0  [`80f4c3f`] 
+- bump version to v1.5.0  [`1b9b4a3`] 
+- bump version to v1.4.1  [`b40cb63`] 
+- bump version to v1.4.0  [`191be06`] 
+
+
 ## [v1.6.1] - 2025-12-11
 
 ### Bug Fixes
