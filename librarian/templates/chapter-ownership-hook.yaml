@@ -243,6 +243,18 @@ spec:
                 }
               }" >/dev/null 2>&1; then
                 echo "  ✓ ownerReference added"
+                
+                # CRITICAL: Remove tracking-id to force ArgoCD to use ownerReferences for UI tree
+                # This recreates the "cache failure" state where hierarchy worked correctly
+                echo "  ⚡ Removing tracking-id annotation to enable ownerReference-based hierarchy..."
+                if kubectl annotate "$APP" -n "$NAMESPACE" \
+                  argocd.argoproj.io/tracking-id- \
+                  --overwrite >/dev/null 2>&1; then
+                  echo "  ✓ tracking-id removed (ArgoCD will now use ownerReferences for UI tree)"
+                else
+                  echo "  ⚠ Failed to remove tracking-id (non-critical, hierarchy may not work)"
+                fi
+                
                 SUCCESS=$(cat "$RESULTS_FILE.success")
                 echo $((SUCCESS + 1)) > "$RESULTS_FILE.success"
               else
@@ -280,5 +292,13 @@ spec:
             fi
 
             echo "✓ All ownership references configured successfully"
-            echo "✓ ArgoCD UI hierarchy: $BOOK_APP_NAME -> $CONFIGMAP_NAME -> Applications"
+            echo "✓ Tracking-IDs removed from child Applications"
+            echo ""
+            echo "📊 Expected ArgoCD UI hierarchy:"
+            echo "   $BOOK_APP_NAME (Application)"
+            echo "     └─ $CONFIGMAP_NAME (ConfigMap)"
+            echo "        └─ Applications (via ownerReferences)"
+            echo ""
+            echo "⚠️  Note: Child Applications no longer tracked by $BOOK_APP_NAME"
+            echo "    They will sync/prune independently but ownership is preserved for garbage collection"
 {{- end }}
