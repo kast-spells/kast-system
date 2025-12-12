@@ -70,7 +70,7 @@ metadata:
     kast.spells/chapter: {{ $chapterName }}
     kast.spells/hook-type: ownership
 spec:
-  ttlSecondsAfterFinished: 300
+  # ttlSecondsAfterFinished: 300  # Commented out to keep jobs for debugging
   backoffLimit: 3
   template:
     metadata:
