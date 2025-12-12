@@ -32,7 +32,7 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "patch"]
   - apiGroups: ["argoproj.io"]
     resources: ["applications"]
     verbs: ["get", "list", "patch"]
@@ -93,17 +93,44 @@ spec:
             BOOK="{{ $spellbook.name }}"
             NAMESPACE="{{ default "argocd" $spellbook.argocdNamespace }}"
             CONFIGMAP_NAME="chapter-${BOOK}-${CHAPTER}"
+            BOOK_APP_NAME="${BOOK}-book"
 
-            echo "================================"
+            echo "========================================"
             echo "Chapter Ownership Hook"
-            echo "================================"
-            echo "Book:    $BOOK"
-            echo "Chapter: $CHAPTER"
-            echo "ConfigMap: $CONFIGMAP_NAME"
+            echo "========================================"
+            echo "Book:           $BOOK"
+            echo "Chapter:        $CHAPTER"
+            echo "Book App:       $BOOK_APP_NAME"
+            echo "Chapter ConfigMap: $CONFIGMAP_NAME"
             echo ""
 
-            # Wait for ConfigMap to exist (should already exist with sync-wave -10)
-            echo "Waiting for ConfigMap to exist..."
+            # STEP 1: Get Book Application UID
+            echo "========================================"
+            echo "STEP 1: Get Book Application UID"
+            echo "========================================"
+            
+            if ! kubectl get application "$BOOK_APP_NAME" -n "$NAMESPACE" &>/dev/null; then
+              echo "ERROR: Book Application '$BOOK_APP_NAME' not found"
+              echo "This hook must run AFTER the book Application is created"
+              exit 1
+            fi
+
+            BOOK_APP_UID=$(kubectl get application "$BOOK_APP_NAME" -n "$NAMESPACE" -o jsonpath='{.metadata.uid}')
+            
+            if [ -z "$BOOK_APP_UID" ]; then
+              echo "ERROR: Failed to get Book Application UID"
+              exit 1
+            fi
+
+            echo "✓ Book Application: $BOOK_APP_NAME"
+            echo "✓ Book App UID: $BOOK_APP_UID"
+
+            # STEP 2: Wait for ConfigMap and get its UID
+            echo ""
+            echo "========================================"
+            echo "STEP 2: Get Chapter ConfigMap UID"
+            echo "========================================"
+            
             MAX_WAIT=30
             WAITED=0
             while [ $WAITED -lt $MAX_WAIT ]; do
@@ -120,9 +147,6 @@ spec:
               exit 1
             fi
 
-            # Get ConfigMap UID
-            echo ""
-            echo "Getting ConfigMap UID..."
             CM_UID=$(kubectl get configmap "$CONFIGMAP_NAME" -n "$NAMESPACE" -o jsonpath='{.metadata.uid}')
 
             if [ -z "$CM_UID" ]; then
@@ -130,11 +154,49 @@ spec:
               exit 1
             fi
 
+            echo "✓ ConfigMap: $CONFIGMAP_NAME"
             echo "✓ ConfigMap UID: $CM_UID"
 
-            # Find all Applications for this chapter
+            # STEP 3: Patch ConfigMap with ownerReference to Book Application
             echo ""
-            echo "Finding Applications in chapter..."
+            echo "========================================"
+            echo "STEP 3: Patch ConfigMap Ownership"
+            echo "========================================"
+            
+            # Check if ConfigMap already has ownerReference to book
+            EXISTING_CM_OWNER=$(kubectl get configmap "$CONFIGMAP_NAME" -n "$NAMESPACE" -o jsonpath='{.metadata.ownerReferences[?(@.kind=="Application")].name}' 2>/dev/null || true)
+
+            if [ "$EXISTING_CM_OWNER" = "$BOOK_APP_NAME" ]; then
+              echo "⊙ ConfigMap already has ownerReference to $BOOK_APP_NAME - skipping"
+            else
+              echo "Adding ownerReference to ConfigMap..."
+              
+              # Use strategic merge patch (more robust than JSON patch)
+              if kubectl patch configmap "$CONFIGMAP_NAME" -n "$NAMESPACE" --type=merge -p "{
+                \"metadata\": {
+                  \"ownerReferences\": [{
+                    \"apiVersion\": \"argoproj.io/v1alpha1\",
+                    \"kind\": \"Application\",
+                    \"name\": \"$BOOK_APP_NAME\",
+                    \"uid\": \"$BOOK_APP_UID\",
+                    \"controller\": false,
+                    \"blockOwnerDeletion\": true
+                  }]
+                }
+              }" 2>&1; then
+                echo "✓ ConfigMap ownerReference added successfully"
+              else
+                echo "✗ Failed to patch ConfigMap"
+                exit 1
+              fi
+            fi
+
+            # STEP 4: Find and patch Applications
+            echo ""
+            echo "========================================"
+            echo "STEP 4: Patch Applications Ownership"
+            echo "========================================"
+            
             APPS=$(kubectl get applications -n "$NAMESPACE" -l "kast.spells/chapter=${CHAPTER}" -o name 2>/dev/null || true)
 
             if [ -z "$APPS" ]; then
@@ -144,19 +206,17 @@ spec:
             fi
 
             APP_COUNT=$(echo "$APPS" | wc -l)
-            echo "✓ Found $APP_COUNT Application(s)"
-
-            # Patch each Application with ownerReference
+            echo "Found $APP_COUNT Application(s) in chapter"
             echo ""
-            echo "Adding ownerReferences to Applications..."
 
-            SUCCESS=0
-            FAILED=0
-            SKIPPED=0
+            # Use temp file to avoid subshell variable scope issues
+            RESULTS_FILE=$(mktemp)
+            echo "0" > "$RESULTS_FILE.success"
+            echo "0" > "$RESULTS_FILE.failed"
+            echo "0" > "$RESULTS_FILE.skipped"
 
             echo "$APPS" | while IFS= read -r APP; do
               APP_NAME=$(echo "$APP" | cut -d'/' -f2)
-              echo ""
               echo "Processing: $APP_NAME"
 
               # Check if ownerReference already exists
@@ -164,52 +224,61 @@ spec:
 
               if [ "$EXISTING_OWNER" = "$CONFIGMAP_NAME" ]; then
                 echo "  ⊙ Already has correct ownerReference - skipping"
-                SKIPPED=$((SKIPPED + 1))
+                SKIPPED=$(cat "$RESULTS_FILE.skipped")
+                echo $((SKIPPED + 1)) > "$RESULTS_FILE.skipped"
                 continue
               fi
 
-              # Create ownerReference patch
-              PATCH_JSON=$(cat <<EOF
-            [{
-              "op": "add",
-              "path": "/metadata/ownerReferences",
-              "value": [{
-                "apiVersion": "v1",
-                "kind": "ConfigMap",
-                "name": "$CONFIGMAP_NAME",
-                "uid": "$CM_UID",
-                "controller": false,
-                "blockOwnerDeletion": true
-              }]
-            }]
-            EOF
-            )
-
-              # Apply patch
-              if kubectl patch "$APP" -n "$NAMESPACE" --type=json -p "$PATCH_JSON" 2>&1; then
+              # Use strategic merge patch (more robust)
+              if kubectl patch "$APP" -n "$NAMESPACE" --type=merge -p "{
+                \"metadata\": {
+                  \"ownerReferences\": [{
+                    \"apiVersion\": \"v1\",
+                    \"kind\": \"ConfigMap\",
+                    \"name\": \"$CONFIGMAP_NAME\",
+                    \"uid\": \"$CM_UID\",
+                    \"controller\": false,
+                    \"blockOwnerDeletion\": true
+                  }]
+                }
+              }" >/dev/null 2>&1; then
                 echo "  ✓ ownerReference added"
-                SUCCESS=$((SUCCESS + 1))
+                SUCCESS=$(cat "$RESULTS_FILE.success")
+                echo $((SUCCESS + 1)) > "$RESULTS_FILE.success"
               else
                 echo "  ✗ Failed to patch"
-                FAILED=$((FAILED + 1))
+                FAILED=$(cat "$RESULTS_FILE.failed")
+                echo $((FAILED + 1)) > "$RESULTS_FILE.failed"
               fi
             done
 
+            # Read final counts from temp files
+            SUCCESS=$(cat "$RESULTS_FILE.success")
+            FAILED=$(cat "$RESULTS_FILE.failed")
+            SKIPPED=$(cat "$RESULTS_FILE.skipped")
+            
+            # Cleanup temp files
+            rm -f "$RESULTS_FILE" "$RESULTS_FILE.success" "$RESULTS_FILE.failed" "$RESULTS_FILE.skipped"
+
             # Summary
             echo ""
-            echo "================================"
+            echo "========================================"
             echo "Summary"
-            echo "================================"
-            echo "Total Applications: $APP_COUNT"
-            echo "Success:  $SUCCESS"
-            echo "Skipped:  $SKIPPED (already had ownerReference)"
-            echo "Failed:   $FAILED"
+            echo "========================================"
+            echo "Book Application:    $BOOK_APP_NAME ✓"
+            echo "Chapter ConfigMap:   $CONFIGMAP_NAME ✓"
+            echo ""
+            echo "Total Applications:  $APP_COUNT"
+            echo "  Success:           $SUCCESS"
+            echo "  Skipped:           $SKIPPED (already had ownerReference)"
+            echo "  Failed:            $FAILED"
             echo ""
 
-            if [ $FAILED -gt 0 ]; then
+            if [ "$FAILED" -gt 0 ]; then
               echo "⚠ Some Applications failed to patch"
               exit 1
             fi
 
-            echo "✓ All Applications processed successfully"
+            echo "✓ All ownership references configured successfully"
+            echo "✓ ArgoCD UI hierarchy: $BOOK_APP_NAME -> $CONFIGMAP_NAME -> Applications"
 {{- end }}
