@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.6.2] - 2025-12-12
+
+### Features
+
+- remove tracking-id annotation to enable ownerReference-based hierarchy (librarian) [`e6c70ad`] 
+- add chapter ownership hook functionality (librarian/templates) [`0955884`] 
+- add annotations for chapter configmap and owner references (kast.yaml) [`13ba11a`] 
+
+### Chore
+
+- bump version to v1.9.1  [`19f7453`] 
+
+
 ## [v1.9.1] - 2025-12-12
 
 ### Features
