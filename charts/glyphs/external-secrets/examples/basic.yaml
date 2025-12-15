@@ -23,7 +23,7 @@ lexicon:
       provider: vault
 
 glyphs:
-  externalsecrets:
+  external-secrets:
     # Secret Store (Cluster-wide)
     - type: secret-store
       mode: cluster

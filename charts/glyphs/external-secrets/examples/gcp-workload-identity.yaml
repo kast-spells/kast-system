@@ -16,7 +16,7 @@ lexicon:
       auth: workload-identity
 
 glyphs:
-  externalsecrets:
+  external-secrets:
     # GCP ClusterSecretStore with Workload Identity
     - type: secret-store
       mode: cluster

@@ -27,7 +27,7 @@ lexicon:
       provider: vault
 
 glyphs:
-  externalsecrets:
+  external-secrets:
     # Create the ClusterSecretStore K8s resource
     - type: secret-store
       mode: cluster

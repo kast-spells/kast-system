@@ -26,7 +26,7 @@ lexicon:
       provider: vault
 
 glyphs:
-  externalsecrets:
+  external-secrets:
     # ClusterSecretStore
     - type: secret-store
       mode: cluster
