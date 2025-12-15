@@ -1,0 +1,107 @@
+name: externalsecrets-datafrom-advanced
+
+# Advanced dataFrom examples
+# Shows extract, find, rewrite, and conversion strategies
+
+lexicon:
+  # Vault server config (required for path generation)
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+      provider: vault
+
+  # SecretStore metadata (for runic indexer discovery)
+  - name: vault-store
+    type: secret-store
+    mode: cluster
+    labels:
+      default: book
+      provider: vault
+
+glyphs:
+  externalsecrets:
+    # ClusterSecretStore
+    - type: secret-store
+      mode: cluster
+      name: vault-store
+      provider:
+        type: vault
+        selector:
+          provider: vault
+          default: book
+
+    # ExternalSecret with extract strategy
+    - type: external-secret
+      name: extracted-secrets
+      selector:
+        provider: vault
+        default: book
+      dataFrom:
+        - extract:
+            key: /production/database/all-credentials
+            version: v2
+            property: data
+            conversionStrategy: Default
+            decodingStrategy: Auto
+
+    # ExternalSecret with rewrite (regex transformation)
+    - type: external-secret
+      name: rewritten-secrets
+      selector:
+        provider: vault
+        default: book
+      dataFrom:
+        - extract:
+            key: /production/env-vars
+          rewrite:
+            - regexp:
+                source: "PROD_(.*)"
+                target: "APP_${1}"
+
+    # ExternalSecret with find strategy (filter by tags)
+    - type: external-secret
+      name: tagged-secrets
+      selector:
+        provider: vault
+        default: book
+      dataFrom:
+        - find:
+            path: /production/
+            name:
+              regexp: ".*-config$"
+            tags:
+              environment: production
+              team: backend
+            conversionStrategy: Unicode
+            decodingStrategy: Base64
+          rewrite:
+            - regexp:
+                source: "(.+)-config"
+                target: "${1}_CONFIGURATION"
+
+    # ExternalSecret with multiple dataFrom sources
+    - type: external-secret
+      name: combined-secrets
+      selector:
+        provider: vault
+        default: book
+      dataFrom:
+        # Source 1: Extract database credentials
+        - extract:
+            key: /production/database
+            property: credentials
+        # Source 2: Extract API keys
+        - extract:
+            key: /production/api-keys
+        # Source 3: Find all monitoring configs
+        - find:
+            path: /production/monitoring/
+            name:
+              regexp: ".*"

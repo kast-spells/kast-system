@@ -1,0 +1,12 @@
+apiVersion: v2
+name: externalsecrets
+version: 1.0.0
+description: externalsecrets glyphs for kast
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-system
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: laaledesiempre
+    email: laaledesiempre@disroot.org

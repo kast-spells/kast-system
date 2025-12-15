@@ -1,0 +1,122 @@
+name: externalsecrets-policies-variants
+
+# Different policy configurations for ExternalSecrets
+# Shows refresh, creation, deletion, and template policies
+
+lexicon:
+  # Vault server config (required for path generation)
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+      provider: vault
+
+  # SecretStore metadata (for runic indexer discovery)
+  - name: vault-store
+    type: secret-store
+    mode: cluster
+    labels:
+      default: book
+      provider: vault
+
+glyphs:
+  externalsecrets:
+    # ClusterSecretStore
+    - type: secret-store
+      mode: cluster
+      name: vault-store
+      provider:
+        type: vault
+        selector:
+          provider: vault
+          default: book
+
+    # ExternalSecret with custom refresh policy
+    - type: external-secret
+      name: frequent-refresh
+      selector:
+        provider: vault
+        default: book
+      refreshPolicy: Periodic
+      refreshInterval: 5m  # Refresh every 5 minutes
+      creationPolicy: Owner
+      deletionPolicy: Retain
+      path: chapter
+
+    # ExternalSecret with manual refresh
+    - type: external-secret
+      name: manual-refresh
+      selector:
+        provider: vault
+        default: book
+      refreshPolicy: Manual  # Only refreshes on annotation change
+      creationPolicy: Orphan
+      deletionPolicy: Merge
+      path: chapter
+
+    # ExternalSecret with template type override
+    - type: external-secret
+      name: dockerconfig-secret
+      selector:
+        provider: vault
+        default: book
+      template:
+        type: kubernetes.io/dockerconfigjson
+        data:
+          .dockerconfigjson: |
+            {
+              "auths": {
+                "registry.example.com": {
+                  "username": "{{ .username }}",
+                  "password": "{{ .password }}",
+                  "auth": "{{ printf "%s:%s" .username .password | b64enc }}"
+                }
+              }
+            }
+      data:
+        - secretKey: username
+        - secretKey: password
+      path: chapter
+
+    # ExternalSecret with metadata template
+    - type: external-secret
+      name: labeled-secret
+      selector:
+        provider: vault
+        default: book
+      template:
+        metadata:
+          labels:
+            app: my-app
+            tier: backend
+            environment: production
+          annotations:
+            managed-by: external-secrets
+            vault-path: "kv/data/production"
+        data:
+          config.yaml: |
+            app:
+              name: {{ .app_name }}
+              version: {{ .version }}
+      data:
+        - secretKey: app_name
+        - secretKey: version
+      path: chapter
+
+    # ExternalSecret with long refresh interval (for rarely changing secrets)
+    - type: external-secret
+      name: static-config
+      selector:
+        provider: vault
+        default: book
+      refreshPolicy: Periodic
+      refreshInterval: 24h  # Refresh once per day
+      creationPolicy: Owner
+      deletionPolicy: Delete
+      path: book
