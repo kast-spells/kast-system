@@ -1,0 +1,59 @@
+name: externalsecrets-vault-basic
+
+# Basic Vault provider example with ExternalSecrets
+# Shows simple dataFrom usage with runic indexer
+
+lexicon:
+  # Vault server config (required for path generation)
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+      provider: vault
+
+  # SecretStore metadata (for runic indexer discovery)
+  - name: vault-production-store
+    type: secret-store
+    mode: cluster
+    labels:
+      environment: production
+      default: book
+      provider: vault
+
+glyphs:
+  externalsecrets:
+    # Create the ClusterSecretStore K8s resource
+    - type: secret-store
+      mode: cluster
+      name: vault-production-store
+      provider:
+        type: vault
+        selector:
+          provider: vault
+          default: book
+
+    # ExternalSecret - uses runic indexer to find store
+    - type: external-secret
+      name: app-config
+      selector:
+        provider: vault
+        default: book
+      # Runic indexer finds: vault-production-store (matches labels from lexicon)
+      # Vault server found via: provider=vault, default=book
+      # Path generated: kv/data/default/default/default/publics/app-config
+
+    # ExternalSecret with chapter path
+    - type: external-secret
+      name: db-credentials
+      path: chapter
+      selector:
+        provider: vault
+        environment: production
+      # Runic indexer finds: vault-production-store
+      # Path generated: kv/data/default/default/publics/db-credentials

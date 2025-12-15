@@ -1,0 +1,64 @@
+name: externalsecrets-gcp-workload-identity
+
+# GCP Secret Manager with Workload Identity
+# Shows authentication using GCP Workload Identity
+
+# NOTE: This example requires External Secrets Operator with GCP provider installed
+
+lexicon:
+  # GCP SecretStore metadata (for runic indexer discovery)
+  - name: gcp-secretmanager
+    type: secret-store
+    mode: cluster
+    labels:
+      provider: gcp
+      projectID: my-gcp-project
+      auth: workload-identity
+
+glyphs:
+  externalsecrets:
+    # GCP ClusterSecretStore with Workload Identity
+    - type: secret-store
+      mode: cluster
+      name: gcp-secretmanager
+      provider:
+        type: gcp
+        config:
+          projectID: my-gcp-project
+          clusterLocation: us-central1
+          clusterName: my-gke-cluster
+          serviceAccount:
+            name: external-secrets-sa
+            namespace: external-secrets
+
+    # ExternalSecret with chapter path
+    - type: external-secret
+      name: app-secrets
+      selector:
+        provider: gcp
+        projectID: my-gcp-project
+      path: chapter
+      # Result: my-app/production/publics/app-secrets
+
+    # ExternalSecret with custom path
+    - type: external-secret
+      name: db-credentials
+      selector:
+        provider: gcp
+        projectID: my-gcp-project
+      path: /production/database
+      # Result: /production/database
+
+    # ExternalSecret with explicit remoteRef keys
+    - type: external-secret
+      name: api-config
+      selector:
+        provider: gcp
+        projectID: my-gcp-project
+      data:
+        - secretKey: api_key
+          remoteRef:
+            key: projects/my-gcp-project/secrets/api-key/versions/latest
+        - secretKey: api_secret
+          remoteRef:
+            key: projects/my-gcp-project/secrets/api-secret/versions/latest

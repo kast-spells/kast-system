@@ -1,0 +1,99 @@
+name: externalsecrets-basic-test
+
+lexicon:
+  # Vault server config (required for path generation)
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+      provider: vault
+
+  # SecretStore metadata (for runic indexer discovery)
+  - name: vault-store
+    type: secret-store
+    mode: cluster
+    labels:
+      default: book
+      provider: vault
+
+glyphs:
+  externalsecrets:
+    # Secret Store (Cluster-wide)
+    - type: secret-store
+      mode: cluster
+      name: vault-store
+      provider:
+        type: vault
+        selector:
+          provider: vault
+          default: book
+
+    # External Secret with inline data mapping
+    - type: external-secret
+      name: app-config
+      selector:
+        provider: vault
+        default: book
+      template:
+        data:
+          config: |
+            datasources:
+            - name: "{{ .database | toString }}"
+              type: "{{ .db_type }}"
+      data:
+        - secretKey: database
+        - secretKey: db_type
+          remoteRef:
+            key: custom-db-type
+
+    # External Secret with auto path (dataFrom)
+    - type: external-secret
+      name: app-secrets
+      selector:
+        provider: vault
+        default: book
+
+    # External Secret with custom path
+    - type: external-secret
+      name: db-credentials
+      selector:
+        provider: vault
+        default: book
+      path: /database/prod
+
+    # External Secret with advanced dataFrom
+    - type: external-secret
+      name: advanced-secrets
+      selector:
+        provider: vault
+        default: book
+      dataFrom:
+        - extract:
+            key: database-credentials
+            version: v1
+            property: data
+            conversionStrategy: Default
+            decodingStrategy: Auto
+          rewrite:
+          - regexp:
+              source: "exp-(.*?)-ression"
+              target: "rewriting-${1}-with-groups"
+        - find:
+            path: path-to-filter
+            name:
+              regexp: ".*foobar.*"
+            tags:
+              foo: bar
+            conversionStrategy: Unicode
+            decodingStrategy: Base64
+          rewrite:
+          - regexp:
+              source: "foo"
+              target: "bar"
+

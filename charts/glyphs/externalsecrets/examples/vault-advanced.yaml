@@ -1,0 +1,92 @@
+name: externalsecrets-vault-advanced
+
+# Advanced Vault provider example
+# Shows data mapping, inline templates, custom paths
+
+lexicon:
+  # Vault server config (required for path generation)
+  - chapter: base-system
+    skipVerify: true
+    type: vault
+    url: http://vault.vault.svc:8200
+    namespace: vault
+    serviceAccount: vault
+    authPath: k8s-path-auth
+    secretPath: kv
+    labels:
+      default: book
+      provider: vault
+
+  # SecretStore metadata (for runic indexer discovery)
+  - name: vault-store
+    type: secret-store
+    mode: cluster
+    labels:
+      default: book
+      provider: vault
+
+glyphs:
+  externalsecrets:
+    # ClusterSecretStore
+    - type: secret-store
+      mode: cluster
+      name: vault-store
+      provider:
+        type: vault
+        selector:
+          provider: vault
+          default: book
+
+    # ExternalSecret with data mapping (individual keys)
+    - type: external-secret
+      name: database-config
+      selector:
+        provider: vault
+        default: book
+      template:
+        data:
+          # Inline template to transform secrets
+          database.yaml: |
+            host: "{{ .db_host }}"
+            port: {{ .db_port }}
+            database: "{{ .db_name }}"
+            username: "{{ .username }}"
+            password: "{{ .password }}"
+      data:
+        - secretKey: db_host
+        - secretKey: db_port
+        - secretKey: db_name
+        - secretKey: username
+        - secretKey: password
+
+    # ExternalSecret with custom remoteRef
+    - type: external-secret
+      name: api-keys
+      selector:
+        provider: vault
+        default: book
+      data:
+        - secretKey: primary_key
+          remoteRef:
+            key: /production/keys/primary  # Absolute path
+        - secretKey: secondary_key
+          remoteRef:
+            key: /production/keys/secondary
+
+    # ExternalSecret with book-level path
+    - type: external-secret
+      name: shared-config
+      selector:
+        provider: vault
+        default: book
+      path: book
+      # Result: kv/data/default/publics/shared-config
+
+    # ExternalSecret with custom absolute path
+    - type: external-secret
+      name: ssl-cert
+      selector:
+        provider: vault
+        default: book
+      path: /infrastructure/ssl/certs
+      # Result: kv/data/infrastructure/ssl/certs
