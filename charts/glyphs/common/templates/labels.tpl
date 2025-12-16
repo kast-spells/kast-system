@@ -47,16 +47,16 @@ Usage:
 */}}
 {{- define "common.all.labels" -}}
 {{- include "common.labels" . }}
-{{ include "common.infra.labels" . }}
+{{- include "common.infra.labels" . }}
 {{- if .Values.labels }}
 {{- if .Values.labels.finops }}
 {{- if .Values.labels.finops.enabled }}
-{{ include "common.finops.labels" . }}
+{{- include "common.finops.labels" . }}
 {{- end }}
 {{- end }}
 {{- if .Values.labels.covenant }}
 {{- if .Values.labels.covenant.enabled }}
-{{ include "common.covenant.labels" . }}
+{{- include "common.covenant.labels" . }}
 {{- end }}
 {{- end }}
 {{- end }}

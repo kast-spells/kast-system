@@ -1,0 +1,11 @@
+glyphs:
+  aws:
+    un-policy:
+      type: iam-policy          
+      resources:
+        arn: "arn:aws:secrets" #el recurso
+        actions: 
+        - s3:ListBucket
+        - s3:GetObjec1t
+        effect: Allow
+      name: kast-un-role #optional
