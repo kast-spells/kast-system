@@ -1,0 +1,43 @@
+lexicon:
+  dev-eks-cluster:
+    type: k8s-cluster
+    labels:
+      environment: development
+      region: us-west-1
+      provider: aws
+      default: book
+    clusterURL: https://AE280A8EC0804A46D65241CEED3D3454.gr7.us-west-1.eks.amazonaws.com
+    oidcID: SARLANGAOIDC
+    region: us-west-1
+    accountID: "323636678935"
+  aws-iam-policy-secrets-manager:
+    type: aws-iam-policy
+    arn: iam-policy-secretsdasdadasdadsa
+    labels:
+      recurso: secert-manager
+      environment: development
+      region: us-west-1
+      provider: aws
+  aws-iam-policy-s3:
+    type: aws-iam-policy
+    arn: iam-policy-s3sasasdas
+    labels:
+      recurso: s3
+      environment: development
+      region: us-west-1
+      provider: aws
+
+
+glyphs:
+  aws:
+    un-role:
+      type: iam-oidc-k8s-role
+      oidcID: SARLANGAOIDC
+      nameOverride: kast-un-role #optional
+      policies:
+        - name: kast-un-policy
+          selector:
+            recurso: secert-manager
+        - name: aws-iam-policy-s3
+          selector:
+            recurso: s3

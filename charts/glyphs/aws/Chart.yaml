@@ -1,0 +1,12 @@
+apiVersion: v2
+name: aws
+version: 1.0.0
+description: this has all the definitions of gcp infrastructure
+home: https://github.com/kast-spells
+sources:
+  - https://github.com/kast-spells/kast-system
+maintainers:
+  - name: namen malkav
+    email: namenmalkav@gmail.com
+  - name: intaky-dev
+    email: kazapeke@gmail.com
