@@ -24,7 +24,7 @@ metadata:
 spec:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
   description: "{{ default (include "common.name" $root) $glyphDefinition.description }}"
-  PolicyDocument: |
+  policyDocument: |
     {
       "Version": "2012-10-17",
       "Statement": [
