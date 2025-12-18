@@ -14,7 +14,7 @@ lexicon:
     type: aws-iam-policy
     arn: iam-policy-secretsdasdadasdadsa
     labels:
-      recurso: secert-manager
+      resources: secret-manager
       environment: development
       region: us-west-1
       provider: aws
@@ -22,7 +22,7 @@ lexicon:
     type: aws-iam-policy
     arn: iam-policy-s3sasasdas
     labels:
-      recurso: s3
+      resources: s3
       environment: development
       region: us-west-1
       provider: aws
@@ -37,7 +37,7 @@ glyphs:
       policies:
         - name: kast-un-policy
           selector:
-            recurso: secert-manager
+            resources: secret-manager
         - name: aws-iam-policy-s3
           selector:
-            recurso: s3
+            resources: s3
