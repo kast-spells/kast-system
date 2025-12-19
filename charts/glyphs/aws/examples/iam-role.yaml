@@ -6,7 +6,7 @@ lexicon:
       region: us-west-1
       provider: aws
       default: book
-    clusterURL: https://AE280A8EC0804A46D65241CEED3D3454.gr7.us-west-1.eks.amazonaws.com
+    clusterURL: https://SARLANGAOIDC.gr7.us-west-1.eks.amazonaws.com
     oidcID: SARLANGAOIDC
     region: us-west-1
     accountID: "323636678935"
