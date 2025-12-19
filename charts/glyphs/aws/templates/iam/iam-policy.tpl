@@ -23,6 +23,9 @@ metadata:
   {{- end }}
 spec:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
+  {{- with $glyphDefinition.path }}
+  path: {{ . }}
+  {{- end }}
   description: "{{ default (include "common.name" $root) $glyphDefinition.description }}"
   policyDocument: |
     {
@@ -35,4 +38,11 @@ spec:
         }
       ]
     }
+  {{- with $glyphDefinition.tags }}
+  tags:
+    {{- range . }}
+    - key: {{ .key }}
+      value: {{ .value }}
+    {{- end }}
+  {{- end }}
 {{- end }}

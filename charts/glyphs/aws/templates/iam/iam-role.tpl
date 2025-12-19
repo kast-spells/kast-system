@@ -12,6 +12,9 @@ apiVersion: iam.services.k8s.aws/v1alpha1
 kind: Role
 metadata:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
+  {{- with $glyphDefinition.namespace }}
+  namespace: {{ . }}
+  {{- end }}
   labels:
     {{- include "common.all.labels" $root | nindent 4 }}
     {{- with $glyphDefinition.labels }}
@@ -24,7 +27,13 @@ metadata:
   {{- end }}
 spec:
   name: {{ default (include "common.name" $root) $glyphDefinition.name }}
+  {{- with $glyphDefinition.path }}
+  path: {{ . }}
+  {{- end }}
   description: "{{ default (include "common.name" $root) $glyphDefinition.description }}"
+  {{- with $glyphDefinition.permissionsBoundary }}
+  permissionsBoundary: {{ . }}
+  {{- end }}
   assumeRolePolicyDocument: |
     {
       "Version": "2012-10-17",
@@ -38,7 +47,14 @@ spec:
           "Condition": {
             "StringEquals": {
               "oidc.eks.{{ $glyphDefinition.region }}.amazonaws.com/id/{{ default $k8sCluster.oidcID $glyphDefinition.oidcID }}:sub": [
+                {{- if $glyphDefinition.serviceAccounts }}
+                {{- range $index, $sa := $glyphDefinition.serviceAccounts }}
+                {{- if $index }},{{ end }}
+                "system:serviceaccount:{{ default $root.Release.Namespace $sa.namespace }}:{{ $sa.name }}"
+                {{- end }}
+                {{- else }}
                 "system:serviceaccount:{{ default $root.Release.Namespace  $glyphDefinition.namespace }}:{{ default (include "common.name" $root) $glyphDefinition.nameOverride }}"
+                {{- end }}
               ],
               "oidc.eks.{{ $glyphDefinition.region }}.amazonaws.com/id/{{ default $k8sCluster.oidcID $glyphDefinition.oidcID }}:aud": "sts.amazonaws.com"
             }
@@ -53,5 +69,12 @@ spec:
     - {{ $policyResult.arn }}
     {{- end }}
   {{- end }}
-{{- end }}    
+  {{- with $glyphDefinition.tags }}
+  tags:
+    {{- range . }}
+    - key: {{ .key }}
+      value: {{ .value }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 {{- end }}

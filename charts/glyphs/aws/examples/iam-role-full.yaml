@@ -1,0 +1,51 @@
+lexicon:
+  dev-eks-cluster:
+    type: k8s-cluster
+    labels:
+      environment: development
+      region: us-west-1
+      provider: aws
+      default: book
+    clusterURL: https://AE280A8EC0804A46D65241CEED3D3454.gr7.us-west-1.eks.amazonaws.com
+    oidcID: SARLANGAOIDC
+    region: us-west-1
+    accountID: "31232132131"
+  cert-manager-route53-policy:
+    type: aws-iam-policy
+    arn: arn:aws:iam::31232132131:policy/ack-eks-cert-manager-route53
+    labels:
+      resources: route53
+      environment: development
+      region: us-west-1
+      provider: aws
+
+glyphs:
+  aws:
+    cert-manager-role:
+      type: iam-oidc-k8s-role
+      name: ack-dev-eks-cert-manager
+      namespace: cert-manager
+      path: /ack/
+      description: "IAM Role for cert-manager and external-dns to manage Route53 DNS records"
+      permissionsBoundary: arn:aws:iam::31232132131:policy/ack/eks-ack-permissions-boundary
+      oidcID: 
+      region: us-west-1
+      serviceAccounts:
+        - namespace: cert-manager
+          name: dev-cert-manager
+        - namespace: kube-system
+          name: external-dns
+      policies:
+        - selector:
+            resources: route53
+      tags:
+        - key: Name
+          value: dev-eks-cert-manager-route53
+        - key: ManagedBy
+          value: ack-iam-controller
+        - key: Cluster
+          value: dev-eks
+        - key: Component
+          value: cert-manager
+        - key: Environment
+          value: dev

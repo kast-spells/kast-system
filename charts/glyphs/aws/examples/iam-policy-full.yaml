@@ -1,0 +1,25 @@
+glyphs:
+  aws:
+    cert-manager-route53-policy:
+      type: iam-policy
+      name: ack-rwg-dev-eks-cert-manager-route53
+      path: /ack/
+      description: "IAM Policy for cert-manager to manage Route53 DNS records"
+      resources:
+        arn: "arn:aws:route53:::hostedzone/*"
+        actions:
+          - route53:GetChange
+          - route53:ChangeResourceRecordSets
+          - route53:ListResourceRecordSets
+          - route53:ListHostedZones
+          - route53:ListHostedZonesByName
+        effect: Allow
+      tags:
+        - key: Name
+          value: cert-manager-route53-policy
+        - key: ManagedBy
+          value: ack-iam-controller
+        - key: Component
+          value: cert-manager
+        - key: Environment
+          value: dev
