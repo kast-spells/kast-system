@@ -1,0 +1,52 @@
+# Security Context Separation Example
+# Tests proper separation of pod-level vs container-level securityContext
+# Pod-level: runAsUser, fsGroup, etc. (root level)
+# Container-level: capabilities, privileged, etc. (workload.securityContext)
+
+spellbook:
+  name: example
+chapter:
+  name: test
+
+name: security-test
+namespace: security-test
+
+image:
+  name: nginx
+  tag: alpine
+
+# Pod-level security context (root level)
+# Only fields valid at pod level: runAsUser, runAsGroup, fsGroup, runAsNonRoot, etc.
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 3000
+  fsGroup: 2000
+  runAsNonRoot: true
+
+# Workload configuration with container-level security context
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+  # Container-level security context
+  # Only fields valid at container level: capabilities, privileged, allowPrivilegeEscalation, etc.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - NET_BIND_SERVICE
+
+service:
+  enabled: true
+  port: 8080
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi

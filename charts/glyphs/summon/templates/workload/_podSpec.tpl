@@ -4,6 +4,36 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
 
 {{/*
+summon.podSecurityContext filters securityContext to only include pod-level valid fields.
+Container-level fields (capabilities, privileged, etc.) are excluded.
+
+Pod-level valid fields:
+- runAsUser, runAsGroup, runAsNonRoot
+- fsGroup, fsGroupChangePolicy
+- seccompProfile, seLinuxOptions
+- supplementalGroups, sysctls
+- windowsOptions
+
+Parameters:
+  $securityContext - The securityContext dictionary
+
+Returns: Filtered securityContext with only pod-level fields
+*/}}
+{{- define "summon.podSecurityContext" -}}
+{{- $ctx := . -}}
+{{- $podFields := dict -}}
+{{- $validPodFields := list "runAsUser" "runAsGroup" "runAsNonRoot" "fsGroup" "fsGroupChangePolicy" "seccompProfile" "seLinuxOptions" "supplementalGroups" "sysctls" "windowsOptions" -}}
+{{- range $key, $value := $ctx -}}
+  {{- if has $key $validPodFields -}}
+    {{- $_ := set $podFields $key $value -}}
+  {{- end -}}
+{{- end -}}
+{{- if $podFields -}}
+  {{- toYaml $podFields -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 summon.common.podSpec generates the common pod specification shared by all workload types.
 Used by: Deployment, StatefulSet, Job, CronJob, DaemonSet
 
@@ -22,8 +52,11 @@ serviceAccountName: {{ include "common.serviceAccountName" $root }}
 runtimeClassName: {{ . }}
 {{- end }}
 {{- with $root.Values.securityContext }}
+{{- $podSecCtx := include "summon.podSecurityContext" . | fromYaml }}
+{{- if $podSecCtx }}
 securityContext:
-  {{- toYaml . | nindent 2 }}
+  {{- toYaml $podSecCtx | nindent 2 }}
+{{- end }}
 {{- end }}
 {{- if $root.Values.initContainers }}
 initContainers:
@@ -77,8 +110,11 @@ Usage:
 runtimeClassName: {{ . }}
 {{- end }}
 {{- with $root.Values.securityContext }}
+{{- $podSecCtx := include "summon.podSecurityContext" . | fromYaml }}
+{{- if $podSecCtx }}
 securityContext:
-  {{- toYaml . | nindent 2 }}
+  {{- toYaml $podSecCtx | nindent 2 }}
+{{- end }}
 {{- end }}
 {{- if $root.Values.initContainers }}
 initContainers:

@@ -33,6 +33,12 @@ spec:
       annotations:
         {{- include "summon.checksums.annotations" $root | nindent 8 }}
     spec:
+      {{- if $root.Values.hostNetwork }}
+      hostNetwork: {{ $root.Values.hostNetwork }}
+      {{- end }}
+      {{- if $root.Values.dnsPolicy }}
+      dnsPolicy: {{ $root.Values.dnsPolicy }}
+      {{- end }}
       {{- include "summon.common.podSpec" $root | nindent 6 }}
 {{- end -}}
 

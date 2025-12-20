@@ -118,7 +118,16 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   resources:
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with $container.securityContext }}
+  {{- /* Determine securityContext: use workload.securityContext for main container, $container.securityContext otherwise */ -}}
+  {{- $containerSecCtx := dict -}}
+  {{- if and (typeOf $containerName | eq "int") $root.Values.workload.securityContext -}}
+    {{- /* Main container (numeric index): use workload.securityContext */ -}}
+    {{- $containerSecCtx = $root.Values.workload.securityContext -}}
+  {{- else if $container.securityContext -}}
+    {{- /* SideCar/initContainer: use their own securityContext */ -}}
+    {{- $containerSecCtx = $container.securityContext -}}
+  {{- end -}}
+  {{- with $containerSecCtx }}
   securityContext:
     {{- toYaml . | nindent 4 }}
   {{- end }}

@@ -1,19 +1,12 @@
 {{/*kast - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
-
-summon.workload.statefulset creates StatefulSet resources for summon workloads  
-Supports both direct usage and glyph parameter pattern
-
-Parameters:
-- Direct usage: . (root context)
-- Glyph usage: (list $root $glyphDefinition)
- */}}
-{{- define "summon.workload.statefulset" -}}
+*/}}
+{{- define "summon.workload.daemonset" -}}
 {{- $root := . -}}
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: DaemonSet
 metadata:
   name: {{ include "common.name" $root }}
   labels:
@@ -27,12 +20,13 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if not $root.Values.autoscaling.enabled }}
-  replicas: {{ default 1 $root.Values.workload.replicas }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "common.selectorLabels" $root | nindent 6 }}
+  {{- with $root.Values.workload.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -47,21 +41,4 @@ spec:
       dnsPolicy: {{ $root.Values.dnsPolicy }}
       {{- end }}
       {{- include "summon.common.podSpec" $root | nindent 6 }}
-  {{- if $root.Values.workload.volumeClaimTemplates }}
-  volumeClaimTemplates:
-  {{- range $name, $volume := $root.Values.workload.volumeClaimTemplates }}
-    - metadata:
-        name: {{ $name }}
-      spec:
-        {{- if $volume.storageClassName }}
-        storageClassName: {{ $volume.storageClassName }}
-        {{- end }}
-        accessModes:
-          - {{ default "ReadWriteOnce" $volume.accessModes }}
-        resources:
-          requests:
-            storage: {{ $volume.size }}
-  {{- end -}}
-  {{- end -}}          
 {{- end -}}
-##TODO faltan volumenes
