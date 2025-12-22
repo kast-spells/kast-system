@@ -5,6 +5,97 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.2] - 2025-12-22
+
+### Features
+
+- add chapter-specific post-provisioning policies and secret consumption (covenant/templates/covenant.yaml) [`fd4d85e`] 
+- add Vault policy for post-provisioning ServiceAccount and consume keycloak-access secret from Vault into chapter namespace (covenant/templates/covenant.yaml) [`5254bd5`] 
+- add common name template support (librarian) [`a2cef02`] 
+- add podSecurityContext filter for filtered securityContext with only pod-level fields feat(glyphs/summon/templates/workload/_container.tpl): update resources section to use podSecurityContext feat(glyphs/summon/templates/workload/_podSpec.tpl): add podSecurityContext filter and update common.podSpec feat(glyphs/summon/templates/workload/daemonset/daemonset.tpl): add daemonset template feat(glyphs/summon/templates/workload/deployment/deployment.tpl): add deployment template feat(glyphs/summon/templates/workload/statefulset/statefulSet.tpl): add statefulset template feat(summon/examples/security-context-separation.yaml): add example security context separation docs: update security context separation example perf: improve security context separation example performance (glyphs/summon/templates/workload) [`39e83f1`] 
+- add example iam-policy and iam-role configurations (aws) [`3f507a4`] 
+- add iam-policy template and example (charts/glyphs/aws) [`d9068c5`] 
+- add AWS IAM policy and role templates (charts/glyphs/aws) [`0582087`] 
+- add aws and gcp secret path helpers (charts/glyphs/external-secrets/templates) [`e919c6b`] 
+- update external secret template to use extract key (external-secrets) [`c539010`] 
+- update yaml templates for external-secret and secret-store (external-secrets/templates) [`0aae41f`] 
+- update api version to v1beta1 in external-secret and secret-store templates (external-secrets) [`87c125d`] 
+- rename externalsecrets to external-secrets (glyphs/external-secrets) [`6097c76`] 
+- Update chapter ownership hook to use argocd.argoproj.io/hook-delete-policy: HookSucceeded (librarian/templates/chapter-ownership-hook.yaml) [`a28c1cd`] 
+- remove tracking-id annotation to enable ownerReference-based hierarchy (librarian) [`e6c70ad`] 
+- add chapter ownership hook functionality (librarian/templates) [`0955884`] 
+- add annotations for chapter configmap and owner references (kast.yaml) [`13ba11a`] 
+- add chapter ownership hook and RBAC resources for chapter ownership management (kast) [`feddcdc`] 
+- add chapter configmap and ownership to spells  [`5bd2665`] 
+- add support for secret and configmap volumes (charts) [`b38f8f6`] 
+- add comprehensive port handling and multi-service support (summon) [`b661529`] 
+- bump version to 1.8.0 and update changelog  [`998dc57`] 
+- add security context to workload container template (charts/glyphs/summon/templates/workload) [`5e0df5f`] 
+- add runtime class support to pod spec templates (glyphs/summon/templates) [`ff36ac3`] 
+- update gateway and virtualService templates (charts/glyphs/istio/templates) [`407a2d5`] 
+- add finops labels for cost allocation and tracking (summon) [`f7a3171`] 
+- add common name template and update kast.yaml (librarian) [`e9904ab`] 
+- add AWS ClusterIssuer with IRSA Autodiscovery example (charts/glyphs/certManager) [`b6d70eb`] 
+
+### Bug Fixes
+
+- improve namePrefix and nameSuffix logic (librarian) [`bee84f7`] 
+- update iam-policy.tpl to conform to api conventions (glyphs/aws) [`98a7449`] 
+- update iam-role.yaml to use correct secret-manager label (charts/glyphs/aws/examples) [`508cb43`] 
+- update iam-role labels to use resources (charts/glyphs/aws) [`49ad940`] 
+- uncomment ttlSecondsAfterFinished for proper job cleanup (librarian) [`00f17bd`] 
+- fix chapter ownership hook script (ownership-hook) [`73c7555`] 
+- update kubectl image to alpine/k8s (librarian/templates/chapter-ownership-hook.yaml) [`f5fa01a`] 
+- update namePrefix and nameSuffix logic (kast.yaml) [`b9de205`] 
+
+### Refactoring
+
+- remove uid from configmap metadata (kast) [`aa340f2`] 
+- simplify values.yaml for summon chart (charts) [`905bc85`] 
+
+### Chore
+
+- bump version to v1.6.3  [`ad29070`] 
+- bump version to v1.6.2  [`3ab7167`] 
+- bump version to v1.9.1  [`19f7453`] 
+- bump version to v1.6.1  [`54c92f0`] 
+- bump version to v1.6.0  [`80f4c3f`] 
+- bump version to v1.5.0  [`1b9b4a3`] 
+- bump version to v1.4.1  [`b40cb63`] 
+- bump version to v1.4.0  [`191be06`] 
+- bump version to v1.9.0  [`5b1e074`] 
+- bump version to v1.8.0  [`1865733`] 
+- bump version to v1.7.0  [`c95e379`] 
+- bump version to v1.6.0  [`25ff64f`] 
+- bump version to v1.7.0  [`0d2b818`] 
+- bump version to v1.2.0  [`9ba8c9e`] 
+- bump version to v1.5.0  [`d3d5d08`] 
+- bump version to v1.3.1  [`8b0b871`] 
+- bump version to v1.3.0  [`0a9ead2`] 
+- bump version to v1.4.0  [`8067647`] 
+- bump version to v1.6.0  [`4741d46`] 
+- bump version to v1.3.0  [`5b36048`] 
+- bump version to v1.5.0  [`599ae16`] 
+- bump version to v1.1.0  [`3aa388e`] 
+- bump version to v1.1.0  [`b915594`] 
+
+### Other
+
+- rollback to version 1.2.4 removing chapter ownership hooks (librarian) [`abbd346`] 
+- Merge pull request #32 from kast-spells/feature/aws-roles  [`ee2ae03`]  (#32)
+- Merge pull request #31 from kast-spells/hotfix/typo  [`53ceaef`]  (#31)
+- Merge pull request #30 from kast-spells/feature/aws-glyph  [`2099272`]  (#30)
+- Merge pull request #29 from kast-spells/feature/aws-iam  [`97c4754`]  (#29)
+- Merge pull request #28 from kast-spells/feature/externalsecrets  [`efac554`]  (#28)
+- Implements provider-agnostic ExternalSecrets support (vault/aws/gcp) with   dynamic SecretStore discovery via runic indexer.  [`acc36d2`] 
+- comentando el fit  [`ef59b16`] 
+- proveyendo el fit  [`dc6ad4a`] 
+- errors shenanigans  [`82b9c05`] 
+- shenanigans  [`a103204`] 
+- shenanigans  [`9bdecc4`] 
+- external secrets  [`214d629`] 
+
+
 ## [v1.6.3] - 2025-12-12
 
 ### Bug Fixes
