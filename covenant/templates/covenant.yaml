@@ -273,6 +273,10 @@ metadata:
   "nameOverride" $chapterSAName
   "serviceAccount" (printf "%s-post-provision" $bookPath)
   "bookPublicsRead" true
+  "extraPolicy" (list
+    (dict "path" "secret/data/the-yaml-life/admintools/keycloak/publics/*" "capabilities" (list "read" "list"))
+    (dict "path" "secret/metadata/the-yaml-life/admintools/keycloak/publics/*" "capabilities" (list "read" "list"))
+  )
 ) }}
 
 {{/* Consume keycloak-access secret from Vault into THIS chapter namespace */}}
