@@ -273,7 +273,6 @@ metadata:
   "nameOverride" $chapterSAName
   "serviceAccount" (printf "%s-post-provision" $bookPath)
   "bookPublicsRead" true
-  "targetNamespace" .Release.Namespace
 ) }}
 
 {{/* Consume keycloak-access secret from Vault into THIS chapter namespace */}}
@@ -286,6 +285,7 @@ metadata:
   "path" "book"
   "private" "admintools/keycloak/publics"
   "serviceAccount" (printf "%s-post-provision" $bookPath)
+  "customRole" $chapterSAName
   "refreshPeriod" "3m0s"
   "staticData" (dict "username" "keycloak")
   "randomKey" "password"
