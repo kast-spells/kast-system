@@ -148,7 +148,6 @@ git submodule update --init --recursive
 **What you just created:**
 ```
 my-bookrack/                    # YOUR repository
-├── vendor/
 │   └── kast-system/            # Submodule (library)
 │       ├── charts/
 │       │   ├── glyphs/         # Glyph templates
