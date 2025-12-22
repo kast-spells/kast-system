@@ -265,16 +265,18 @@ metadata:
 {{/* STEP 2: Generate groups for chapters (areas) - only when chapterFilter is set */}}
 {{- if $chapterFilter }}
 
-{{/* Add Vault prolicy for post-provisioning ServiceAccount to read keycloak-access */}}
-{{- $policyKey := (printf "%s-post-provision-policy" $bookPath) }}
+{{/* Add Vault prolicy for THIS chapter's post-provisioning ServiceAccount */}}
+{{- $chapterSAName := (printf "%s-%s-post-provision" $bookPath $chapterFilter) }}
+{{- $policyKey := (printf "%s-post-provision-policy" $chapterSAName) }}
 {{- $_ := set $vaultGlyphs $policyKey (dict
   "type" "vaultPolicy"
-  "nameOverride" (printf "%s-post-provision" $bookPath)
+  "nameOverride" $chapterSAName
   "serviceAccount" (printf "%s-post-provision" $bookPath)
   "bookPublicsRead" true
+  "targetNamespace" .Release.Namespace
 ) }}
 
-{{/* Consume keycloak-access secret from Vault into chapter namespace */}}
+{{/* Consume keycloak-access secret from Vault into THIS chapter namespace */}}
 {{- $keycloakAccessKey := (printf "keycloak-access-%s" $chapterFilter) }}
 {{- $_ := set $vaultGlyphs $keycloakAccessKey (dict
   "type" "vaultSecret"
