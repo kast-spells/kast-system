@@ -138,8 +138,16 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  {{- $namePrefix := default (default (default $spellbook.namePrefix (get $spellbook.global "namePrefix")) $chapter.namePrefix) $spellDefinition.namePrefix }}
-  {{- $nameSuffix := default (default (default $spellbook.nameSuffix (get $spellbook.global "nameSuffix")) $chapter.nameSuffix) $spellDefinition.nameSuffix }}
+  {{- $bookPrefix := default $spellbook.namePrefix "" }}
+  {{- if and $spellbook.global (hasKey $spellbook.global "namePrefix") }}
+    {{- $bookPrefix = $spellbook.global.namePrefix }}
+  {{- end }}
+  {{- $bookSuffix := default $spellbook.nameSuffix "" }}
+  {{- if and $spellbook.global (hasKey $spellbook.global "nameSuffix") }}
+    {{- $bookSuffix = $spellbook.global.nameSuffix }}
+  {{- end }}
+  {{- $namePrefix := default (default $bookPrefix $chapter.namePrefix) $spellDefinition.namePrefix }}
+  {{- $nameSuffix := default (default $bookSuffix $chapter.nameSuffix) $spellDefinition.nameSuffix }}
   {{- $nameContext := dict "Values" (dict "name" $spellDefinition.name "namePrefix" $namePrefix "nameSuffix" $nameSuffix) "Release" (dict "Name" $spellDefinition.name) }}
   name: {{ include "common.name" $nameContext }}
   namespace: {{ default "argocd" $spellbook.argocdNamespace }}
