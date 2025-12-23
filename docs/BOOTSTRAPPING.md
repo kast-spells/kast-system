@@ -240,7 +240,10 @@ cat > bookrack/my-book/applications/nginx.yaml <<'EOF'
 name: nginx
 
 # Image configuration (triggers summon chart)
-image: nginx:1.25-alpine
+image:
+  name: nginx
+  tag: 1.25-alpine
+  pullPolicy: IfNotPresent
 
 # Container configuration
 command: []
@@ -289,21 +292,21 @@ resources:
     memory: 64Mi
 
 # ConfigMap with custom index.html
-volumes:
-  config:
-    type: configMap
-    contentType: literal
-    data:
-      index.html: |
-        <!DOCTYPE html>
-        <html>
-        <head><title>kast-system</title></head>
-        <body>
-          <h1>Welcome to kast-system!</h1>
-          <p>This is your first spell deployed via ArgoCD and kast-system.</p>
-        </body>
-        </html>
+configMaps:
+  html-content:
+    location: create
+    contentType: file
+    name: index.html
     mountPath: /usr/share/nginx/html
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head><title>kast-system</title></head>
+      <body>
+        <h1>Welcome to kast-system!</h1>
+        <p>This is your first spell deployed via ArgoCD and kast-system.</p>
+      </body>
+      </html>
 EOF
 ```
 
@@ -526,7 +529,10 @@ Librarian scans each spell for registered trinket keys and adds sources automati
 ```yaml
 # spell.yaml
 name: my-app
-image: nginx:1.25
+
+image:
+  name: nginx
+  tag: "1.25"
 
 vault:              # ← Librarian detects this key
   my-secret:
@@ -663,7 +669,9 @@ values:
 ```yaml
 # Spell definition (cleaned)
 name: my-app
-image: nginx:1.25
+image:
+  name: nginx
+  tag: "1.25"
 ports: [...]
 service: {...}
 # (vault:, istio:, runes:, appParams: removed)
@@ -716,7 +724,10 @@ Librarian uses runicIndexer for dynamic cluster selection:
 **Spell with cluster selector:**
 ```yaml
 name: my-app
-image: nginx:1.25
+
+image:
+  name: nginx
+  tag: "1.25"
 
 clusterSelector:
   labels:
@@ -956,7 +967,11 @@ Edit spell and watch ArgoCD auto-sync:
 # Edit nginx spell
 cat > bookrack/my-book/applications/nginx.yaml <<'EOF'
 name: nginx
-image: nginx:1.25-alpine
+
+image:
+  name: nginx
+  tag: 1.25-alpine
+  pullPolicy: IfNotPresent
 
 replicas: 2  # Scale to 2 replicas
 
@@ -1017,7 +1032,11 @@ Enhance your spells with infrastructure glyphs:
 ```yaml
 # bookrack/my-book/applications/api.yaml
 name: api
-image: myorg/api:v1.0
+
+image:
+  repository: myorg/api
+  tag: v1.0
+  pullPolicy: IfNotPresent
 
 service:
   enabled: true
@@ -1034,7 +1053,11 @@ vault:
 ```yaml
 # bookrack/my-book/applications/frontend.yaml
 name: frontend
-image: myorg/frontend:v1.0
+
+image:
+  repository: myorg/frontend
+  tag: v1.0
+  pullPolicy: IfNotPresent
 
 service:
   enabled: true
@@ -1194,7 +1217,11 @@ kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/rele
 # Add rollout strategy to spell
 cat > bookrack/my-book/applications/api-rollout.yaml <<'EOF'
 name: api
-image: myorg/api:v1.0
+
+image:
+  repository: myorg/api
+  tag: v1.0
+  pullPolicy: IfNotPresent
 
 workloadType: rollout  # Use rollout instead of deployment
 
