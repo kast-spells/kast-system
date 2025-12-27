@@ -44,8 +44,8 @@ spec:
         {{- else if eq "cloudflare" $glyphDefinition.issuerType }}
           cloudflare: 
             apiTokenSecretRef:
-              name: {{ default "cloudflare" $glyphDefinition.cloudflare.secret.name }}
-              key: {{ default "api-token" $glyphDefinition.cloudflare.secret.key }}
+              name: {{ default "cloudflare" ($glyphDefinition.cloudflare).secret.name }}
+              key: {{ default "api-token" ($glyphDefinition.cloudflare).secret.key }}
         {{- else if eq "aws" $glyphDefinition.issuerType }}
           route53:
             region: {{ default "us-east-1" (dig "aws" "region" "" $glyphDefinition) }}
