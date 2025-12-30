@@ -1102,7 +1102,6 @@ targetRevision: v1.2.3
 - [ArgoCD ApplicationSet Docs](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/)
 - [Git Files Generator](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Git/)
 - [Multi-Source Apps](https://argo-cd.readthedocs.io/en/stable/user-guide/multiple_sources/)
-- [Kast System Architecture](./kast-architecture.md)
 
 ---
 

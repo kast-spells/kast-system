@@ -432,4 +432,4 @@ make test spell example-api --book example-tdd-book --debug
 
 - [Testing Guide](TESTING.md) - TDD methodology and architecture
 - [Examples Index](EXAMPLES_INDEX.md) - All examples catalog
-- [CODING_STANDARDS.md](../CODING_STANDARDS.md) - Code conventions
+- [CODING_STANDARDS.md](CODING_STANDARDS.md) - Code conventions

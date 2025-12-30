@@ -27,7 +27,6 @@ Reusable Helm named template for specific functionality. Glyphs are invoked via 
 
 ### Databases
 
-- [postgresql](glyphs/postgresql.md) - Cloud-hosted PostgreSQL
 - [s3](glyphs/s3.md) - S3-compatible storage
 
 ### Identity & Access

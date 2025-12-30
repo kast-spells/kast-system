@@ -244,4 +244,4 @@ See [TDD Commands](TDD_COMMANDS.md) for complete reference.
 5. Follow TDD approach
 6. No marketing/fluff
 
-See [CODING_STANDARDS.md](../CODING_STANDARDS.md) for conventions.
+See [CODING_STANDARDS.md](CODING_STANDARDS.md) for conventions.

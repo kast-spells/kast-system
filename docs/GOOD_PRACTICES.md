@@ -1586,11 +1586,11 @@ make update-snapshot CHART=<chart> EXAMPLE=<name>
 
 ### Additional Resources
 
-- [CLAUDE.md](CLAUDE.md) - TDD philosophy and workflow
+- [CLAUDE.md](../CLAUDE.md) - TDD philosophy and workflow
 - [CODING_STANDARDS.md](CODING_STANDARDS.md) - Template standards
-- [GLYPH_DEVELOPMENT.md](docs/GLYPH_DEVELOPMENT.md) - Glyph guide
-- [LEXICON.md](docs/LEXICON.md) - Infrastructure discovery
-- [TDD_COMMANDS.md](docs/TDD_COMMANDS.md) - Testing commands
+- [GLYPH_DEVELOPMENT.md](GLYPH_DEVELOPMENT.md) - Glyph guide
+- [LEXICON.md](LEXICON.md) - Infrastructure discovery
+- [TDD_COMMANDS.md](TDD_COMMANDS.md) - Testing commands
 
 ---
 
