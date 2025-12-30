@@ -4,6 +4,7 @@ Holistic guide to kast-system documentation. Follow the learning paths below bas
 
 ## Quick Links
 
+**Bootstrap Cluster:** [Bootstrapping](BOOTSTRAPPING.md) ← Start here for fresh clusters
 **Get Started:** [Getting Started](GETTING_STARTED.md)
 **Core Concepts:** [Glossary](GLOSSARY.md)
 **Main README:** [../README.md](../README.md)
@@ -17,8 +18,10 @@ Holistic guide to kast-system documentation. Follow the learning paths below bas
 ┌─────────────────────────────────────────────────────────────┐
 │                    ENTRY POINT                              │
 ├─────────────────────────────────────────────────────────────┤
-│ README.md          → Architecture overview, quick start     │
+│ BOOTSTRAPPING.md   → Cluster setup with ArgoCD (from zero) │
+│ BOOTSTRAPPING_TROUBLESHOOTING.md → Bootstrap issues guide  │
 │ GETTING_STARTED.md → Complete tutorial (zero to production) │
+│ README.md          → Architecture overview, quick start     │
 │ GLOSSARY.md        → Terminology reference                  │
 └─────────────────────────────────────────────────────────────┘
                             ↓
@@ -71,7 +74,13 @@ Holistic guide to kast-system documentation. Follow the learning paths below bas
 
 ## Learning Paths
 
+### Path 0: Bootstrap Fresh Cluster (30-45 minutes)
+**Start here if you don't have ArgoCD installed**
+1. [Bootstrapping](BOOTSTRAPPING.md) - Cluster setup with ArgoCD
+2. [Getting Started](GETTING_STARTED.md) - First application deployment
+
 ### Path 1: Deploy Your First App (30 minutes)
+**Start here if you already have ArgoCD installed**
 1. [Getting Started](GETTING_STARTED.md) - Tutorial
 2. [Bookrack](BOOKRACK.md) - Configuration structure
 3. [Summon](SUMMON.md) - Workload chart basics
@@ -104,6 +113,9 @@ Holistic guide to kast-system documentation. Follow the learning paths below bas
 ---
 
 ## By Use Case
+
+### "I'm starting from scratch with a fresh Kubernetes cluster"
+→ [Bootstrapping](BOOTSTRAPPING.md) → [Getting Started](GETTING_STARTED.md)
 
 ### "I want to deploy a simple container"
 → [Getting Started](GETTING_STARTED.md) → [Summon](SUMMON.md)
@@ -232,4 +244,4 @@ See [TDD Commands](TDD_COMMANDS.md) for complete reference.
 5. Follow TDD approach
 6. No marketing/fluff
 
-See [CODING_STANDARDS.md](../CODING_STANDARDS.md) for conventions.
+See [CODING_STANDARDS.md](CODING_STANDARDS.md) for conventions.

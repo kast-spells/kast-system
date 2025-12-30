@@ -362,8 +362,6 @@ Kaster orchestrates these glyph packages:
 - `postgresql.cluster` - PostgreSQL cluster
 - `postgresql.database` - Database provisioning
 
-**Documentation:** [docs/glyphs/postgresql.md](glyphs/postgresql.md)
-
 ### 8. Keycloak
 
 **Location:** `charts/glyphs/keycloak/`

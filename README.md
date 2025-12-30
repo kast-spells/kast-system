@@ -130,6 +130,7 @@ kast-system/
 
 **Start Here:**
 - [Documentation Navigation](docs/NAVIGATION.md) - Holistic guide with learning paths
+- [Bootstrapping Guide](docs/BOOTSTRAPPING.md) - Cluster setup with ArgoCD (from scratch)
 - [Getting Started](docs/GETTING_STARTED.md) - Complete tutorial (zero to production)
 - [Glossary](docs/GLOSSARY.md) - Terminology reference
 

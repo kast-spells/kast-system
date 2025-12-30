@@ -272,7 +272,6 @@ glyphs:
 ```
 
 **Documentation:**
-- [docs/glyphs/postgresql.md](glyphs/postgresql.md)
 - [Vault Integration](VAULT.md) (databaseEngine section)
 
 ### Identity & Access
