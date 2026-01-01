@@ -303,6 +303,68 @@ Returns: Main template definition
       {{- include "tarot.generateStep" (list $root $cardName $cardDef) | nindent 4 }}
     {{- end }}
 
+  {{- else if eq $executionMode "containerSet" }}
+  {{/* ContainerSet execution - all containers in single pod, share volumes */}}
+  containerSet:
+    containers:
+    {{- range $cardName, $cardDef := $allCards }}
+      {{- if ne $cardName "_syntax_test" }}
+      {{- $resolvedCard := index $resolvedCards $cardName }}
+      {{- if $resolvedCard.container }}
+      - name: {{ $cardName }}
+        image: {{ include "summon.getImage" (list $root $resolvedCard) | quote }}
+        {{- if $resolvedCard.container.command }}
+        command:
+        {{- range $resolvedCard.container.command }}
+          - {{ . | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if $resolvedCard.container.args }}
+        args:
+        {{- range $resolvedCard.container.args }}
+          - {{ . | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if $cardDef.depends }}
+        dependencies:
+        {{- range $cardDef.depends }}
+          - {{ . }}
+        {{- end }}
+        {{- end }}
+        {{/* Environment variables */}}
+        {{- if or $resolvedCard.envs $resolvedCard.secrets $resolvedCard.configMaps }}
+        {{- include "summon.common.envs.env" (dict "Values" $resolvedCard) | nindent 8 }}
+        {{- end }}
+        {{- if or $resolvedCard.secrets $resolvedCard.configMaps }}
+        {{- include "summon.common.envs.envFrom" (dict "Values" $resolvedCard) | nindent 8 }}
+        {{- end }}
+        {{- if $resolvedCard.container.resources }}
+        resources:
+          {{- $resolvedCard.container.resources | toYaml | nindent 10 }}
+        {{- end }}
+        {{- if $resolvedCard.container.workingDir }}
+        workingDir: {{ $resolvedCard.container.workingDir | quote }}
+        {{- end }}
+      {{- end }}
+      {{- end }}
+    {{- end }}
+    {{/* Shared volumeMounts for all containers */}}
+    {{- if $root.Values.tarot.volumes }}
+    volumeMounts:
+      {{- range $name, $volumeDef := $root.Values.tarot.volumes }}
+      - name: {{ $name }}
+        mountPath: {{ $volumeDef.destinationPath | default (printf "/%s" $name) }}
+      {{- end }}
+    {{- end }}
+    {{- if $root.Values.tarot.secrets }}
+      {{- range $name, $secretDef := $root.Values.tarot.secrets }}
+        {{- if $secretDef.mountPath }}
+      - name: {{ $name | replace "." "-" }}
+        mountPath: {{ $secretDef.mountPath }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+
   {{- else }}
   {{/* Default to DAG for unknown execution modes */}}
   dag:

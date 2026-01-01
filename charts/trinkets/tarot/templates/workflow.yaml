@@ -164,8 +164,8 @@ spec:
 {{/* Main entrypoint template */}}
 {{- include "tarot.generateMainTemplate" (list . .Values.tarot.reading $resolvedCards) | nindent 4 }}
 
-{{/* Individual card templates (only for non-container modes) */}}
-{{- if ne (.Values.tarot.executionMode | default "dag") "container" }}
+{{/* Individual card templates (only for non-container/non-containerSet modes) */}}
+{{- if and (ne (.Values.tarot.executionMode | default "dag") "container") (ne (.Values.tarot.executionMode | default "dag") "containerSet") }}
 {{- include "tarot.generateAllCardTemplates" (list . .Values.tarot.reading $resolvedCards) | nindent 4 }}
 {{- end }}
 
