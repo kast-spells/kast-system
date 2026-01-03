@@ -124,7 +124,7 @@ helm upgrade --install --create-namespace argocd argo/argo-cd \
 
 ### 1. Create Your Bookrack Repository
 
-Create your own repository for configuration management using the Book/Chapter/Spell pattern. This is YOUR repository where you'll store all your application configurations (spells). kast-system will be added as a library (submodule) to provide access to charts (librarian, kaster, summon, glyphs).
+Create your own repository for configuration management using the Book/Chapter/Spell pattern. This is YOUR repository where you'll store all your application configurations (spells). kast-system will be added as a library ([submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)) to provide access to charts (librarian, kaster, summon, glyphs).
 
 **Important:**
 - `bookrack/` = Your configuration (spells, books, chapters) - lives in YOUR repository
@@ -138,7 +138,7 @@ cd ~/my-bookrack
 # Initialize YOUR git repository
 git init
 
-# Add kast-system as submodule (library for charts only)
+# Add kast-system as submodule(library for charts only)
 git submodule add https://github.com/kast-spells/librarian.git
 
 # Initialize submodule
