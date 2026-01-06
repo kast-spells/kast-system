@@ -32,7 +32,7 @@ jobs:
 
       - name: Clone destination repository
         run: |
-          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/glyphs.git glyphs-repo
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/runik-spells/glyphs.git glyphs-repo
           cd glyphs-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

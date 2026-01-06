@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -54,9 +54,9 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
 {{- if ne $root.Release.Namespace $s3Provider.namespace }}
 {{- /* Build dict explicitly to ensure secretName is used */}}
 {{- $s3Labels := merge (default dict $glyphDefinition.labels) (dict
-  "kast.ing/s3-identity" "true"
-  "kast.ing/s3-provider" $s3Provider.name
-  "kast.ing/identity-name" $identityName
+  "runik.ing/s3-identity" "true"
+  "runik.ing/s3-provider" $s3Provider.name
+  "runik.ing/identity-name" $identityName
 ) }}
 {{ include "vault.secret" (list $root (dict
   "name" $secretName
@@ -95,10 +95,10 @@ Both secrets use the same vault path (/s3-identities/<identity>) with randomKeys
     "BUCKETS" (join "," $bucketPatterns)
   )
   "labels" (dict
-    "kast.ing/s3-identity" "true"
-    "kast.ing/s3-provider" $s3Provider.name
-    "kast.ing/source-namespace" $root.Release.Namespace
-    "kast.ing/identity-name" $identityName
+    "runik.ing/s3-identity" "true"
+    "runik.ing/s3-provider" $s3Provider.name
+    "runik.ing/source-namespace" $root.Release.Namespace
+    "runik.ing/identity-name" $identityName
   )
   "serviceAccount" $s3Provider.serviceAccount
   "role" $s3Provider.role

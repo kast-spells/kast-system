@@ -1,10 +1,10 @@
 # Testing Guide
 
-Comprehensive testing system for kast-system following Test-Driven Development (TDD) methodology.
+Comprehensive testing system for runik-system following Test-Driven Development (TDD) methodology.
 
 ## Overview
 
-kast-system uses a dual testing approach with automatic discovery:
+runik-system uses a dual testing approach with automatic discovery:
 - **TDD Workflow:** Red-Green-Refactor cycle for all features
 - **Snapshot Testing:** Output validation and K8s schema compliance
 - **Glyph Testing:** Infrastructure template validation
@@ -799,7 +799,7 @@ make test-all
 
 ## Test System Architecture
 
-kast-system uses a modular dispatcher pattern for scalable, semantic testing:
+runik-system uses a modular dispatcher pattern for scalable, semantic testing:
 
 ### Architecture Diagram
 

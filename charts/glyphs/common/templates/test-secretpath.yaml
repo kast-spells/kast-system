@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2025 laaledesiempre@disroot.org
 Licensed under the GNU GPL v3. See LICENSE file for details.
 

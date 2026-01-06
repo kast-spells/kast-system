@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -86,7 +86,7 @@ metadata:
     app.kubernetes.io/name: {{ $bookPath }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    covenant.kast.io/type: applicationset
+    covenant.runik.io/type: applicationset
   annotations:
     argocd.argoproj.io/sync-wave: "{{ default "6" ($covenant.appParams).syncWave }}"
 spec:
@@ -105,8 +105,8 @@ spec:
       namespace: {{ default "argocd" .Values.spellbook.argocdNamespace }}
       labels:
         app.kubernetes.io/managed-by: applicationset
-        covenant.kast.io/book: {{ $bookPath }}
-        covenant.kast.io/chapter: '{{`{{.chapter}}`}}'
+        covenant.runik.io/book: {{ $bookPath }}
+        covenant.runik.io/chapter: '{{`{{.chapter}}`}}'
       {{- $appParams := default dict .Values.appParams }}
       {{- with $appParams.annotations }}
       annotations:

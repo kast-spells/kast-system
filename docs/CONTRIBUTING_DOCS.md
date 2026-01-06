@@ -1,6 +1,6 @@
 # Contributing to Documentation
 
-Guide for contributing to kast-system documentation.
+Guide for contributing to runik-system documentation.
 
 ## Local Development
 
@@ -220,7 +220,7 @@ GitHub Actions automatically deploys on push to `main`:
 2. GitHub Actions runs
 3. Builds site with `mkdocs build`
 4. Deploys to `gh-pages` branch
-5. Live at https://kast-spells.github.io/kast-system
+5. Live at https://runik-spells.github.io/runik-system
 
 **Check deployment:**
 - Go to repo → Actions tab

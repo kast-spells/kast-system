@@ -23,5 +23,5 @@ labels:
 description: "User authentication and authorization portal"
 
 annotations:
-  covenant.kast.io/integration: keycloak
-  covenant.kast.io/realm: production
+  covenant.runik.io/integration: keycloak
+  covenant.runik.io/realm: production

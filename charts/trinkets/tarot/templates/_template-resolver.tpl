@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -122,7 +122,7 @@ metadata:
   namespace: {{ $root.Release.Namespace | quote }}
   labels:
     {{- include "tarot.labels" $root | nindent 4 }}
-    kast.ing/template: {{ $templateDef.name | quote }}
+    runik.ing/template: {{ $templateDef.name | quote }}
     {{- if $root.Values.workflow.labels }}
     {{- $root.Values.workflow.labels | toYaml | nindent 4 }}
     {{- end }}
@@ -207,7 +207,7 @@ metadata:
   namespace: {{ $root.Release.Namespace | quote }}
   labels:
     {{- include "tarot.labels" $root | nindent 4 }}
-    kast.ing/template-type: workflow
+    runik.ing/template-type: workflow
     {{- if $templateDef.labels }}
     {{- $templateDef.labels | toYaml | nindent 4 }}
     {{- end }}
@@ -235,7 +235,7 @@ metadata:
   name: {{ $templateName | quote }}
   labels:
     {{- include "tarot.labels" $root | nindent 4 }}
-    kast.ing/template-type: cluster-workflow
+    runik.ing/template-type: cluster-workflow
     {{- if $templateDef.labels }}
     {{- $templateDef.labels | toYaml | nindent 4 }}
     {{- end }}

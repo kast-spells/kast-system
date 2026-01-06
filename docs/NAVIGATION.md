@@ -1,6 +1,6 @@
 # Documentation Navigation
 
-Holistic guide to kast-system documentation. Follow the learning paths below based on your goals.
+Holistic guide to runik-system documentation. Follow the learning paths below based on your goals.
 
 ## Quick Links
 

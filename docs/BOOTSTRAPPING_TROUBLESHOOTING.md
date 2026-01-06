@@ -1,6 +1,6 @@
 # Bootstrapping Troubleshooting Guide
 
-Common issues and solutions when bootstrapping a Kubernetes cluster with ArgoCD and kast-system.
+Common issues and solutions when bootstrapping a Kubernetes cluster with ArgoCD and runik-system.
 
 **Related:** [Bootstrapping Guide](BOOTSTRAPPING.md)
 
@@ -141,13 +141,13 @@ argocd repo add https://github.com/your-org/my-bookrack.git \
 # 3. Validate book structure locally
 cd ~/my-bookrack
 git submodule update --init --recursive
-cd vendor/kast-system
+cd vendor/runik-system
 make test-book BOOK=../../bookrack/my-book
 
 # 4. Check Application source path
 kubectl get application -n argocd librarian-my-book \
   -o jsonpath='{.spec.source.path}'
-# Should be: vendor/kast-system/librarian
+# Should be: vendor/runik-system/librarian
 
 # 5. Force refresh and sync
 argocd app get librarian-my-book --refresh
@@ -235,7 +235,7 @@ argocd app set my-book-applications-nginx --sync-policy automated
 
 ```bash
 # Test spell locally with Helm
-cd vendor/kast-system
+cd vendor/runik-system
 make create-example CHART=summon EXAMPLE=test-nginx
 
 # Copy your spell
@@ -252,7 +252,7 @@ make test CHART=summon EXAMPLE=test-nginx
 yamllint bookrack/my-book/applications/nginx.yaml
 
 # Validate with Helm
-helm template test ./vendor/kast-system/charts/summon \
+helm template test ./vendor/runik-system/charts/summon \
   --values bookrack/my-book/applications/nginx.yaml
 
 # Check librarian generated values

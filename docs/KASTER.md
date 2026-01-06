@@ -4,7 +4,7 @@ Orchestration chart that serves as the package manager for [glyphs](GLYPHS.md). 
 
 ## Overview
 
-Kaster is the central orchestration mechanism in kast-system that:
+Kaster is the central orchestration mechanism in runik-system that:
 - Iterates over glyph definitions in spell configuration
 - Invokes appropriate glyph templates (vault, istio, certManager, etc.)
 - Passes context (spellbook, chapter, lexicon) to glyphs
@@ -83,7 +83,7 @@ kind: Application
 spec:
   sources:
     # Source 1: Main chart (summon)
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/summon
       helm:
         values: |
@@ -91,7 +91,7 @@ spec:
           # ...
 
     # Source 2: Kaster (glyphs) - ADDED AUTOMATICALLY
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/kaster
       helm:
         values: |
@@ -598,7 +598,7 @@ lexicon:
 ```yaml
 apiVersion: v2
 name: kaster
-description: Glyph orchestration chart for kast-system
+description: Glyph orchestration chart for runik-system
 version: 1.0.0
 dependencies: []  # Glyphs are static symlinks, not dependencies
 ```
@@ -709,7 +709,7 @@ glyphs:
   freeForm:
     - type: resource
       yaml: |
-        # Entire manifests here - loses kast benefits
+        # Entire manifests here - loses runik benefits
 ```
 
 ### Lexicon Integration

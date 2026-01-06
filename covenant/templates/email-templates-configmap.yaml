@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
@@ -13,8 +13,8 @@ metadata:
   name: stalwart-email-templates
   namespace: {{ .Values.namespace | default "keycloak" }}
   labels:
-    covenant.kast.io/component: post-provisioning
-    covenant.kast.io/type: email-templates
+    covenant.runik.io/component: post-provisioning
+    covenant.runik.io/type: email-templates
 data:
   welcome-email.txt: |
     Subject: Bienvenido a The YAML Life - Tu cuenta de correo esta lista

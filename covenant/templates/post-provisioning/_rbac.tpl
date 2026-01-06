@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -29,7 +29,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: post-provisioning
+    covenant.runik.io/type: post-provisioning
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -38,7 +38,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: post-provisioning
+    covenant.runik.io/type: post-provisioning
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -51,7 +51,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: post-provisioning
+    covenant.runik.io/type: post-provisioning
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

@@ -2,7 +2,7 @@ name: covenant-test-full
 description: "Complete test covenant - demonstrates all features with distributed configuration"
 
 # Repository where covenant chart lives
-repository: https://github.com/kast-spells/kast-system.git
+repository: https://github.com/runik-spells/runik-system.git
 path: ./covenant
 revision: main
 
@@ -10,8 +10,8 @@ revision: main
 # REALM CONFIGURATION - The Keycloak realm for this organization
 # ===========================================================================
 realm:
-  name: kast-test-full
-  displayName: "Kast Test Organization - Full Features"
+  name: runik-test-full
+  displayName: "Runik Test Organization - Full Features"
   enabled: true
   keycloakRef: main
   sslRequired: external

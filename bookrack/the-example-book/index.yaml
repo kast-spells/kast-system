@@ -4,17 +4,17 @@ description: "Example book with real-world spell patterns from production deploy
 trinkets:
   kaster:
     key: glyphs
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: master
   tarot:
     key: tarot
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/tarot
     revision: master
 
 defaultTrinket:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   revision: master
 

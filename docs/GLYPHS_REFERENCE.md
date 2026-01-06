@@ -1,6 +1,6 @@
 # Glyphs Reference
 
-Complete list of available glyphs in kast-system.
+Complete list of available glyphs in runik-system.
 
 ## What is a Glyph
 

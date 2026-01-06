@@ -1,6 +1,6 @@
 # Librarian
 
-ArgoCD App-of-Apps orchestrator for kast-system. Librarian transforms book/chapter/spell structure into ArgoCD Applications with automatic multi-source detection.
+ArgoCD App-of-Apps orchestrator for runik-system. Librarian transforms book/chapter/spell structure into ArgoCD Applications with automatic multi-source detection.
 
 ## Overview
 
@@ -113,7 +113,7 @@ appParams:
 
 # Default trinket (summon) - used when spell has no chart/path
 defaultTrinket:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   revision: v1.0.0
 
@@ -121,17 +121,17 @@ defaultTrinket:
 trinkets:
   kaster:
     key: glyphs          # Trigger: spell has "glyphs:" field
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: v1.0.0
   tarot:
     key: tarot           # Trigger: spell has "tarot:" field
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/tarot
     revision: v1.0.0
   microspell:
     key: microspell      # Trigger: spell has "microspell:" field
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/microspell
     revision: v1.0.0
 
@@ -284,7 +284,7 @@ Librarian supports 4 spell deployment patterns:
 ```yaml
 # Book index.yaml
 defaultTrinket:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   revision: v1.0.0
 
@@ -306,7 +306,7 @@ metadata:
   name: simple-app
 spec:
   sources:
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/summon
       targetRevision: v1.0.0
       helm:
@@ -338,7 +338,7 @@ spec:
 trinkets:
   kaster:
     key: glyphs  # Trigger on "glyphs:" field
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: v1.0.0
 
@@ -364,7 +364,7 @@ metadata:
 spec:
   sources:
     # Source 1: defaultTrinket (summon) - ALWAYS present
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/summon
       targetRevision: v1.0.0
       helm:
@@ -375,7 +375,7 @@ spec:
           lexicon: [...]
 
     # Source 2: kaster (detected via "glyphs:" key)
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/kaster
       targetRevision: v1.0.0
       helm:
@@ -406,12 +406,12 @@ spec:
 trinkets:
   kaster:
     key: glyphs
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: v1.0.0
   tarot:
     key: tarot
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/tarot
     revision: v1.0.0
 
@@ -451,7 +451,7 @@ metadata:
 spec:
   sources:
     # Source 1: defaultTrinket (summon)
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/summon
       targetRevision: v1.0.0
       helm:
@@ -463,7 +463,7 @@ spec:
           lexicon: [...]
 
     # Source 2: kaster (glyphs)
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/kaster
       targetRevision: v1.0.0
       helm:
@@ -476,7 +476,7 @@ spec:
           lexicon: [...]
 
     # Source 3: tarot (workflows)
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/trinkets/tarot
       targetRevision: v1.0.0
       helm:
@@ -543,7 +543,7 @@ spec:
           # bookData flag controls if context passed
 
     # Source 2: kaster (if glyphs present)
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: ./charts/kaster
       targetRevision: v1.0.0
       helm:
@@ -605,7 +605,7 @@ runes:
 ```yaml
 sources:
   # Source 1: defaultTrinket (payment-service)
-  - repoURL: https://github.com/kast-spells/kast-system.git
+  - repoURL: https://github.com/runik-spells/runik-system.git
     path: ./charts/summon
     ...
 
@@ -1284,7 +1284,7 @@ chapters:
 trinkets:
   kaster:
     key: glyphs
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: v1.0.0
 ```

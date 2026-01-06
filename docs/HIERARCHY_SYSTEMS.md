@@ -40,7 +40,7 @@ Rune-level (rune definition in spell)
 ```yaml
 # Book index.yaml
 summon:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   revision: v1.0.0
 values:
   image:
@@ -180,7 +180,7 @@ Spell values
 ```yaml
 # Book index.yaml
 microspell:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: charts/trinkets/microspell
   revision: v1.0.0
 values:
@@ -567,7 +567,7 @@ image:
 
 ## Summary
 
-Hierarchy systems in kast enable:
+Hierarchy systems in runik enable:
 
 1. **Inheritance:** Broad defaults inherited by specific configurations
 2. **Overrides:** Specific configurations override general ones

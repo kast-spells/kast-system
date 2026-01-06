@@ -1,4 +1,4 @@
-name: Sync Documentation to kast-docs
+name: Sync Documentation to runik-docs
 
 on:
   push:
@@ -10,31 +10,31 @@ jobs:
   sync-docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout kast-system
+      - name: Checkout runik-system
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Clone kast-docs repository
+      - name: Clone runik-docs repository
         run: |
-          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/kast-spells/kast-docs.git kast-docs
-          cd kast-docs
+          git clone https://x-access-token:${{ secrets.DEST_REPO_PAT }}@github.com/runik-spells/runik-docs.git runik-docs
+          cd runik-docs
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Sync documentation files
         run: |
           # Remove old docs
-          rm -rf kast-docs/docs/
+          rm -rf runik-docs/docs/
 
           # Copy documentation (includes CODING_STANDARDS.md and GOOD_PRACTICES.md)
-          cp -r docs/ kast-docs/docs/
+          cp -r docs/ runik-docs/docs/
 
           # Copy configuration
-          cp mkdocs.yml kast-docs/
+          cp mkdocs.yml runik-docs/
 
-      - name: Commit and push to kast-docs
-        working-directory: kast-docs
+      - name: Commit and push to runik-docs
+        working-directory: runik-docs
         run: |
           git add -A
 
@@ -46,8 +46,8 @@ jobs:
           # Get tag name
           TAG_NAME="${GITHUB_REF#refs/tags/}"
 
-          git commit -m "docs: sync from kast-system ${TAG_NAME}" \
-            -m "Automated sync from kast-spells/kast-system" \
+          git commit -m "docs: sync from runik-system ${TAG_NAME}" \
+            -m "Automated sync from runik-spells/runik-system" \
             -m "Source commit: ${GITHUB_SHA}" \
             -m "Tag: ${TAG_NAME}"
 

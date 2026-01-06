@@ -48,8 +48,8 @@ glyphs:
           filter:
             expression: |
               has(body.metadata.annotations) &&
-              has(body.metadata.annotations['kast.ing/action']) &&
-              body.metadata.annotations['kast.ing/action'] == 'restart'
+              has(body.metadata.annotations['runik.ing/action']) &&
+              body.metadata.annotations['runik.ing/action'] == 'restart'
 
     # Sensor: Trigger Tarot reading via runicIndexer
     deployment-restart-sensor:

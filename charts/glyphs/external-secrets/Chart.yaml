@@ -2,9 +2,9 @@ apiVersion: v2
 name: external-secrets
 version: 1.0.0
 description: external-secrets glyphs for kast
-home: https://github.com/kast-spells
+home: https://github.com/runik-spells
 sources:
-  - https://github.com/kast-spells/kast-system
+  - https://github.com/runik-spells/runik-system
 maintainers:
   - name: namen malkav
     email: namenmalkav@gmail.com

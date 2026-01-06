@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
@@ -123,7 +123,7 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
   labels:
     {{- include "tarot.labels" $ | nindent 4 }}
-    kast.ing/trigger-binding: "true"
+    runik.ing/trigger-binding: "true"
 subjects:
   - kind: ServiceAccount
     name: {{ .serviceAccount }}

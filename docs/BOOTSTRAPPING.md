@@ -1,13 +1,13 @@
 # Bootstrapping Guide
 
-Complete guide for bootstrapping a Kubernetes cluster with ArgoCD and kast-system from scratch.
+Complete guide for bootstrapping a Kubernetes cluster with ArgoCD and runik-system from scratch.
 
 ## Table of Contents
 
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
 3. [ArgoCD Installation](#argocd-installation)
-4. [kast-system Setup](#kast-system-setup)
+4. [runik-system Setup](#runik-system-setup)
 5. [First Deployment](#first-deployment)
 6. [Troubleshooting](#troubleshooting)
 7. [Next Steps](#next-steps)
@@ -17,7 +17,7 @@ Complete guide for bootstrapping a Kubernetes cluster with ArgoCD and kast-syste
 This guide walks you through setting up a complete GitOps workflow using:
 - **Kubernetes cluster** (any distribution: kind, k3s, EKS, GKE, AKS, on-prem)
 - **ArgoCD** (from official Helm chart)
-- **kast-system** (TDD Kubernetes deployment framework)
+- **runik-system** (TDD Kubernetes deployment framework)
 
 **Target audience:** Single cluster setup, cloud-agnostic
 
@@ -98,7 +98,7 @@ helm search repo argo/argo-cd
 
 You can create a custom `values.yaml` file for ArgoCD configuration.
 
-**Example spell reference:** Check the example ArgoCD spell at [bookrack/the-example-book/intro/argocd.yaml](https://github.com/kast-spells/kast-system/blob/master/bookrack/the-example-book/intro/argocd.yaml)
+**Example spell reference:** Check the example ArgoCD spell at [bookrack/the-example-book/intro/argocd.yaml](https://github.com/runik-spells/runik-system/blob/master/bookrack/the-example-book/intro/argocd.yaml)
 
 **Extract values from example spell:**
 ```bash
@@ -120,15 +120,15 @@ helm upgrade --install --create-namespace argocd argo/argo-cd \
   --values values.yaml
 ```
 
-## kast-system Setup
+## runik-system Setup
 
 ### 1. Create Your Bookrack Repository
 
-Create your own repository for configuration management using the Book/Chapter/Spell pattern. This is YOUR repository where you'll store all your application configurations (spells). kast-system will be added as a library (submodule) to provide access to charts (librarian, kaster, summon, glyphs).
+Create your own repository for configuration management using the Book/Chapter/Spell pattern. This is YOUR repository where you'll store all your application configurations (spells). runik-system will be added as a library (submodule) to provide access to charts (librarian, kaster, summon, glyphs).
 
 **Important:**
 - `bookrack/` = Your configuration (spells, books, chapters) - lives in YOUR repository
-- Your spells reference kast-system charts but are NOT stored inside the submodule
+- Your spells reference runik-system charts but are NOT stored inside the submodule
 
 ```bash
 # Create YOUR bookrack repository directory
@@ -138,8 +138,8 @@ cd ~/my-bookrack
 # Initialize YOUR git repository
 git init
 
-# Add kast-system as submodule (library for charts only)
-git submodule add https://github.com/kast-spells/librarian.git
+# Add runik-system as submodule (library for charts only)
+git submodule add https://github.com/runik-spells/librarian.git
 
 # Initialize submodule
 git submodule update --init --recursive
@@ -148,7 +148,7 @@ git submodule update --init --recursive
 **What you just created:**
 ```
 my-bookrack/                    # YOUR repository
-│   └── kast-system/            # Submodule (library)
+│   └── runik-system/            # Submodule (library)
 │       ├── charts/
 │       │   ├── glyphs/         # Glyph templates
 │       │   ├── kaster/         # Glyph orchestrator
@@ -180,7 +180,7 @@ chapters:
 
 # Default trinket (workload chart)
 defaultTrinket:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   targetRevision: main
 
@@ -188,19 +188,19 @@ defaultTrinket:
 trinkets:
   kaster-vault:
     key: vault
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     targetRevision: main
 
   kaster-istio:
     key: istio
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     targetRevision: main
 
   kaster-certManager:
     key: certManager
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     targetRevision: main
 
@@ -301,10 +301,10 @@ configMaps:
     content: |
       <!DOCTYPE html>
       <html>
-      <head><title>kast-system</title></head>
+      <head><title>runik-system</title></head>
       <body>
-        <h1>Welcome to kast-system!</h1>
-        <p>This is your first spell deployed via ArgoCD and kast-system.</p>
+        <h1>Welcome to runik-system!</h1>
+        <p>This is your first spell deployed via ArgoCD and runik-system.</p>
       </body>
       </html>
 EOF
@@ -317,9 +317,9 @@ EOF
 git add .
 
 # Commit
-git commit -m "Initial kast-system bookrack setup
+git commit -m "Initial runik-system bookrack setup
 
-- Add kast-system submodule
+- Add runik-system submodule
 - Create my-book with infrastructure and applications chapters
 - Add nginx example spell"
 
@@ -350,7 +350,7 @@ spec:
   source:
     repoURL: https://github.com/your-org/my-bookrack.git  # YOUR repository
     targetRevision: main
-    path: vendor/kast-system/librarian  # Path to librarian chart within your repo
+    path: vendor/runik-system/librarian  # Path to librarian chart within your repo
 
     helm:
       values: |
@@ -377,7 +377,7 @@ argocd app sync librarian-my-book
 
 **How this works:**
 1. ArgoCD clones YOUR repository (`https://github.com/your-org/my-bookrack.git`)
-2. Navigates to `vendor/kast-system/librarian/` (the chart)
+2. Navigates to `vendor/runik-system/librarian/` (the chart)
 3. Helm packages the chart, following symlink `librarian/bookrack -> ../bookrack`
 4. Symlink resolves to YOUR `bookrack/` directory (with your spells)
 5. Librarian reads `bookrack/my-book/` and generates Applications
@@ -397,7 +397,7 @@ cat > bookrack/my-book/intro/librarian.yaml <<'EOF'
 
 name: librarian-my-book
 repository: https://github.com/your-org/my-bookrack.git  # YOUR repository
-path: vendor/kast-system/librarian
+path: vendor/runik-system/librarian
 revision: main
 namespace: argocd
 
@@ -437,19 +437,19 @@ Then bootstrap with Option A once, and librarian will manage itself from then on
 cd ~/my-bookrack
 
 # Install librarian chart locally
-helm install librarian ./vendor/kast-system/librarian \
+helm install librarian ./vendor/runik-system/librarian \
   --namespace argocd \
   --set name=my-book \
   --create-namespace
 
-# PROBLEM: The symlink vendor/kast-system/librarian/bookrack -> ../bookrack
+# PROBLEM: The symlink vendor/runik-system/librarian/bookrack -> ../bookrack
 # points to vendor/bookrack (doesn't exist) instead of ../../bookrack (your bookrack)
 ```
 
 **To fix symlink for local development:**
 ```bash
 # Temporary fix: Copy librarian chart and fix symlink
-cp -r vendor/kast-system/librarian /tmp/librarian-local
+cp -r vendor/runik-system/librarian /tmp/librarian-local
 cd /tmp/librarian-local
 rm bookrack
 ln -s ~/my-bookrack/bookrack bookrack
@@ -879,7 +879,7 @@ kubectl get application -n argocd my-book-applications-nginx \
 - **Lexicon** provides dynamic infrastructure discovery
 - **Runic indexer** enables label-based matching
 
-This architecture enables the declarative, composable, GitOps workflow that kast-system provides.
+This architecture enables the declarative, composable, GitOps workflow that runik-system provides.
 
 ## First Deployment
 
@@ -942,7 +942,7 @@ curl http://localhost:8081
 # Expected output:
 # <!DOCTYPE html>
 # <html>
-# <head><title>kast-system</title></head>
+# <head><title>runik-system</title></head>
 # ...
 ```
 
@@ -1198,7 +1198,7 @@ sed -i 's/my-cluster/my-cluster-dev/' bookrack/my-book-dev/index.yaml
 sed -i 's/my-cluster/my-cluster-prod/' bookrack/my-book-prod/index.yaml
 
 # Deploy both books
-helm upgrade librarian ./vendor/kast-system/librarian \
+helm upgrade librarian ./vendor/runik-system/librarian \
   --namespace argocd \
   --reuse-values \
   --set bookrack.books[0]="my-book-dev" \
@@ -1322,7 +1322,7 @@ helm install velero vmware-tanzu/velero \
 
 **Documentation:**
 - [ArgoCD Official Docs](https://argo-cd.readthedocs.io/)
-- [kast-system docs/](../docs/)
+- [runik-system docs/](../docs/)
 - [GETTING_STARTED.md](./GETTING_STARTED.md) - Detailed bookrack usage
 - [LIBRARIAN.md](./LIBRARIAN.md) - Apps of Apps pattern
 - [SUMMON.md](./SUMMON.md) - Workload chart reference
@@ -1331,18 +1331,18 @@ helm install velero vmware-tanzu/velero \
 **Testing:**
 ```bash
 # TDD workflow
-cd vendor/kast-system
+cd vendor/runik-system
 make test              # Run comprehensive tests
 make test-status       # Check test coverage
 make list-glyphs       # List available glyphs
 ```
 
 **Community:**
-- GitHub Issues: https://github.com/kast-spells/kast-system/issues
-- Documentation: https://docs.kast.ing
+- GitHub Issues: https://github.com/runik-spells/runik-system/issues
+- Documentation: https://docs.runik.ing
 
 ---
 
-**Congratulations!** 🎉 You now have a fully functional GitOps workflow with ArgoCD and kast-system.
+**Congratulations!** 🎉 You now have a fully functional GitOps workflow with ArgoCD and runik-system.
 
 Your next commit to the bookrack repository will automatically trigger a deployment.

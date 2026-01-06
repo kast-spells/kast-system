@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -526,8 +526,8 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: integration-provisioning
-    covenant.kast.io/integration: {{ $clientName }}
+    covenant.runik.io/type: integration-provisioning
+    covenant.runik.io/integration: {{ $clientName }}
 data:
   {{ $configMapName }}: |
 {{ $scriptContent | indent 4 }}
@@ -628,15 +628,15 @@ data:
 
 {{/* Add covenant-specific annotations to Job metadata */}}
 {{- $_ := set $summonValues "annotations" (dict
-  "covenant.kast.io/client-id" (default $clientName $clientDef.clientId)
-  "covenant.kast.io/web-url" $clientDef.webUrl
-  "covenant.kast.io/script-checksum" $scriptChecksum
+  "covenant.runik.io/client-id" (default $clientName $clientDef.clientId)
+  "covenant.runik.io/web-url" $clientDef.webUrl
+  "covenant.runik.io/script-checksum" $scriptChecksum
 ) }}
 
 {{/* Add covenant-specific labels */}}
 {{- $_ := set $summonValues "labels" (dict
-  "covenant.kast.io/type" "integration-provisioning"
-  "covenant.kast.io/integration" $clientName
+  "covenant.runik.io/type" "integration-provisioning"
+  "covenant.runik.io/integration" $clientName
 ) }}
 
 {{/* Generate Job using summon glyph */}}
@@ -660,7 +660,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: post-provisioning
+    covenant.runik.io/type: post-provisioning
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -669,7 +669,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: post-provisioning
+    covenant.runik.io/type: post-provisioning
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -682,7 +682,7 @@ metadata:
   namespace: {{ $root.Release.Namespace }}
   labels:
     {{- include "common.labels" $root | nindent 4}}
-    covenant.kast.io/type: post-provisioning
+    covenant.runik.io/type: post-provisioning
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -724,10 +724,10 @@ metadata:
     app.kubernetes.io/name: {{ $postProvDef.name }}
     app.kubernetes.io/instance: {{ $root.Release.Name }}
     app.kubernetes.io/managed-by: {{ $root.Release.Service }}
-    covenant.kast.io/chapter: {{ $postProvDef.chapter }}
-    covenant.kast.io/post-provisioning: chapter
+    covenant.runik.io/chapter: {{ $postProvDef.chapter }}
+    covenant.runik.io/post-provisioning: chapter
   annotations:
-    covenant.kast.io/post-prov-name: {{ $postProvDef.name }}
+    covenant.runik.io/post-prov-name: {{ $postProvDef.name }}
 spec:
   {{- if $postProvDef.backoffLimit }}
   backoffLimit: {{ $postProvDef.backoffLimit }}
@@ -742,7 +742,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ $postProvDef.name }}
         app.kubernetes.io/instance: {{ $root.Release.Name }}
-        covenant.kast.io/chapter: {{ $postProvDef.chapter }}
+        covenant.runik.io/chapter: {{ $postProvDef.chapter }}
     spec:
       serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProvDef.restartPolicy }}
@@ -819,11 +819,11 @@ metadata:
     app.kubernetes.io/name: {{ $postProvName }}
     app.kubernetes.io/instance: {{ $root.Release.Name }}
     app.kubernetes.io/managed-by: {{ $root.Release.Service }}
-    covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
-    covenant.kast.io/post-provisioning: {{ $postProvName }}
+    covenant.runik.io/member: {{ $memberKey | replace "/" "-" }}
+    covenant.runik.io/post-provisioning: {{ $postProvName }}
   annotations:
-    covenant.kast.io/member-email: {{ $member.email }}
-    covenant.kast.io/member-username: {{ $memberName }}
+    covenant.runik.io/member-email: {{ $member.email }}
+    covenant.runik.io/member-username: {{ $memberName }}
 spec:
   {{- if $postProvDef.job.backoffLimit }}
   backoffLimit: {{ $postProvDef.job.backoffLimit }}
@@ -836,7 +836,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ $postProvName }}
         app.kubernetes.io/instance: {{ $root.Release.Name }}
-        covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+        covenant.runik.io/member: {{ $memberKey | replace "/" "-" }}
     spec:
       serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProvDef.job.restartPolicy }}

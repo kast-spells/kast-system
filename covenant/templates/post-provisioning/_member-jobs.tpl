@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -90,11 +90,11 @@ metadata:
     app.kubernetes.io/name: {{ $postProv.name }}
     app.kubernetes.io/instance: {{ $root.Release.Name }}
     app.kubernetes.io/managed-by: {{ $root.Release.Service }}
-    covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
-    covenant.kast.io/post-provisioning: {{ $postProv.name }}
+    covenant.runik.io/member: {{ $memberKey | replace "/" "-" }}
+    covenant.runik.io/post-provisioning: {{ $postProv.name }}
   annotations:
-    covenant.kast.io/member-email: {{ $memberName }}
-    covenant.kast.io/member-username: {{ $memberName }}
+    covenant.runik.io/member-email: {{ $memberName }}
+    covenant.runik.io/member-username: {{ $memberName }}
 spec:
   {{- if $postProv.job.backoffLimit }}
   backoffLimit: {{ $postProv.job.backoffLimit }}
@@ -107,7 +107,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ $postProv.name }}
         app.kubernetes.io/instance: {{ $root.Release.Name }}
-        covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+        covenant.runik.io/member: {{ $memberKey | replace "/" "-" }}
     spec:
       serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProv.job.restartPolicy }}

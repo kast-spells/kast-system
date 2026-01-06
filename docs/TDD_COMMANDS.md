@@ -2,7 +2,7 @@
 
 ## TDD Workflow
 
-kast-system follows Test-Driven Development with Red-Green-Refactor cycle.
+runik-system follows Test-Driven Development with Red-Green-Refactor cycle.
 
 ### Basic Cycle
 

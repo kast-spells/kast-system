@@ -1,10 +1,10 @@
 apiVersion: v2
 name: summon
 version: 1.0.0
-description: the summon chart of kast to create microservices or run conainers
-home: https://github.com/kast-spells
+description: the summon chart of runik to create microservices or run conainers
+home: https://github.com/runik-spells
 sources:
-  - https://github.com/kast-spells/kast-system
+  - https://github.com/runik-spells/runik-system
 maintainers:
   - name: namen malkav
     email: namenmalkav@gmail.com

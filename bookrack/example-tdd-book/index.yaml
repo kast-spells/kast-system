@@ -2,7 +2,7 @@
 # This book serves as both documentation and TDD testing for the librarian system
 
 name: example-tdd-book
-description: "Comprehensive example showing all kast-system features for TDD validation"
+description: "Comprehensive example showing all runik-system features for TDD validation"
 
 # Chapters define the deployment sequence
 chapters:
@@ -36,7 +36,7 @@ appParams:
 
 # Default trinket (summon) - used when no chart/path specified
 defaultTrinket:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   revision: feature/coding-standards
 
@@ -44,12 +44,12 @@ defaultTrinket:
 trinkets:
   kaster:
     key: glyphs
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: feature/coding-standards
   tarot:
     key: tarot
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/tarot
     revision: feature/coding-standards
 

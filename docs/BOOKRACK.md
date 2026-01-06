@@ -135,7 +135,7 @@ appParams:                           # Optional: Default ArgoCD sync config
 
 # Default chart (summon)
 defaultTrinket:                      # Optional: Chart for spells without chart/path
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   revision: v1.0.0
   chart: null                        # Alternative to path
@@ -145,18 +145,18 @@ defaultTrinket:                      # Optional: Chart for spells without chart/
 trinkets:                            # Optional: Additional charts (multi-source)
   kaster:
     key: glyphs                      # Trigger: spell has "glyphs:" field
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: v1.0.0
     values: {}                       # Default values for this trinket
   tarot:
     key: tarot                       # Trigger: spell has "tarot:" field
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/tarot
     revision: v1.0.0
   microspell:
     key: microspell
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/trinkets/microspell
     revision: v1.0.0
 

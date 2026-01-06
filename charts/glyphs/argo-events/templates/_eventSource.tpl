@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -52,7 +52,7 @@ Example glyphDefinition (resource):
             operation: "="
             value: myapp
         expression: |
-          has(body.metadata.annotations['kast.ing/action'])
+          has(body.metadata.annotations['runik.ing/action'])
  */}}
 {{- define "argo-events.eventSource" }}
 {{- $root := index . 0 }}

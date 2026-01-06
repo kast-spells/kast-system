@@ -49,9 +49,9 @@ glyphs:
             # Complex expression filter
             expression: |
               has(body.metadata.annotations) &&
-              has(body.metadata.annotations['kast.ing/action']) &&
-              (body.metadata.annotations['kast.ing/action'] == 'restart' ||
-               body.metadata.annotations['kast.ing/action'] == 'scale')
+              has(body.metadata.annotations['runik.ing/action']) &&
+              (body.metadata.annotations['runik.ing/action'] == 'restart' ||
+               body.metadata.annotations['runik.ing/action'] == 'scale')
 
     # Sensor: Handle restart action
     deployment-restart-sensor:

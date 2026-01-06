@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -11,8 +11,8 @@ Common labels with kast-specific additions
 */}}
 {{- define "tarot.labels" -}}
 {{ include "common.labels" . }}
-kast.ing/component: tarot
-kast.ing/type: trinket
+runik.ing/component: tarot
+runik.ing/type: trinket
 {{- end }}
 
 {{/*

@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -12,7 +12,7 @@ Creates:
 5. Prolicy (vault access for /s3-identities/*)
 
 The aggregator script:
-- Lists all secrets with label kast.ing/s3-identity=true
+- Lists all secrets with label runik.ing/s3-identity=true
 - Reads credentials and metadata
 - Builds S3 config JSON (SeaweedFS format with actions: ["Action:Bucket"])
 - Creates/updates Secret with s3.json
@@ -66,7 +66,7 @@ Bucket creation:
       "filter" (dict
         "afterStart" true
         "labels" (list
-          (dict "key" "kast.ing/s3-identity" "operation" "=" "value" "true")
+          (dict "key" "runik.ing/s3-identity" "operation" "=" "value" "true")
         )
       )
     )
@@ -98,7 +98,7 @@ data:
 
     # Find all S3 identity secrets in current namespace
     SECRETS_JSON=$(kubectl get secrets -n ${NAMESPACE} \
-      -l kast.ing/s3-identity=true \
+      -l runik.ing/s3-identity=true \
       -o json)
 
     # Count secrets
@@ -132,7 +132,7 @@ data:
           (if (.data.BUCKETS) then ((.data.BUCKETS | @base64d | split(",")) | map(select(length > 0))) else [] end) as $buckets |
 
           {
-            name: (.metadata.labels."kast.ing/identity-name" // .metadata.name),
+            name: (.metadata.labels."runik.ing/identity-name" // .metadata.name),
             credentials: [{
               accessKey: (.data.AWS_ACCESS_KEY_ID | @base64d),
               secretKey: (.data.AWS_SECRET_ACCESS_KEY | @base64d)

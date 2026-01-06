@@ -1,6 +1,6 @@
 # Summon
 
-Base Helm chart for Kubernetes workload deployments in kast-system.
+Base Helm chart for Kubernetes workload deployments in runik-system.
 
 ## Overview
 

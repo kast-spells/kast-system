@@ -1,10 +1,10 @@
 # Core Components Overview
 
-This page provides a high-level overview of kast-system's core components and how they interact.
+This page provides a high-level overview of runik-system's core components and how they interact.
 
 ## Architecture
 
-kast-system consists of four main components that work together to provide a complete GitOps deployment framework:
+runik-system consists of four main components that work together to provide a complete GitOps deployment framework:
 
 ```
 ┌─────────────────────────────────────────────────────────┐

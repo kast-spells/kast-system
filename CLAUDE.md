@@ -81,7 +81,7 @@ Direct types                  Wrapper required
 
 ## TDD Development
 
-kast-system follows strict TDD: Red → Green → Refactor
+runik-system follows strict TDD: Red → Green → Refactor
 
 ### TDD Cycle
 
@@ -205,7 +205,7 @@ chapters:
   - applications
 
 defaultTrinket:  # Usually summon
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
 
 trinkets:
@@ -330,7 +330,7 @@ Legend:
 
 ## Covenant Testing
 
-**IMPORTANT**: Covenant chart in `kast-system/covenant/` (source of truth), books in separate repos.
+**IMPORTANT**: Covenant chart in `runik-system/covenant/` (source of truth), books in separate repos.
 
 **Two-stage Architecture**:
 - **Main** (no chapterFilter): ApplicationSet + KeycloakRealm + Vault policies
@@ -436,7 +436,7 @@ glyphs:
 
 ### Core Principles
 - **TDD mandatory**: Write examples before code
-- **Defaults over definition**: kast uses sensible defaults, don't over-specify
+- **Defaults over definition**: runik uses sensible defaults, don't over-specify
 - **GitOps-first**: No manual kubectl
 - **GNU GPL v3**: Copyright headers required
 
@@ -504,7 +504,7 @@ make lint
 - **Auto-discovery**: Tests discover charts/glyphs/trinkets with examples/
 
 ### Multi-Repo Sync
-- **GitHub Actions**: Auto-sync to kast-spells org
+- **GitHub Actions**: Auto-sync to runik-spells org
 - **Versioning**: Independent per chart via git tags
 - **Rsync**: `rsync -avL` follows symlinks
 

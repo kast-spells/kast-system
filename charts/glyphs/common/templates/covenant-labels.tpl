@@ -1,4 +1,4 @@
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
@@ -29,19 +29,19 @@ Usage in values.yaml:
 {{- if .Values.labels.covenant }}
 {{- if .Values.labels.covenant.enabled }}
 {{- with .Values.labels.covenant.team }}
-covenant.kast.io/team: {{ . }}
+covenant.runik.io/team: {{ . }}
 {{- end }}
 {{- with .Values.labels.covenant.owner }}
-covenant.kast.io/owner: {{ . }}
+covenant.runik.io/owner: {{ . }}
 {{- end }}
 {{- with .Values.labels.covenant.department }}
-covenant.kast.io/department: {{ . }}
+covenant.runik.io/department: {{ . }}
 {{- end }}
 {{- with .Values.labels.covenant.member }}
-covenant.kast.io/member: {{ . }}
+covenant.runik.io/member: {{ . }}
 {{- end }}
 {{- with .Values.labels.covenant.organization }}
-covenant.kast.io/organization: {{ . }}
+covenant.runik.io/organization: {{ . }}
 {{- end }}
 {{- end }}
 {{- end }}

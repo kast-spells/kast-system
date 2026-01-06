@@ -54,11 +54,11 @@ Kast uses a multi-tier labeling system:
    - `environment` - Environment (defaults to chapter)
 
 4. **Covenant Labels** (toggleable via `.Values.labels.covenant.enabled`)
-   - `covenant.kast.io/team` - Team name
-   - `covenant.kast.io/owner` - Owner email
-   - `covenant.kast.io/department` - Department
-   - `covenant.kast.io/member` - Member identifier
-   - `covenant.kast.io/organization` - Organization
+   - `covenant.runik.io/team` - Team name
+   - `covenant.runik.io/owner` - Owner email
+   - `covenant.runik.io/department` - Department
+   - `covenant.runik.io/member` - Member identifier
+   - `covenant.runik.io/organization` - Organization
 
 ## Functions
 

@@ -2,7 +2,7 @@
 # Apps of Apps pattern - reference to another book
 
 name: the-developers-book
-repository: https://github.com/kast-spells/kast-system.git
+repository: https://github.com/runik-spells/runik-system.git
 path: ./librarian
 revision: master
 namespace: argocd

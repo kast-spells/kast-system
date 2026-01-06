@@ -5,7 +5,7 @@ name: covenant-example
 description: "Example covenant book demonstrating modular realm structure"
 
 # Repository where covenant chart lives
-repository: https://github.com/kast-spells/kast-system.git
+repository: https://github.com/runik-spells/runik-system.git
 path: ./covenant
 revision: main
 

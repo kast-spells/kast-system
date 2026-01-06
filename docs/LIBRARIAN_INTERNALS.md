@@ -461,7 +461,7 @@ kubectl get application -n argocd my-book-applications-nginx \
 - **Lexicon** provides dynamic infrastructure discovery
 - **Runic indexer** enables label-based matching
 
-This architecture enables the declarative, composable, GitOps workflow that kast-system provides.
+This architecture enables the declarative, composable, GitOps workflow that runik-system provides.
 
 ---
 

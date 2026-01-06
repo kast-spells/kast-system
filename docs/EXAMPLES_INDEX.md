@@ -1,6 +1,6 @@
 # Examples Index
 
-Complete index of all examples in kast-system organized by category and complexity.
+Complete index of all examples in runik-system organized by category and complexity.
 
 ## Quick Navigation
 

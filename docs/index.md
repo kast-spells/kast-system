@@ -1,10 +1,10 @@
-# kast-system Documentation
+# runik-system Documentation
 
-Welcome to **kast-system** - Kubernetes Arcane Spelling Technology, a Test-Driven Development framework for Helm-based deployments.
+Welcome to **runik-system** - Kubernetes Arcane Spelling Technology, a Test-Driven Development framework for Helm-based deployments.
 
-## What is kast-system?
+## What is runik-system?
 
-kast-system is a comprehensive GitOps framework that combines:
+runik-system is a comprehensive GitOps framework that combines:
 
 - **Glyphs**: Reusable Helm templates for infrastructure (Vault, Istio, Cert-Manager, etc.)
 - **Kaster**: Orchestration chart that coordinates multiple glyphs
@@ -15,7 +15,7 @@ kast-system is a comprehensive GitOps framework that combines:
 
 ## Quick Links
 
-!!! tip "New to kast-system?"
+!!! tip "New to runik-system?"
     Start with the [Navigation Guide](NAVIGATION.md) for a holistic overview and learning paths.
 
 **Get Started:**
@@ -100,8 +100,8 @@ Designed for ArgoCD-first deployment:
 
 ```bash
 # Clone repository
-git clone https://github.com/kast-spells/kast-system.git
-cd kast-system
+git clone https://github.com/runik-spells/runik-system.git
+cd runik-system
 
 # Run tests
 make test
@@ -161,7 +161,7 @@ Components work together seamlessly:
 
 ## Community
 
-- **GitHub**: [kast-spells/kast-system](https://github.com/kast-spells/kast-system)
+- **GitHub**: [runik-spells/runik-system](https://github.com/runik-spells/runik-system)
 - **License**: GNU GPL v3
 
 ## Next Steps

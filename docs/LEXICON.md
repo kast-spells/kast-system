@@ -4,7 +4,7 @@ The lexicon and runic indexer form the foundation of kast's intelligent infrastr
 
 ## Overview
 
-Instead of hardcoding infrastructure references, kast uses a **lexicon** (registry of available resources) combined with a **runic indexer** (selection algorithm) to dynamically discover the right infrastructure components at deployment time.
+Instead of hardcoding infrastructure references, runik uses a **lexicon** (registry of available resources) combined with a **runic indexer** (selection algorithm) to dynamically discover the right infrastructure components at deployment time.
 
 ### Key Benefits
 

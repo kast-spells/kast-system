@@ -13,7 +13,7 @@
 3. [Available Generators](#available-generators)
 4. [Template Variables Reference](#template-variables-reference)
 5. [Multi-Source Applications](#multi-source-applications)
-6. [Kast System Integration Examples](#kast-system-integration-examples)
+6. [Kast System Integration Examples](#runik-system-integration-examples)
 7. [Advanced Patterns](#advanced-patterns)
 8. [Troubleshooting](#troubleshooting)
 
@@ -159,7 +159,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/kast-spells/kast-system.git
+        repoURL: https://github.com/runik-spells/runik-system.git
         path: charts/summon
         targetRevision: main
         helm:
@@ -203,7 +203,7 @@ spec:
   goTemplate: true
   generators:
     - git:
-        repoURL: https://github.com/kast-spells/kast-system.git
+        repoURL: https://github.com/runik-spells/runik-system.git
         revision: main
         directories:
           - path: charts/*
@@ -214,7 +214,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/kast-spells/kast-system.git
+        repoURL: https://github.com/runik-spells/runik-system.git
         path: '{{.path.path}}'
         targetRevision: main
       destination:
@@ -266,7 +266,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/kast-spells/kast-system.git
+        repoURL: https://github.com/runik-spells/runik-system.git
         path: charts/summon
         targetRevision: main
         helm:
@@ -359,7 +359,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/kast-spells/kast-system.git
+        repoURL: https://github.com/runik-spells/runik-system.git
         path: charts/summon
         targetRevision: main
         helm:
@@ -481,7 +481,7 @@ When using multiple sources, you can reference files from one source in another 
 spec:
   sources:
     # Source 1: Helm chart
-    - repoURL: https://github.com/kast-spells/kast-system.git
+    - repoURL: https://github.com/runik-spells/runik-system.git
       path: charts/summon
       targetRevision: feature/coding-standards
       helm:
@@ -556,7 +556,7 @@ spec:
 
       sources:
         # Summon chart
-        - repoURL: https://github.com/kast-spells/kast-system.git
+        - repoURL: https://github.com/runik-spells/runik-system.git
           path: charts/summon
           targetRevision: feature/coding-standards
           helm:
@@ -619,7 +619,7 @@ spec:
       project: default
 
       sources:
-        - repoURL: https://github.com/kast-spells/kast-system.git
+        - repoURL: https://github.com/runik-spells/runik-system.git
           path: charts/summon
           targetRevision: main
           helm:
@@ -685,7 +685,7 @@ spec:
 
       sources:
         # Dynamically select trinket chart
-        - repoURL: https://github.com/kast-spells/kast-system.git
+        - repoURL: https://github.com/runik-spells/runik-system.git
           path: 'charts/trinkets/{{.trinket | default "summon"}}'
           targetRevision: main
           helm:
@@ -730,7 +730,7 @@ spec:
 
       sources:
         # Summon for workload (if any)
-        - repoURL: https://github.com/kast-spells/kast-system.git
+        - repoURL: https://github.com/runik-spells/runik-system.git
           path: charts/summon
           targetRevision: main
           helm:
@@ -738,7 +738,7 @@ spec:
               - $values/{{.path.path}}/{{.path.filename}}.yaml
 
         # Kaster for glyphs
-        - repoURL: https://github.com/kast-spells/kast-system.git
+        - repoURL: https://github.com/runik-spells/runik-system.git
           path: charts/kaster
           targetRevision: main
           helm:
@@ -801,7 +801,7 @@ spec:
       project: default
 
       sources:
-        - repoURL: https://github.com/kast-spells/kast-system.git
+        - repoURL: https://github.com/runik-spells/runik-system.git
           path: charts/summon
           targetRevision: main
           helm:

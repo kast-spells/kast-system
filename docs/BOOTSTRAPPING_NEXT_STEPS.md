@@ -1,6 +1,6 @@
 # Bootstrapping: Next Steps
 
-After successfully bootstrapping your cluster with ArgoCD and kast-system, this guide helps you expand your deployment with advanced features.
+After successfully bootstrapping your cluster with ArgoCD and runik-system, this guide helps you expand your deployment with advanced features.
 
 **Related:** [Bootstrapping Guide](BOOTSTRAPPING.md) | [Troubleshooting](BOOTSTRAPPING_TROUBLESHOOTING.md)
 
@@ -239,7 +239,7 @@ sed -i 's/my-cluster/my-cluster-dev/' bookrack/my-book-dev/index.yaml
 sed -i 's/my-cluster/my-cluster-prod/' bookrack/my-book-prod/index.yaml
 
 # Deploy both books
-helm upgrade librarian ./vendor/kast-system/librarian \
+helm upgrade librarian ./vendor/runik-system/librarian \
   --namespace argocd \
   --reuse-values \
   --set bookrack.books[0]="my-book-dev" \
@@ -498,7 +498,7 @@ velero restore create --from-backup manual-backup
 
 ```bash
 # TDD workflow
-cd vendor/kast-system
+cd vendor/runik-system
 make test              # Run comprehensive tests
 make test-status       # Check test coverage
 make list-glyphs       # List available glyphs
@@ -506,12 +506,12 @@ make list-glyphs       # List available glyphs
 
 ### Community
 
-- **GitHub Issues:** https://github.com/kast-spells/kast-system/issues
-- **Documentation:** https://docs.kast.ing
+- **GitHub Issues:** https://github.com/runik-spells/runik-system/issues
+- **Documentation:** https://docs.runik.ing
 
 ---
 
-**Congratulations!** You now have a fully functional GitOps workflow with ArgoCD and kast-system.
+**Congratulations!** You now have a fully functional GitOps workflow with ArgoCD and runik-system.
 
 Your next commit to the bookrack repository will automatically trigger a deployment.
 
