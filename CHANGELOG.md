@@ -5,6 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.0.0] - 2026-01-05
+
+### ⚠️ BREAKING CHANGES
+
+**Project Rebranding: kast → runik**
+
+This is a major version upgrade involving complete rebranding from "kast" to "runik". See [MIGRATION_KAST_TO_RUNIK.md](./MIGRATION_KAST_TO_RUNIK.md) for detailed migration instructions.
+
+#### Changed
+
+- **Organization**: Renamed GitHub organization from `kast-spells` to `runik-spells`
+- **Repository**: Renamed repository from `kast-system` to `runik-system`
+- **Repository URLs**: All chart repository URLs updated from `github.com/kast-spells/*` to `github.com/runik-spells/*`
+- **Annotations**: Kubernetes annotations updated:
+  - `covenant.kast.io/*` → `covenant.runik.io/*`
+  - `kast.ing/*` → `runik.ing/*`
+- **Template Headers**: Copyright headers updated from "kast - Kubernetes arcane spelling technology" to "runik - Kubernetes arcane spelling technology"
+- **Documentation**: All documentation updated to reference "runik" instead of "kast"
+- **Workflow URLs**: GitHub Actions workflows updated to use runik-spells organization
+
+#### Preserved (NO CHANGE)
+
+- **Chart Names**: All chart names remain unchanged:
+  - `kaster` (chart orchestrator)
+  - `summon` (workload chart)
+  - `librarian` (apps of apps generator)
+  - `covenant` (identity management)
+  - All trinket chart names
+- **Directory Structure**: Chart directories remain unchanged (`charts/kaster/`, `charts/summon/`, etc.)
+- **Glyph System**: All glyph names and functionality unchanged
+- **API**: No functional changes to templates, values, or chart interfaces
+- **Backward Compatibility**: NOT backward compatible - requires manual migration
+
+#### Migration Required
+
+Users must update:
+1. Book `index.yaml` repository URLs
+2. Covenant realm names (if applicable)
+3. Custom resource annotations using kast domains
+4. Internal documentation references
+5. CI/CD pipeline references
+
+See [MIGRATION_KAST_TO_RUNIK.md](./MIGRATION_KAST_TO_RUNIK.md) for complete migration guide.
+
+#### Files Modified
+
+**Phase 2 - Kubernetes Annotations:**
+- 13 template files (.tpl) - annotations updated
+
+**Phase 3 - Template Headers:**
+- 110 template files (.tpl) - copyright headers updated
+
+**Phase 4 - Chart Metadata:**
+- 19 Chart.yaml files - URLs updated (names preserved)
+
+**Phase 5 - Documentation:**
+- 47 markdown files (.md) - references updated
+
+**Phase 7 - GitHub Workflows:**
+- 6 workflow files (.yml) - organization URLs updated
+
+**Phase 8 - Bookrack Configurations:**
+- 8 configuration files (index.yaml) - repository URLs and realm names updated
+
+**Phase 10 - Copyright & Licensing:**
+- 5 documentation files - copyright examples updated
+
+**Total**: 194 files modified, 1098 insertions(+), 437 deletions(-)
+
+### Notes
+
+- This version maintains full functional compatibility with v1.x chart APIs
+- Only breaking changes are naming and URL references
+- Chart versioning strategy remains independent per chart
+- No Kubernetes resource changes required for existing deployments
+
 ## [v0.3.2] - 2025-12-22
 
 ### Features
@@ -82,11 +158,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
 - rollback to version 1.2.4 removing chapter ownership hooks (librarian) [`abbd346`] 
-- Merge pull request #32 from kast-spells/feature/aws-roles  [`ee2ae03`]  (#32)
-- Merge pull request #31 from kast-spells/hotfix/typo  [`53ceaef`]  (#31)
-- Merge pull request #30 from kast-spells/feature/aws-glyph  [`2099272`]  (#30)
-- Merge pull request #29 from kast-spells/feature/aws-iam  [`97c4754`]  (#29)
-- Merge pull request #28 from kast-spells/feature/externalsecrets  [`efac554`]  (#28)
+- Merge pull request #32 from runik-spells/feature/aws-roles  [`ee2ae03`]  (#32)
+- Merge pull request #31 from runik-spells/hotfix/typo  [`53ceaef`]  (#31)
+- Merge pull request #30 from runik-spells/feature/aws-glyph  [`2099272`]  (#30)
+- Merge pull request #29 from runik-spells/feature/aws-iam  [`97c4754`]  (#29)
+- Merge pull request #28 from runik-spells/feature/externalsecrets  [`efac554`]  (#28)
 - Implements provider-agnostic ExternalSecrets support (vault/aws/gcp) with   dynamic SecretStore discovery via runic indexer.  [`acc36d2`] 
 - comentando el fit  [`ef59b16`] 
 - proveyendo el fit  [`dc6ad4a`] 
@@ -359,7 +435,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
 - Here is a conventional commit message based on the provided change summaries:  [`d572f85`] 
-- Merge pull request #27 from kast-spells/refactor/covenant  [`b5ee8ba`]  (#27)
+- Merge pull request #27 from runik-spells/refactor/covenant  [`b5ee8ba`]  (#27)
 - Here are the commit messages for each part:  [`a5dce25`] 
 
 
@@ -460,19 +536,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update version to 1.2.4 (charts/summon) [`6818945`] 
 - add spellbook, lexicon and cards to kast.yaml template (librarian/templates) [`7829faa`] 
 - add .gitignore for bookrack symlink (covenant,librarian) [`161c72a`] 
-- update sync-docs workflow to use token-based authentication and clone kast-docs repository (workflows/sync-docs.yml) [`8c97e8e`] 
+- update sync-docs workflow to use token-based authentication and clone runik-docs repository (workflows/sync-docs.yml) [`8c97e8e`] 
 
 ### Bug Fixes
 
 - fix chart versions and covenant template (charts,covenant) [`90fa2ac`] 
 - exclude bookrack from rsync sync (workflows) [`c6c4541`] 
 - update sync-docs workflow to use multi-line commit message (.github/workflows) [`d8897e5`] 
-- create tag in kast-docs after sync to trigger deployment (workflows) [`dd498f5`] 
+- create tag in runik-docs after sync to trigger deployment (workflows) [`dd498f5`] 
 - translate Spanish comments to English (workflows) [`6449418`] 
 
 ### Documentation
 
-- setup automatic sync to kast-docs on tags  [`c497ab3`] 
+- setup automatic sync to runik-docs on tags  [`c497ab3`] 
 - add MkDocs Material site with GitHub Pages deployment  [`583bc29`] 
 - reorganize documentation with holistic navigation  [`76bf328`] 
 
@@ -496,7 +572,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
 - Here is a conventional commit message based on the provided change summaries:  [`d572f85`] 
-- Merge pull request #27 from kast-spells/refactor/covenant  [`b5ee8ba`]  (#27)
+- Merge pull request #27 from runik-spells/refactor/covenant  [`b5ee8ba`]  (#27)
 - Here are the commit messages for each part:  [`a5dce25`] 
 - Here's a conventional commit message based on the provided change summaries:  [`0ef3ef7`] 
 - Review Kast system stack and documentation  [`4caadca`] 
@@ -536,7 +612,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
 - Here is a conventional commit message based on the provided change summaries:  [`d572f85`] 
-- Merge pull request #27 from kast-spells/refactor/covenant  [`b5ee8ba`]  (#27)
+- Merge pull request #27 from runik-spells/refactor/covenant  [`b5ee8ba`]  (#27)
 - Here are the commit messages for each part:  [`a5dce25`] 
 - Here's a conventional commit message based on the provided change summaries:  [`0ef3ef7`] 
 

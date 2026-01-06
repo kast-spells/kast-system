@@ -1,6 +1,6 @@
 # Kast Framework Good Practices Guide
 
-A comprehensive guide to best practices, patterns, and anti-patterns for developing with the kast-system framework.
+A comprehensive guide to best practices, patterns, and anti-patterns for developing with the runik-system framework.
 
 ## Table of Contents
 
@@ -194,7 +194,7 @@ workload:
 #### Standard Glyph Template Pattern
 
 ```go
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -365,13 +365,13 @@ name: my-book
 trinkets:
   kaster:
     key: glyphs
-    repository: https://github.com/kast-spells/kast-system.git
+    repository: https://github.com/runik-spells/runik-system.git
     path: ./charts/kaster
     revision: master
 
 # Default trinket for regular spells
 defaultTrinket:
-  repository: https://github.com/kast-spells/kast-system.git
+  repository: https://github.com/runik-spells/runik-system.git
   path: ./charts/summon
   revision: master
 
@@ -1508,7 +1508,7 @@ annotations:
 ```yaml
 # [BAD]: Custom labels without namespace
 labels:
-  myapp-team: engineering  # Should use covenant.kast.io/team
+  myapp-team: engineering  # Should use covenant.runik.io/team
 
 # [BAD]: Duplicating information in labels and annotations
 labels:

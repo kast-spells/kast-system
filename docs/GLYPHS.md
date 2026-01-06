@@ -1,6 +1,6 @@
 # Glyphs - Infrastructure as Code Templates
 
-Comprehensive guide to the glyph system in kast. Glyphs are reusable Helm named templates that generate Kubernetes resources for infrastructure integration.
+Comprehensive guide to the glyph system in runik. Glyphs are reusable Helm named templates that generate Kubernetes resources for infrastructure integration.
 
 ## Overview
 
@@ -496,7 +496,7 @@ glyphs:
 ### Basic Structure
 
 ```go
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 

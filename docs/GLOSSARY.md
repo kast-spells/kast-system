@@ -1,6 +1,6 @@
 # Glossary
 
-Technical terminology reference for kast-system.
+Technical terminology reference for runik-system.
 
 ## Configuration Structure
 
@@ -11,7 +11,7 @@ Deployment context containing chapters and configuration. Represents an environm
 Logical grouping of spells within a book. Examples: intro, services, monitoring. Each chapter is a directory within the book containing spells. Chapters can have an optional `index.yaml` to override book-level defaults for kaster/summon chart repositories.
 
 **Spell**
-Central concept in kast. YAML file defining application or infrastructure deployment. Located in book chapters. Spells can include multiple resources simultaneously, support glyphs and runes, and range from simple docker deployments via summon to complex multi-chart deployments.
+Central concept in runik. YAML file defining application or infrastructure deployment. Located in book chapters. Spells can include multiple resources simultaneously, support glyphs and runes, and range from simple docker deployments via summon to complex multi-chart deployments.
 
 **Index**
 `index.yaml` file in book root. Defines book metadata, chapters, chart versions, and repositories.
@@ -141,7 +141,7 @@ Process of determining card implementation. Methods: registered name lookup, sel
 ## Covenant (Identity Management)
 
 **Covenant**
-Trinket for identity and access management using Keycloak and Vault OIDC. Manages realms, clients, users, groups, and secrets. Located in `kast-system/covenant/`. Uses two-stage deployment: main covenant generates ApplicationSet, per-chapter covenants render actual resources.
+Trinket for identity and access management using Keycloak and Vault OIDC. Manages realms, clients, users, groups, and secrets. Located in `runik-system/covenant/`. Uses two-stage deployment: main covenant generates ApplicationSet, per-chapter covenants render actual resources.
 
 **Integration**
 Configuration in covenant for OIDC client. Defines clientId, redirect URIs, web URL, and secret generation. One integration = one KeycloakClient + one VaultSecret.
@@ -238,13 +238,13 @@ Kubernetes namespace. Can be defined in spell or inherited from chapter name.
 Kubernetes operator for declarative Vault configuration. Provides VaultSecret, Policy, KubernetesAuthEngineRole, RandomSecret, and other CRDs. Used extensively by vault glyph. Repository: https://github.com/redhat-cop/vault-config-operator
 
 **External Secrets Operator**
-Kubernetes operator syncing secrets from external systems. Legacy approach, replaced by vault-config-operator in kast.
+Kubernetes operator syncing secrets from external systems. Legacy approach, replaced by vault-config-operator in runik.
 
 **Argo Workflows**
 Kubernetes-native workflow engine. Used by Tarot trinket for dynamic CI/CD workflow execution.
 
 **ArgoCD**
-GitOps continuous delivery tool. Librarian generates ArgoCD Applications via ApplicationSets. Core deployment mechanism for kast.
+GitOps continuous delivery tool. Librarian generates ArgoCD Applications via ApplicationSets. Core deployment mechanism for runik.
 
 **Istio**
 Service mesh providing traffic management, security, and observability. Istio glyph generates VirtualServices, Gateways, and DestinationRules.
@@ -266,7 +266,7 @@ Third phase of TDD. Improve code while maintaining test coverage. Command: `make
 ## Additional Terms
 
 **Multi-Source**
-ArgoCD Application pattern using multiple Helm charts simultaneously. Kast uses this for combining summon (workload) + kaster (glyphs) + runes (additional charts). Enables composition of complex deployments from modular components.
+ArgoCD Application pattern using multiple Helm charts simultaneously. Runik uses this for combining summon (workload) + kaster (glyphs) + runes (additional charts). Enables composition of complex deployments from modular components.
 
 **ApplicationSet**
 ArgoCD resource generating multiple Applications from templates. Librarian uses ApplicationSets to deploy entire books. Covenant uses ApplicationSets to generate per-chapter applications.
@@ -275,7 +275,7 @@ ArgoCD resource generating multiple Applications from templates. Librarian uses 
 Parameter in covenant deployment filtering which chapter's resources to render. Main covenant has no filter (generates ApplicationSet), chapter-specific covenants have filter (render actual resources).
 
 **Prolicy**
-Vault policy glyph type. Note: "prolicy" is correct spelling in kast (not "policy") to distinguish from Vault Policy CRD. Generates both Policy CRD and KubernetesAuthEngineRole.
+Vault policy glyph type. Note: "prolicy" is correct spelling in runik (not "policy") to distinguish from Vault Policy CRD. Generates both Policy CRD and KubernetesAuthEngineRole.
 
 **Default Verbs**
 Glyph containing utility templates for common operations. Provides helper functions used by other glyphs.

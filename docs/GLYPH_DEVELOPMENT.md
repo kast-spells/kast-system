@@ -1,6 +1,6 @@
 # Glyph Development Guide
 
-Guide for creating new glyphs in kast-system. Glyphs are reusable Helm named templates that generate Kubernetes resources.
+Guide for creating new glyphs in runik-system. Glyphs are reusable Helm named templates that generate Kubernetes resources.
 
 ## Overview
 
@@ -76,9 +76,9 @@ apiVersion: v2
 name: <glyph-name>
 description: <Short description of glyph purpose>
 version: 1.0.0
-home: https://github.com/kast-spells
+home: https://github.com/runik-spells
 sources:
-  - https://github.com/kast-spells/kast-system
+  - https://github.com/runik-spells/runik-system
 maintainers:
   - name: Your Name
     email: your.email@example.com
@@ -91,9 +91,9 @@ apiVersion: v2
 name: database
 description: Database integration glyph for PostgreSQL and MySQL
 version: 1.0.0
-home: https://github.com/kast-spells
+home: https://github.com/runik-spells
 sources:
-  - https://github.com/kast-spells/kast-system
+  - https://github.com/runik-spells/runik-system
 maintainers:
   - name: Platform Team
     email: platform@example.com
@@ -152,7 +152,7 @@ spec:
 **All templates must include:**
 
 ```go
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
@@ -494,9 +494,9 @@ apiVersion: v2
 name: database
 description: Database integration glyph for connection management
 version: 1.0.0
-home: https://github.com/kast-spells
+home: https://github.com/runik-spells
 sources:
-  - https://github.com/kast-spells/kast-system
+  - https://github.com/runik-spells/runik-system
 maintainers:
   - name: Platform Team
     email: platform@example.com
@@ -531,7 +531,7 @@ make glyphs database
 
 ```bash
 cat > charts/glyphs/database/templates/connection.tpl <<'EOF'
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 

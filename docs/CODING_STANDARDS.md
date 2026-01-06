@@ -59,7 +59,7 @@ Use the common validation helpers:
 Every template must include this standardized header:
 
 ```helm
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -87,7 +87,7 @@ Usage: {{- include "template.name" (list $root $glyph) }}
 
 #### Example 1: Simple Resource Template
 ```helm
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
@@ -111,7 +111,7 @@ Usage: {{- include "summon.persistentVolumeClaim" . }}
 
 #### Example 2: Complex Integration Template
 ```helm
-{{/*kast - Kubernetes arcane spelling technology
+{{/*runik - Kubernetes arcane spelling technology
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 
