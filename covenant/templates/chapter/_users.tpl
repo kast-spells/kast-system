@@ -29,12 +29,14 @@ Generates KeycloakUser resources for members
 {{- range $memberKey, $member := $members }}
 {{- $userGlyphKey := $memberKey | replace "/" "-" -}}
 
-{{/* Auto-generate username and email from firstName.lastName@emailDomain with optional override */}}
+{{/* Auto-generate username and email from firstName.lastName@emailDomain (lastName optional) */}}
 {{- $baseUsername := "" -}}
 {{- if $member.overrideUsername }}
   {{- $baseUsername = $member.overrideUsername -}}
-{{- else }}
+{{- else if $member.lastName }}
   {{- $baseUsername = printf "%s.%s" ($member.firstName | lower) ($member.lastName | lower) -}}
+{{- else }}
+  {{- $baseUsername = $member.firstName | lower -}}
 {{- end }}
 {{- $generatedUsername := printf "%s@%s" $baseUsername $finalRealm.emailDomain -}}
 
