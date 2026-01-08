@@ -79,7 +79,7 @@ Generates member-level post-provisioning Jobs (condition-based: roles/groups)
 
     {{/* If conditions are met, generate the Job */}}
     {{- if $conditionsMet }}
-      {{- $jobName := printf "%s-%s-%s" $postProv.name ($memberKey | replace "/" "-") "provision" -}}
+      {{- $jobName := printf "%s-%s-%s" $postProv.name ($memberKey | replace "/" "-") "provision" | trunc 63 | trimSuffix "-" -}}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -90,7 +90,7 @@ metadata:
     app.kubernetes.io/name: {{ $postProv.name }}
     app.kubernetes.io/instance: {{ $root.Release.Name }}
     app.kubernetes.io/managed-by: {{ $root.Release.Service }}
-    covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+    covenant.kast.io/member: {{ $memberKey | replace "/" "-" | trunc 63 | trimSuffix "-" }}
     covenant.kast.io/post-provisioning: {{ $postProv.name }}
   annotations:
     covenant.kast.io/member-email: {{ $memberName }}
@@ -107,7 +107,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ $postProv.name }}
         app.kubernetes.io/instance: {{ $root.Release.Name }}
-        covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+        covenant.kast.io/member: {{ $memberKey | replace "/" "-" | trunc 63 | trimSuffix "-" }}
     spec:
       serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProv.job.restartPolicy }}
