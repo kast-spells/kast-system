@@ -1,7 +1,7 @@
 apiVersion: v2
 name: aws
 version: 1.0.0
-description: this has all the definitions of gcp infrastructure
+description: this has all the definitions of aws infrastructure
 home: https://github.com/runik-spells
 sources:
   - https://github.com/runik-spells/runik-system

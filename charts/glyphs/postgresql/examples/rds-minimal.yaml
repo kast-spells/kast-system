@@ -1,0 +1,18 @@
+spellbook:
+  name: test-postgresql-rds
+  chapters:
+    - rds-databases
+
+chapter:
+  name: rds-databases
+
+glyphs:
+  postgresql:
+    minimal-rds:
+      type: rds
+      description: Minimal PostgreSQL RDS connection
+      endpoint: minimal-db.abc123.us-east-1.rds.amazonaws.com
+      port: 5432
+      database: mydb
+      credentialsSecret:
+        name: rds-credentials

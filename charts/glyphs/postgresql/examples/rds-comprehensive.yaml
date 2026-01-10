@@ -1,0 +1,130 @@
+spellbook:
+  name: test-postgresql-rds
+  chapters:
+    - rds-databases
+
+chapter:
+  name: rds-databases
+
+# Lexicon: Infrastructure references
+lexicon:
+  - name: aws-secretsmanager
+    type: secret-store
+    mode: cluster
+    labels:
+      provider: aws
+      region: us-east-1
+      auth: irsa
+      environment: production
+
+  - name: production-rds
+    type: database
+    provider: aws-rds
+    labels:
+      environment: production
+      engine: postgresql
+      version: "17.5"
+      region: us-east-1
+
+glyphs:
+  # External Secrets configuration
+  external-secrets:
+    # AWS ClusterSecretStore with IRSA auth
+    - type: secret-store
+      mode: cluster
+      name: aws-secretsmanager
+      provider:
+        type: aws
+        config:
+          service: SecretsManager
+          region: us-east-1
+          serviceAccount:
+            name: external-secrets-sa
+            namespace: external-secrets
+
+    # Get RDS credentials from AWS Secrets Manager
+    - type: external-secret
+      name: production-rds-credentials
+      selector:
+        provider: aws
+        region: us-east-1
+      data:
+        - secretKey: username
+          remoteRef:
+            key: rds/production-db/credentials
+            property: username
+        - secretKey: password
+          remoteRef:
+            key: rds/production-db/credentials
+            property: password
+        - secretKey: endpoint
+          remoteRef:
+            key: rds/production-db/credentials
+            property: endpoint
+        - secretKey: port
+          remoteRef:
+            key: rds/production-db/credentials
+            property: port
+        - secretKey: database
+          remoteRef:
+            key: rds/production-db/credentials
+            property: database
+
+  # PostgreSQL RDS configuration
+  postgresql:
+    production-rds:
+      type: rds
+      description: Production PostgreSQL RDS instance with External Secrets
+
+      # RDS connection details
+      endpoint: production-db.xyz789.us-east-1.rds.amazonaws.com
+      port: 5432
+      database: production_db
+
+      # Reference to credentials secret (from external-secrets)
+      credentialsSecret:
+        name: production-rds-credentials
+        usernameKey: username
+        passwordKey: password
+        endpointKey: endpoint
+        portKey: port
+        databaseKey: database
+
+      # Service configuration (creates ExternalName service pointing to RDS)
+      service:
+        enabled: true
+        type: ExternalName
+        name: production-db-svc
+        ports:
+          - name: postgresql
+            port: 5432
+            targetPort: 5432
+            protocol: TCP
+
+      # Connection pool configuration (metadata for apps)
+      connectionPool:
+        maxConnections: 100
+        minConnections: 10
+        idleTimeout: 300
+
+      # SSL/TLS configuration
+      ssl:
+        enabled: true
+        mode: require
+        caCertSecret:
+          name: rds-ca-cert
+          key: ca.crt
+
+      # Labels for service discovery
+      labels:
+        environment: production
+        provider: aws-rds
+        engine: postgresql
+        version: "17.5"
+        tier: database
+
+      annotations:
+        description: "AWS RDS PostgreSQL production database"
+        managed-by: "terraform"
+        rds-instance-id: "production-db-2025"
+        aws-region: "us-east-1"

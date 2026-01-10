@@ -37,7 +37,7 @@ Generates chapter-level post-provisioning Jobs (run once per chapter)
 {{/* Generate chapter-level post-provisioning jobs */}}
 {{- range $postProv := $chapterIndex.chapterPostProvisioning }}
 {{- if not (eq $postProv.enabled false) }}
-{{- $jobName := printf "%s-%s-%s" $bookPath $chapterFilter $postProv.name -}}
+{{- $jobName := printf "%s-%s-%s" $bookPath $chapterFilter $postProv.name | trunc 63 | trimSuffix "-" -}}
 
 {{/* Support both inline script and scriptFile */}}
 {{- $scriptContent := "" -}}

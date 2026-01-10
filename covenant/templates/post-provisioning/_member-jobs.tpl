@@ -79,7 +79,7 @@ Generates member-level post-provisioning Jobs (condition-based: roles/groups)
 
     {{/* If conditions are met, generate the Job */}}
     {{- if $conditionsMet }}
-      {{- $jobName := printf "%s-%s-%s" $postProv.name ($memberKey | replace "/" "-") "provision" -}}
+      {{- $jobName := printf "%s-%s-%s" $postProv.name ($memberKey | replace "/" "-") "provision" | trunc 63 | trimSuffix "-" -}}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -90,8 +90,13 @@ metadata:
     app.kubernetes.io/name: {{ $postProv.name }}
     app.kubernetes.io/instance: {{ $root.Release.Name }}
     app.kubernetes.io/managed-by: {{ $root.Release.Service }}
+<<<<<<< HEAD
     covenant.runik.io/member: {{ $memberKey | replace "/" "-" }}
     covenant.runik.io/post-provisioning: {{ $postProv.name }}
+=======
+    covenant.kast.io/member: {{ $memberKey | replace "/" "-" | trunc 63 | trimSuffix "-" }}
+    covenant.kast.io/post-provisioning: {{ $postProv.name }}
+>>>>>>> a583c73f8d9bd1e8b894392cd8b60d39e9048157
   annotations:
     covenant.runik.io/member-email: {{ $memberName }}
     covenant.runik.io/member-username: {{ $memberName }}
@@ -107,7 +112,11 @@ spec:
       labels:
         app.kubernetes.io/name: {{ $postProv.name }}
         app.kubernetes.io/instance: {{ $root.Release.Name }}
+<<<<<<< HEAD
         covenant.runik.io/member: {{ $memberKey | replace "/" "-" }}
+=======
+        covenant.kast.io/member: {{ $memberKey | replace "/" "-" | trunc 63 | trimSuffix "-" }}
+>>>>>>> a583c73f8d9bd1e8b894392cd8b60d39e9048157
     spec:
       serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProv.job.restartPolicy }}
