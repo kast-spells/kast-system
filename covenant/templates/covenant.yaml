@@ -31,7 +31,7 @@ Capabilities:
 {{- $chapterFilter := $covenant.chapterFilter }}
 
 {{/* Generate unique ServiceAccount name for post-provisioning jobs */}}
-{{- $postProvisionSA := printf "%s-post-provision" $bookPath }}
+{{- $postProvisionSA := printf "%s-post-provision" $bookPath | trunc 63 | trimSuffix "-" }}
 
 {{/* Read covenant book index first to get realm name */}}
 {{- $covenantIndexPath := printf "bookrack/%s/index.yaml" $bookPath }}
@@ -266,12 +266,12 @@ metadata:
 {{- if $chapterFilter }}
 
 {{/* Add Vault prolicy for THIS chapter's post-provisioning ServiceAccount */}}
-{{- $chapterSAName := (printf "%s-%s-post-provision" $bookPath $chapterFilter) }}
+{{- $chapterSAName := (printf "%s-%s-post-provision" $bookPath $chapterFilter) | trunc 63 | trimSuffix "-" }}
 {{- $policyKey := (printf "%s-post-provision-policy" $chapterSAName) }}
 {{- $_ := set $vaultGlyphs $policyKey (dict
   "type" "vaultPolicy"
   "nameOverride" $chapterSAName
-  "serviceAccount" (printf "%s-post-provision" $bookPath)
+  "serviceAccount" $postProvisionSA
   "bookPublicsRead" true
   "extraPolicy" (list
     (dict "path" "secret/data/the-yaml-life/admintools/keycloak/publics/*" "capabilities" (list "read" "list"))
@@ -288,7 +288,7 @@ metadata:
   "format" "plain"
   "path" "book"
   "private" "admintools/keycloak/publics"
-  "serviceAccount" (printf "%s-post-provision" $bookPath)
+  "serviceAccount" $postProvisionSA
   "customRole" $chapterSAName
   "refreshPeriod" "3m0s"
   "staticData" (dict "username" "keycloak")
@@ -442,7 +442,7 @@ metadata:
 {{- $entityId := default (printf "https://%s/saml/metadata" $dnsName) (default "" $clientDef.saml.entityId) }}
 {{- $_ := set $certManagerGlyphs $certKey (dict
   "type" "certificate"
-  "name" (printf "%s-saml" $clientName)
+  "name" (printf "%s-saml" $clientName | trunc 63 | trimSuffix "-")
   "dnsNames" (list $dnsName)
   "commonName" $entityId
   "selector" (default (dict "environment" "production") $clientDef.certSelector)
@@ -517,7 +517,7 @@ metadata:
 {{- else }}
   {{- fail (printf "Integration %s postProvisioning requires either 'script' or 'scriptFile'" $clientName) }}
 {{- end }}
-{{- $configMapName := printf "%s-post-provision-script" $clientName }}
+{{- $configMapName := printf "%s-post-provision-script" $clientName | trunc 63 | trimSuffix "-" }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -533,7 +533,7 @@ data:
 {{ $scriptContent | indent 4 }}
 
 {{/* Build summon values for Job */}}
-{{- $jobName := printf "%s-integration-provision" $clientName }}
+{{- $jobName := printf "%s-integration-provision" $clientName | trunc 63 | trimSuffix "-" }}
 {{- $scriptChecksum := $scriptContent | sha256sum }}
 
 {{/* Get Vault instance from lexicon for template vars */}}
@@ -697,7 +697,7 @@ subjects:
 {{- range $postProvKey, $postProvDef := $consolidatedPostProvisioning }}
   {{/* Only process chapter-level post-provisioning (has .chapter context) */}}
   {{- if $postProvDef.chapter }}
-    {{- $jobName := printf "%s-%s-%s" $bookPath $postProvDef.chapter $postProvDef.name }}
+    {{- $jobName := printf "%s-%s-%s" $bookPath $postProvDef.chapter $postProvDef.name | trunc 63 | trimSuffix "-" }}
 
     {{/* Support both inline script and scriptFile */}}
     {{- $scriptContent := "" }}
@@ -808,7 +808,7 @@ spec:
 
     {{/* If conditions are met, generate the Job */}}
     {{- if $conditionsMet }}
-      {{- $jobName := printf "%s-%s-%s" $postProvName ($memberKey | replace "/" "-") "provision" }}
+      {{- $jobName := printf "%s-%s-%s" $postProvName ($memberKey | replace "/" "-") "provision" | trunc 63 | trimSuffix "-" }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -819,7 +819,7 @@ metadata:
     app.kubernetes.io/name: {{ $postProvName }}
     app.kubernetes.io/instance: {{ $root.Release.Name }}
     app.kubernetes.io/managed-by: {{ $root.Release.Service }}
-    covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+    covenant.kast.io/member: {{ $memberKey | replace "/" "-" | trunc 63 | trimSuffix "-" }}
     covenant.kast.io/post-provisioning: {{ $postProvName }}
   annotations:
     covenant.kast.io/member-email: {{ $member.email }}
@@ -836,7 +836,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ $postProvName }}
         app.kubernetes.io/instance: {{ $root.Release.Name }}
-        covenant.kast.io/member: {{ $memberKey | replace "/" "-" }}
+        covenant.kast.io/member: {{ $memberKey | replace "/" "-" | trunc 63 | trimSuffix "-" }}
     spec:
       serviceAccountName: {{ $postProvisionSA }}
       {{- if $postProvDef.job.restartPolicy }}
