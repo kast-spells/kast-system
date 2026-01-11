@@ -99,8 +99,6 @@ helm upgrade --install --create-namespace argocd argo/argo-cd \
 
 The easiest way to get started is using the official bookrack template repository. This provides a production-ready structure with example spells, automated setup, and all necessary configurations.
 
-#### Option A: Use GitHub Template (Recommended)
-
 **Step 1: Create repository from template**
 
 1. Navigate to the template: https://github.com/kast-spells/bookrack-template
@@ -150,32 +148,6 @@ my-bookrack/                         # YOUR repository
 └── README.md                        # Template documentation
 ```
 
-#### Option B: Manual Clone (Alternative)
-
-If you prefer not to use GitHub's template feature:
-
-```bash
-# Clone the template directly
-git clone https://github.com/kast-spells/bookrack-template.git my-bookrack
-cd my-bookrack
-
-# Remove original git history and reinitialize
-rm -rf .git
-git init
-
-# Initialize kast-system submodule
-git submodule add https://github.com/kast-spells/kast-system.git vendor/kast-system
-git submodule update --init --recursive
-
-# Initial commit
-git add .
-git commit -m "Initial bookrack setup from template"
-
-# Connect to your remote repository
-git remote add origin https://github.com/YOUR-ORG/my-bookrack.git
-git push -u origin main
-```
-
 ### 2. Run Automated Setup Script
 
 The template includes an interactive setup script that configures your book with your cluster details:
@@ -208,30 +180,6 @@ Configuration:
   Git repository: https://github.com/your-org/my-bookrack.git
 
 Proceed with setup? (y/n): y
-```
-
-**What the script does:**
-
-1. **Initializes submodule**: Adds kast-system if not already present
-2. **Renames example-book**: Renames `bookrack/example-book/` to your book name
-3. **Updates configuration**: Sets cluster name and environment in `index.yaml`
-4. **Commits changes**: Creates git commit with your configuration
-5. **Deploys librarian** (optional): Can automatically create ArgoCD Application
-
-**After setup, your structure looks like:**
-```
-my-bookrack/
-└── bookrack/
-    └── production-apps/              # Your book name
-        ├── index.yaml                # Updated with your cluster/env
-        ├── infrastructure/
-        │   ├── index.yaml
-        │   └── redis.yaml
-        └── applications/
-            ├── index.yaml
-            ├── nginx-example.yaml
-            ├── app-with-secrets.yaml
-            └── app-with-istio.yaml
 ```
 
 ### 3. (Optional) Customize Your Book
@@ -347,68 +295,8 @@ git commit -m "Customize book configuration
 git push origin main
 ```
 
-### 5. Deploy Librarian to Cluster
 
-Librarian reads bookrack from the repository and generates ArgoCD Applications.
-
-**Note:** If you ran `setup.sh` in the previous step and chose to deploy the librarian automatically, you can skip this section and proceed to [Verify ArgoCD Applications](#6-verify-argocd-applications).
-
-There are two GitOps ways to deploy librarian:
-
-#### Option A: Via setup.sh (Automated - Recommended)
-
-If you haven't already, the `setup.sh` script can deploy librarian for you:
-
-#### Option B: GitOps Pattern (Self-Managing)
-
-Add librarian as a spell in your book's `intro` chapter:
-
-```bash
-# Create intro chapter for bootstrap spells
-mkdir -p bookrack/YOUR-BOOK-NAME/intro
-
-# Create librarian spell
-cat > bookrack/YOUR-BOOK-NAME/intro/librarian.yaml <<'EOF'
-# Librarian - Apps of Apps for this book
-# Self-managing: librarian deploys itself and all other spells
-
-name: librarian-YOUR-BOOK-NAME
-repository: https://github.com/your-org/my-bookrack.git  # YOUR repository
-path: vendor/kast-system/librarian
-revision: main
-namespace: argocd
-
-appParams:
-  disableAutoSync: false  # Enable auto-sync
-
-values:
-  name: YOUR-BOOK-NAME  # This book name
-EOF
-
-# Update book index.yaml to include intro chapter
-# Edit your book's index.yaml to add 'intro' to chapters list:
-vim bookrack/YOUR-BOOK-NAME/index.yaml
-# Add 'intro' as first chapter:
-#   chapters:
-#     - intro           # Bootstrap chapter (contains librarian)
-#     - infrastructure
-#     - applications
-
-# Commit and push
-git add bookrack/YOUR-BOOK-NAME/intro/
-git commit -m "Add librarian spell for GitOps self-management"
-git push
-```
-
-Then bootstrap with Option A once, and librarian will manage itself from then on.
-
-**Why this is GitOps:**
-- Librarian configuration lives in Git (your bookrack repository)
-- Changes to spells trigger automatic deployments
-- Self-healing: librarian will recreate itself if deleted
-- Auditable: all changes tracked in Git history
-
-### 6. Verify ArgoCD Applications
+### 5. Verify ArgoCD Applications
 
 ```bash
 # Check ArgoCD Applications created by librarian
