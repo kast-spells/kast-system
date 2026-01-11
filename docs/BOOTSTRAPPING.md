@@ -1,13 +1,13 @@
 # Bootstrapping Guide
 
-Complete guide for bootstrapping a Kubernetes cluster with ArgoCD and runik-system from scratch.
+Complete guide for bootstrapping a Kubernetes cluster with ArgoCD and kast-system from scratch.
 
 ## Table of Contents
 
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
 3. [ArgoCD Installation](#argocd-installation)
-4. [runik-system Setup](#runik-system-setup)
+4. [kast-system Setup](#kast-system-setup)
 5. [First Deployment](#first-deployment)
 6. [Troubleshooting](#troubleshooting)
 7. [Next Steps](#next-steps)
@@ -17,7 +17,7 @@ Complete guide for bootstrapping a Kubernetes cluster with ArgoCD and runik-syst
 This guide walks you through setting up a complete GitOps workflow using:
 - **Kubernetes cluster** (any distribution: kind, k3s, EKS, GKE, AKS, on-prem)
 - **ArgoCD** (from official Helm chart)
-- **runik-system** (TDD Kubernetes deployment framework)
+- **kast-system** (TDD Kubernetes deployment framework)
 
 **Target audience:** Single cluster setup, cloud-agnostic
 
@@ -98,7 +98,7 @@ helm search repo argo/argo-cd
 
 You can create a custom `values.yaml` file for ArgoCD configuration.
 
-**Example spell reference:** Check the example ArgoCD spell at [bookrack/the-example-book/intro/argocd.yaml](https://github.com/runik-spells/runik-system/blob/master/bookrack/the-example-book/intro/argocd.yaml)
+**Example spell reference:** Check the example ArgoCD spell at [bookrack/the-example-book/intro/argocd.yaml](https://github.com/kast-spells/kast-system/blob/master/bookrack/the-example-book/intro/argocd.yaml)
 
 **Extract values from example spell:**
 ```bash
@@ -120,284 +120,305 @@ helm upgrade --install --create-namespace argocd argo/argo-cd \
   --values values.yaml
 ```
 
-## runik-system Setup
+## kast-system Setup
 
-### 1. Create Your Bookrack Repository
+### 1. Create Your Bookrack Repository from Template
 
-Create your own repository for configuration management using the Book/Chapter/Spell pattern. This is YOUR repository where you'll store all your application configurations (spells). runik-system will be added as a library (submodule) to provide access to charts (librarian, kaster, summon, glyphs).
+The easiest way to get started is using the official bookrack template repository. This provides a production-ready structure with example spells, automated setup, and all necessary configurations.
 
-**Important:**
-- `bookrack/` = Your configuration (spells, books, chapters) - lives in YOUR repository
-- Your spells reference runik-system charts but are NOT stored inside the submodule
+#### Option A: Use GitHub Template (Recommended)
+
+**Step 1: Create repository from template**
+
+1. Navigate to the template: https://github.com/kast-spells/bookrack-template
+2. Click **"Use this template"** → **"Create a new repository"**
+3. Configure your repository:
+   - **Owner**: Your GitHub username or organization
+   - **Repository name**: `my-bookrack` (or your preferred name)
+   - **Visibility**: Public or Private
+   - **Description** (optional): "Kubernetes GitOps configuration using kast-system"
+4. Click **"Create repository"**
+
+**Step 2: Clone your new repository**
 
 ```bash
-# Create YOUR bookrack repository directory
-mkdir -p ~/my-bookrack
-cd ~/my-bookrack
+# Clone your repository
+git clone https://github.com/YOUR-ORG/my-bookrack.git
+cd my-bookrack
 
-# Initialize YOUR git repository
-git init
-
-# Add runik-system as submodule (library for charts only)
-git submodule add https://github.com/runik-spells/librarian.git
-
-# Initialize submodule
+# Initialize kast-system submodule
 git submodule update --init --recursive
 ```
 
 **What you just created:**
 ```
-my-bookrack/                    # YOUR repository
-│   └── runik-system/            # Submodule (library)
+my-bookrack/                         # YOUR repository
+├── vendor/
+│   └── kast-system/                 # Submodule (library)
 │       ├── charts/
-│       │   ├── glyphs/         # Glyph templates
-│       │   ├── kaster/         # Glyph orchestrator
-│       │   └── summon/         # Workload chart
-│       └── librarian/          # ArgoCD Apps of Apps
-└── bookrack/                   # YOUR configuration (created in next step)
-    └── my-book/
-        ├── index.yaml
+│       │   ├── glyphs/              # Glyph templates
+│       │   ├── kaster/              # Glyph orchestrator
+│       │   └── summon/              # Workload chart
+│       └── librarian/               # ArgoCD Apps of Apps
+│           └── bookrack -> ../bookrack
+├── bookrack/
+│   └── example-book/                # Example book (rename in next step)
+│       ├── index.yaml               # Book configuration
+│       ├── infrastructure/
+│       │   ├── index.yaml           # Chapter config
+│       │   └── redis.yaml           # Example infrastructure spell
+│       └── applications/
+│           ├── index.yaml           # Chapter config
+│           ├── nginx-example.yaml   # Basic spell
+│           ├── app-with-secrets.yaml  # Vault integration example
+│           └── app-with-istio.yaml    # Istio integration example
+├── setup.sh                         # Automated setup script
+├── Makefile                         # Helper commands
+└── README.md                        # Template documentation
+```
+
+#### Option B: Manual Clone (Alternative)
+
+If you prefer not to use GitHub's template feature:
+
+```bash
+# Clone the template directly
+git clone https://github.com/kast-spells/bookrack-template.git my-bookrack
+cd my-bookrack
+
+# Remove original git history and reinitialize
+rm -rf .git
+git init
+
+# Initialize kast-system submodule
+git submodule add https://github.com/kast-spells/kast-system.git vendor/kast-system
+git submodule update --init --recursive
+
+# Initial commit
+git add .
+git commit -m "Initial bookrack setup from template"
+
+# Connect to your remote repository
+git remote add origin https://github.com/YOUR-ORG/my-bookrack.git
+git push -u origin main
+```
+
+### 2. Run Automated Setup Script
+
+The template includes an interactive setup script that configures your book with your cluster details:
+
+```bash
+# Run the setup script
+./setup.sh
+```
+
+**The script will prompt you for:**
+
+| Prompt | Default | Description |
+|--------|---------|-------------|
+| **Book name** | `my-book` | Name for your book (becomes directory name) |
+| **Cluster name** | `my-cluster` | Kubernetes cluster identifier |
+| **Environment** | `dev` | Environment type: `dev`, `staging`, or `prod` |
+| **Git repository URL** | (required) | Your repository URL for ArgoCD |
+
+**Example interaction:**
+```
+Enter book name [my-book]: production-apps
+Enter cluster name [my-cluster]: prod-us-east-1
+Enter environment (dev/staging/prod) [dev]: prod
+Enter git repository URL: https://github.com/your-org/my-bookrack.git
+
+Configuration:
+  Book name: production-apps
+  Cluster name: prod-us-east-1
+  Environment: prod
+  Git repository: https://github.com/your-org/my-bookrack.git
+
+Proceed with setup? (y/n): y
+```
+
+**What the script does:**
+
+1. **Initializes submodule**: Adds kast-system if not already present
+2. **Renames example-book**: Renames `bookrack/example-book/` to your book name
+3. **Updates configuration**: Sets cluster name and environment in `index.yaml`
+4. **Commits changes**: Creates git commit with your configuration
+5. **Deploys librarian** (optional): Can automatically create ArgoCD Application
+
+**After setup, your structure looks like:**
+```
+my-bookrack/
+└── bookrack/
+    └── production-apps/              # Your book name
+        ├── index.yaml                # Updated with your cluster/env
+        ├── infrastructure/
+        │   ├── index.yaml
+        │   └── redis.yaml
         └── applications/
-            └── *.yaml          # YOUR spells
+            ├── index.yaml
+            ├── nginx-example.yaml
+            ├── app-with-secrets.yaml
+            └── app-with-istio.yaml
 ```
 
-### 2. Create Book Structure
+### 3. (Optional) Customize Your Book
+
+After running `setup.sh`, you may want to customize the generated configuration:
+
+#### Review and Edit Book Configuration
 
 ```bash
-# Create book directory structure
-mkdir -p bookrack/my-book/_lexicon
-mkdir -p bookrack/my-book/infrastructure
-mkdir -p bookrack/my-book/applications
+# Edit book-level configuration
+vim bookrack/YOUR-BOOK-NAME/index.yaml
+```
 
-# Create book index.yaml
-cat > bookrack/my-book/index.yaml <<'EOF'
-name: my-book
+**Key sections to review:**
 
-# Chapters define deployment order
+```yaml
+name: YOUR-BOOK-NAME
+
 chapters:
-  - infrastructure  # Deploy infrastructure first
-  - applications    # Deploy applications second
+  - infrastructure  # Deploys first
+  - applications    # Deploys second
+  # Add more chapters as needed
 
-# Default trinket (workload chart)
-defaultTrinket:
-  repository: https://github.com/runik-spells/runik-system.git
-  path: ./charts/summon
-  targetRevision: main
-
-# Trinkets register glyph types (vault, istio, certManager, etc.)
-trinkets:
-  kaster-vault:
-    key: vault
-    repository: https://github.com/runik-spells/runik-system.git
-    path: ./charts/kaster
-    targetRevision: main
-
-  kaster-istio:
-    key: istio
-    repository: https://github.com/runik-spells/runik-system.git
-    path: ./charts/kaster
-    targetRevision: main
-
-  kaster-certManager:
-    key: certManager
-    repository: https://github.com/runik-spells/runik-system.git
-    path: ./charts/kaster
-    targetRevision: main
-
-# Appendix propagated to all chapters/spells
 appendix:
-  # Cluster-level configuration
   cluster:
-    name: my-cluster
-    environment: dev
+    name: YOUR-CLUSTER-NAME
+    environment: prod  # or dev/staging
+    region: us-east-1  # Add your region
 
-  # Lexicon: Infrastructure registry with label-based discovery
-  lexicon: []
-    # Example infrastructure entries:
-    # - name: external-gateway
-    #   type: istio-gw
-    #   labels:
-    #     access: external
-    #     default: book
-    #   gateway: istio-system/external-gateway
-    #
-    # - name: letsencrypt-prod
-    #   type: cert-issuer
-    #   labels:
-    #     default: book
-    #   issuer: letsencrypt-prod
-EOF
+  lexicon:
+    # Add infrastructure registry entries
+    - name: external-gateway
+      type: istio-gw
+      labels:
+        access: external
+        default: book
+      gateway: istio-system/external-gateway
 ```
 
-### 3. Create Example Spell (Application)
+#### Explore Example Spells
 
-Create a simple nginx deployment as first spell:
+The template includes production-ready examples:
+
+**Basic workload** (`nginx-example.yaml`):
+```bash
+cat bookrack/YOUR-BOOK-NAME/applications/nginx-example.yaml
+```
+
+**Vault integration** (`app-with-secrets.yaml`):
+```bash
+cat bookrack/YOUR-BOOK-NAME/applications/app-with-secrets.yaml
+# Shows: vault secret injection, environment variable binding
+```
+
+**Istio integration** (`app-with-istio.yaml`):
+```bash
+cat bookrack/YOUR-BOOK-NAME/applications/app-with-istio.yaml
+# Shows: VirtualService, service mesh configuration
+```
+
+**Infrastructure** (`redis.yaml`):
+```bash
+cat bookrack/YOUR-BOOK-NAME/infrastructure/redis.yaml
+# Shows: StatefulSet, persistent volumes
+```
+
+#### Add Your Own Spells
 
 ```bash
-# Create spell in applications chapter
-cat > bookrack/my-book/applications/nginx.yaml <<'EOF'
-# Simple nginx deployment using summon chart
-name: nginx
+# Create new spell
+cat > bookrack/YOUR-BOOK-NAME/applications/my-api.yaml <<'EOF'
+name: my-api
 
-# Image configuration (triggers summon chart)
+replicas: 2
+
 image:
-  name: nginx
-  tag: 1.25-alpine
+  repository: myorg/api
+  tag: "v1.0.0"
   pullPolicy: IfNotPresent
 
-# Container configuration
-command: []
-args: []
-
-# Ports
-ports:
-  - name: http
-    containerPort: 80
-    protocol: TCP
-
-# Service configuration
 service:
   enabled: true
   type: ClusterIP
   ports:
     - name: http
-      port: 80
+      port: 8080
       targetPort: http
-      protocol: TCP
 
-# Health checks
-livenessProbe:
-  enabled: true
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-readinessProbe:
-  enabled: true
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 5
-  periodSeconds: 5
-
-# Resources
 resources:
-  limits:
+  requests:
     cpu: 100m
     memory: 128Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
-
-# ConfigMap with custom index.html
-configMaps:
-  html-content:
-    location: create
-    contentType: file
-    name: index.html
-    mountPath: /usr/share/nginx/html
-    content: |
-      <!DOCTYPE html>
-      <html>
-      <head><title>runik-system</title></head>
-      <body>
-        <h1>Welcome to runik-system!</h1>
-        <p>This is your first spell deployed via ArgoCD and runik-system.</p>
-      </body>
-      </html>
+  limits:
+    cpu: 200m
+    memory: 256Mi
 EOF
 ```
 
-### 4. Commit Configuration
+### 4. Commit and Push Configuration
 
 ```bash
-# Stage all files
-git add .
+# Stage all your customizations
+git add bookrack/
 
-# Commit
-git commit -m "Initial runik-system bookrack setup
+# Commit changes
+git commit -m "Customize book configuration
 
-- Add runik-system submodule
-- Create my-book with infrastructure and applications chapters
-- Add nginx example spell"
+- Update lexicon with infrastructure
+- Add custom application spells
+- Configure production settings"
 
-# Push to remote (create remote repository first on GitHub/GitLab)
-# git remote add origin https://github.com/your-org/my-bookrack.git
-# git push -u origin main
+# Push to remote
+git push origin main
 ```
 
 ### 5. Deploy Librarian to Cluster
 
-Librarian reads bookrack from the repository and generates ArgoCD Applications. There are two ways to deploy it:
+Librarian reads bookrack from the repository and generates ArgoCD Applications.
 
-#### Option A: Bootstrap via kubectl (Quickstart)
+**Note:** If you ran `setup.sh` in the previous step and chose to deploy the librarian automatically, you can skip this section and proceed to [Verify ArgoCD Applications](#6-verify-argocd-applications).
 
-Use kubectl to create the initial librarian Application pointing to your repository:
+There are two GitOps ways to deploy librarian:
+
+#### Option A: Via setup.sh (Automated - Recommended)
+
+If you haven't already, the `setup.sh` script can deploy librarian for you:
 
 ```bash
-# Create ArgoCD Application for librarian (bootstrap)
-kubectl apply -f - <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: librarian-my-book
-  namespace: argocd
-spec:
-  project: default
+# Run setup.sh if not done already
+./setup.sh
 
-  source:
-    repoURL: https://github.com/your-org/my-bookrack.git  # YOUR repository
-    targetRevision: main
-    path: vendor/runik-system/librarian  # Path to librarian chart within your repo
-
-    helm:
-      values: |
-        name: my-book  # Book name to process
-
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-EOF
-
-# Verify Application was created
-kubectl get application -n argocd librarian-my-book
-
-# Sync the Application
-argocd app sync librarian-my-book
+# When prompted "Deploy librarian to ArgoCD? (y/n):", choose 'y'
 ```
 
-**How this works:**
-1. ArgoCD clones YOUR repository (`https://github.com/your-org/my-bookrack.git`)
-2. Navigates to `vendor/runik-system/librarian/` (the chart)
-3. Helm packages the chart, following symlink `librarian/bookrack -> ../bookrack`
-4. Symlink resolves to YOUR `bookrack/` directory (with your spells)
-5. Librarian reads `bookrack/my-book/` and generates Applications
+The script will automatically create the ArgoCD Application with your configuration.
 
-#### Option B: GitOps Pattern (Recommended)
+**How this works:**
+1. Script creates an ArgoCD Application manifest
+2. ArgoCD clones YOUR repository (`https://github.com/your-org/my-bookrack.git`)
+3. Navigates to `vendor/kast-system/librarian/` (the chart from submodule)
+4. Helm packages the chart, following symlink `librarian/bookrack -> ../bookrack`
+5. Symlink resolves to YOUR `bookrack/` directory (with your spells)
+6. Librarian reads `bookrack/YOUR-BOOK-NAME/` and generates Applications
+
+#### Option B: GitOps Pattern (Self-Managing)
 
 Add librarian as a spell in your book's `intro` chapter:
 
 ```bash
 # Create intro chapter for bootstrap spells
-mkdir -p bookrack/my-book/intro
+mkdir -p bookrack/YOUR-BOOK-NAME/intro
 
 # Create librarian spell
-cat > bookrack/my-book/intro/librarian.yaml <<'EOF'
+cat > bookrack/YOUR-BOOK-NAME/intro/librarian.yaml <<'EOF'
 # Librarian - Apps of Apps for this book
 # Self-managing: librarian deploys itself and all other spells
 
-name: librarian-my-book
+name: librarian-YOUR-BOOK-NAME
 repository: https://github.com/your-org/my-bookrack.git  # YOUR repository
-path: vendor/runik-system/librarian
+path: vendor/kast-system/librarian
 revision: main
 namespace: argocd
 
@@ -405,62 +426,31 @@ appParams:
   disableAutoSync: false  # Enable auto-sync
 
 values:
-  name: my-book  # This book name
+  name: YOUR-BOOK-NAME  # This book name
 EOF
 
 # Update book index.yaml to include intro chapter
-cat > bookrack/my-book/index.yaml <<'EOF'
-name: my-book
-
-chapters:
-  - intro           # Bootstrap chapter (contains librarian)
-  - infrastructure
-  - applications
-
-# ... rest of index.yaml
-EOF
+# Edit your book's index.yaml to add 'intro' to chapters list:
+vim bookrack/YOUR-BOOK-NAME/index.yaml
+# Add 'intro' as first chapter:
+#   chapters:
+#     - intro           # Bootstrap chapter (contains librarian)
+#     - infrastructure
+#     - applications
 
 # Commit and push
-git add bookrack/my-book/intro/
+git add bookrack/YOUR-BOOK-NAME/intro/
 git commit -m "Add librarian spell for GitOps self-management"
 git push
 ```
 
 Then bootstrap with Option A once, and librarian will manage itself from then on.
 
-#### Option C: Local Helm Install (Development Only)
-
-**WARNING:** This approach has limitations due to symlink resolution.
-
-```bash
-# From your bookrack repository root
-cd ~/my-bookrack
-
-# Install librarian chart locally
-helm install librarian ./vendor/runik-system/librarian \
-  --namespace argocd \
-  --set name=my-book \
-  --create-namespace
-
-# PROBLEM: The symlink vendor/runik-system/librarian/bookrack -> ../bookrack
-# points to vendor/bookrack (doesn't exist) instead of ../../bookrack (your bookrack)
-```
-
-**To fix symlink for local development:**
-```bash
-# Temporary fix: Copy librarian chart and fix symlink
-cp -r vendor/runik-system/librarian /tmp/librarian-local
-cd /tmp/librarian-local
-rm bookrack
-ln -s ~/my-bookrack/bookrack bookrack
-
-# Now install from fixed copy
-helm install librarian /tmp/librarian-local \
-  --namespace argocd \
-  --set name=my-book
-```
-
-**Recommendation:** Use Option A or B for production. Option C is only for local testing.
+**Why this is GitOps:**
+- Librarian configuration lives in Git (your bookrack repository)
+- Changes to spells trigger automatic deployments
+- Self-healing: librarian will recreate itself if deleted
+- Auditable: all changes tracked in Git history
 
 ### 6. Verify ArgoCD Applications
 
@@ -468,15 +458,18 @@ helm install librarian /tmp/librarian-local \
 # Check ArgoCD Applications created by librarian
 kubectl get applications -n argocd
 
-# Expected output:
-# NAME                        SYNC STATUS   HEALTH STATUS
-# my-book-applications-nginx  Synced        Healthy
+# Expected output (using default template examples):
+# NAME                                    SYNC STATUS   HEALTH STATUS
+# YOUR-BOOK-NAME-applications-nginx-example    Synced        Healthy
+# YOUR-BOOK-NAME-applications-app-with-secrets OutOfSync     Healthy
+# YOUR-BOOK-NAME-applications-app-with-istio   Synced        Healthy
+# YOUR-BOOK-NAME-infrastructure-redis          Synced        Healthy
 
-# View application details
-argocd app get my-book-applications-nginx
+# View specific application details
+argocd app get YOUR-BOOK-NAME-applications-nginx-example
 
-# List all applications
-argocd app list
+# List all applications for your book
+argocd app list -l book=YOUR-BOOK-NAME
 ```
 
 ### 7. How Librarian Works (Technical Deep Dive)
@@ -795,14 +788,14 @@ appParams:
 **View generated Application:**
 ```bash
 # Get Application manifest
-kubectl get application -n argocd my-book-applications-nginx -o yaml
+kubectl get application -n argocd YOUR-BOOK-NAME-applications-nginx-example -o yaml
 
 # Check sources
-kubectl get application -n argocd my-book-applications-nginx \
+kubectl get application -n argocd YOUR-BOOK-NAME-applications-nginx-example \
   -o jsonpath='{.spec.sources}' | jq
 
 # View values passed to charts
-kubectl get application -n argocd my-book-applications-nginx \
+kubectl get application -n argocd YOUR-BOOK-NAME-applications-nginx-example \
   -o jsonpath='{.spec.sources[0].helm.values}'
 ```
 
@@ -811,23 +804,23 @@ kubectl get application -n argocd my-book-applications-nginx \
 **Missing trinket source?**
 ```bash
 # Check trinkets registered in book
-cat bookrack/my-book/index.yaml | grep -A 10 trinkets
+cat bookrack/YOUR-BOOK-NAME/index.yaml | grep -A 10 trinkets
 
 # Verify spell has the trinket key
-cat bookrack/my-book/applications/api.yaml | grep -E "vault:|istio:|tarot:"
+cat bookrack/YOUR-BOOK-NAME/applications/api.yaml | grep -E "vault:|istio:|tarot:"
 ```
 
 **Appendix not merging correctly?**
 ```bash
 # View final appendix in Application values
-kubectl get application -n argocd my-book-applications-nginx \
+kubectl get application -n argocd YOUR-BOOK-NAME-applications-nginx-example \
   -o jsonpath='{.spec.sources[0].helm.values}' | yq .lexicon
 ```
 
 **Cluster selection not working?**
 ```bash
 # Check clusterSelector and lexicon
-kubectl get application -n argocd my-book-applications-nginx \
+kubectl get application -n argocd YOUR-BOOK-NAME-applications-nginx-example \
   -o jsonpath='{.spec.destination.server}'
 
 # Should match lexicon entry clusterURL
@@ -839,19 +832,19 @@ kubectl get application -n argocd my-book-applications-nginx \
 ┌─────────────────────────────────────────────────────────┐
 │ LIBRARIAN INTERNAL FLOW                                 │
 ├─────────────────────────────────────────────────────────┤
-│                                                          │
+│                                                         │
 │  1. READ BOOKRACK STRUCTURE                             │
-│     bookrack/my-book/index.yaml                         │
-│     bookrack/my-book/applications/*.yaml                │
-│                                                          │
+│     bookrack/YOUR-BOOK-NAME/index.yaml                         │
+│     bookrack/YOUR-BOOK-NAME/applications/*.yaml                │
+│                                                         │
 │  2. PASS 1: CONSOLIDATE APPENDIX                        │
-│     book.appendix                                        │
-│       → chapter.appendix (merge)                         │
-│         → spell.appendix (merge)                         │
-│           → $globalAppendix                              │
-│                                                          │
+│     book.appendix                                       │
+│       → chapter.appendix (merge)                        │
+│         → spell.appendix (merge)                        │
+│           → $globalAppendix                             │
+│                                                         │
 │  3. PASS 2: GENERATE APPLICATIONS                       │
-│     For each spell:                                      │
+│     For each spell:                                     │
 │       ├─ Detect trinkets (vault, istio, tarot, etc.)    │
 │       ├─ Build final appendix (global + local)          │
 │       ├─ Generate multi-source spec:                    │
@@ -859,15 +852,15 @@ kubectl get application -n argocd my-book-applications-nginx \
 │       │   └─ Sources 2..N: Detected trinkets            │
 │       ├─ Apply sync policies (book < chapter < spell)   │
 │       └─ Select cluster via runicIndexer                │
-│                                                          │
+│                                                         │
 │  4. OUTPUT: ArgoCD Applications                         │
 │     apiVersion: argoproj.io/v1alpha1                    │
-│     kind: Application                                    │
-│     spec:                                                │
+│     kind: Application                                   │
+│     spec:                                               │
 │       sources: [summon, kaster, ...]                    │
 │       destination: {server, namespace}                  │
 │       syncPolicy: {automated, retry}                    │
-│                                                          │
+│                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -879,7 +872,7 @@ kubectl get application -n argocd my-book-applications-nginx \
 - **Lexicon** provides dynamic infrastructure discovery
 - **Runic indexer** enables label-based matching
 
-This architecture enables the declarative, composable, GitOps workflow that runik-system provides.
+This architecture enables the declarative, composable, GitOps workflow that kast-system provides.
 
 ## First Deployment
 
@@ -888,26 +881,26 @@ This architecture enables the declarative, composable, GitOps workflow that runi
 **Via UI:**
 1. Navigate to ArgoCD UI (http://argocd.local or https://localhost:8080)
 2. Login with admin credentials
-3. Find application: `my-book-applications-nginx`
+3. Find application: `YOUR-BOOK-NAME-applications-nginx-example`
 4. Click "Sync" → "Synchronize"
 5. Monitor deployment progress
 
 **Via CLI:**
 ```bash
 # Sync specific application
-argocd app sync my-book-applications-nginx
+argocd app sync YOUR-BOOK-NAME-applications-nginx-example
 
-# Sync all applications
-argocd app sync -l argocd.argoproj.io/instance=my-book
+# Sync all applications for your book
+argocd app sync -l book=YOUR-BOOK-NAME
 
 # Watch sync progress
-argocd app wait my-book-applications-nginx --health
+argocd app wait YOUR-BOOK-NAME-applications-nginx-example --health
 ```
 
 **Via kubectl (GitOps way):**
 ```bash
-# Enable auto-sync on application
-kubectl patch application my-book-applications-nginx -n argocd \
+# Enable auto-sync on application (if not already enabled)
+kubectl patch application YOUR-BOOK-NAME-applications-nginx-example -n argocd \
   --type merge \
   --patch '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 ```
@@ -915,98 +908,80 @@ kubectl patch application my-book-applications-nginx -n argocd \
 ### 2. Verify Deployment
 
 ```bash
-# Check pods
-kubectl get pods -n my-book-applications
+# Check pods in applications chapter namespace
+kubectl get pods -n YOUR-BOOK-NAME-applications
 
-# Expected: nginx pod Running
-# NAME                     READY   STATUS    RESTARTS   AGE
-# nginx-xxxxxxxxxx-xxxxx   1/1     Running   0          30s
+# Expected: nginx-example pod Running
+# NAME                             READY   STATUS    RESTARTS   AGE
+# nginx-example-xxxxxxxxxx-xxxxx   1/1     Running   0          30s
 
 # Check service
-kubectl get service -n my-book-applications
+kubectl get service -n YOUR-BOOK-NAME-applications
 
 # Check all resources
-kubectl get all -n my-book-applications
+kubectl get all -n YOUR-BOOK-NAME-applications
 ```
 
 ### 3. Test Application
 
 ```bash
-# Port-forward to nginx service
-kubectl port-forward -n my-book-applications svc/nginx 8081:80
+# Port-forward to nginx-example service
+kubectl port-forward -n YOUR-BOOK-NAME-applications svc/nginx-example 8081:80
 
 # Test in browser: http://localhost:8081
 # Or via curl:
 curl http://localhost:8081
 
 # Expected output:
-# <!DOCTYPE html>
-# <html>
-# <head><title>runik-system</title></head>
-# ...
+# Default nginx welcome page
 ```
 
 ### 4. View Logs
 
 ```bash
-# Get nginx logs
-kubectl logs -n my-book-applications deployment/nginx
+# Get nginx-example logs
+kubectl logs -n YOUR-BOOK-NAME-applications deployment/nginx-example
 
 # Follow logs
-kubectl logs -n my-book-applications deployment/nginx -f
+kubectl logs -n YOUR-BOOK-NAME-applications deployment/nginx-example -f
 
 # View events
-kubectl get events -n my-book-applications --sort-by='.lastTimestamp'
+kubectl get events -n YOUR-BOOK-NAME-applications --sort-by='.lastTimestamp'
 ```
 
 ### 5. Make Changes (GitOps Workflow)
 
-Edit spell and watch ArgoCD auto-sync:
+Edit a spell and watch ArgoCD automatically sync the changes:
 
 ```bash
-# Edit nginx spell
-cat > bookrack/my-book/applications/nginx.yaml <<'EOF'
-name: nginx
+# Edit nginx-example spell to scale replicas
+vim bookrack/YOUR-BOOK-NAME/applications/nginx-example.yaml
 
-image:
-  name: nginx
-  tag: 1.25-alpine
-  pullPolicy: IfNotPresent
+# Change replicas from 2 to 3:
+# replicas: 3
 
-replicas: 2  # Scale to 2 replicas
-
-ports:
-  - name: http
-    containerPort: 80
-
-service:
-  enabled: true
-  type: ClusterIP
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
-
-resources:
-  limits:
-    cpu: 100m
-    memory: 128Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
-EOF
+# Or use sed to make the change
+sed -i 's/replicas: 2/replicas: 3/' bookrack/YOUR-BOOK-NAME/applications/nginx-example.yaml
 
 # Commit and push
-git add bookrack/my-book/applications/nginx.yaml
-git commit -m "Scale nginx to 2 replicas"
+git add bookrack/YOUR-BOOK-NAME/applications/nginx-example.yaml
+git commit -m "Scale nginx-example to 3 replicas"
 git push
 
-# Watch ArgoCD detect change and sync
-argocd app get my-book-applications-nginx --refresh
+# Watch ArgoCD detect change and sync (if auto-sync enabled)
+argocd app get YOUR-BOOK-NAME-applications-nginx-example --refresh
 
 # Watch pods scale
-kubectl get pods -n my-book-applications -w
+kubectl get pods -n YOUR-BOOK-NAME-applications -w
+# You should see a third pod being created
 ```
+
+**GitOps in action:**
+1. You commit changes to Git (source of truth)
+2. ArgoCD detects the change (webhook or polling)
+3. ArgoCD automatically syncs the cluster state
+4. Kubernetes creates the new pod
+5. All changes are auditable in Git history
 
 ## Troubleshooting
 
@@ -1030,7 +1005,7 @@ Enhance your spells with infrastructure glyphs:
 #### Vault Integration (Secrets Management)
 
 ```yaml
-# bookrack/my-book/applications/api.yaml
+# bookrack/YOUR-BOOK-NAME/applications/api.yaml
 name: api
 
 image:
@@ -1051,7 +1026,7 @@ vault:
 #### Istio Integration (Service Mesh)
 
 ```yaml
-# bookrack/my-book/applications/frontend.yaml
+# bookrack/YOUR-BOOK-NAME/applications/frontend.yaml
 name: frontend
 
 image:
@@ -1078,7 +1053,7 @@ istio:
 #### cert-manager Integration (TLS Certificates)
 
 ```yaml
-# bookrack/my-book/infrastructure/tls-cert.yaml
+# bookrack/YOUR-BOOK-NAME/infrastructure/tls-cert.yaml
 name: app-tls-cert
 
 # Pure infrastructure (no image/chart = kaster only)
@@ -1107,7 +1082,7 @@ appendix:
 Add infrastructure entries to enable dynamic discovery:
 
 ```yaml
-# bookrack/my-book/index.yaml
+# bookrack/YOUR-BOOK-NAME/index.yaml
 appendix:
   lexicon:
     # Istio Gateway
@@ -1184,25 +1159,49 @@ echo "https://$(kubectl get ingress -n argocd argocd-server -o jsonpath='{.spec.
 
 Create separate books for different environments:
 
+**Option A: Multiple Books (Recommended for isolated environments)**
+
 ```bash
-# Create development book
-mkdir -p bookrack/my-book-dev/{infrastructure,applications}
-cp bookrack/my-book/index.yaml bookrack/my-book-dev/
+# Clone your existing bookrack repository for each environment
+# or use the template multiple times
 
-# Create production book
-mkdir -p bookrack/my-book-prod/{infrastructure,applications}
-cp bookrack/my-book/index.yaml bookrack/my-book-prod/
+# Development environment
+git clone https://github.com/kast-spells/bookrack-template.git dev-bookrack
+cd dev-bookrack
+./setup.sh
+# Enter: book name = "app-dev", cluster = "cluster-dev", env = "dev"
 
-# Update cluster names in each book
-sed -i 's/my-cluster/my-cluster-dev/' bookrack/my-book-dev/index.yaml
-sed -i 's/my-cluster/my-cluster-prod/' bookrack/my-book-prod/index.yaml
+# Production environment
+git clone https://github.com/kast-spells/bookrack-template.git prod-bookrack
+cd prod-bookrack
+./setup.sh
+# Enter: book name = "app-prod", cluster = "cluster-prod", env = "prod"
+```
 
-# Deploy both books
-helm upgrade librarian ./vendor/runik-system/librarian \
-  --namespace argocd \
-  --reuse-values \
-  --set bookrack.books[0]="my-book-dev" \
-  --set bookrack.books[1]="my-book-prod"
+**Option B: Chapters per Environment (Single book)**
+
+```bash
+# Within your existing book, use chapters for environments
+mkdir -p bookrack/YOUR-BOOK-NAME/{dev,staging,prod}
+
+# Each chapter has its own index.yaml with environment-specific config
+cat > bookrack/YOUR-BOOK-NAME/dev/index.yaml <<'EOF'
+localAppendix:
+  cluster:
+    environment: dev
+    name: cluster-dev
+EOF
+
+# Copy spells to each environment chapter
+cp -r bookrack/YOUR-BOOK-NAME/applications/* bookrack/YOUR-BOOK-NAME/dev/
+cp -r bookrack/YOUR-BOOK-NAME/applications/* bookrack/YOUR-BOOK-NAME/prod/
+
+# Update book index.yaml
+vim bookrack/YOUR-BOOK-NAME/index.yaml
+# chapters:
+#   - dev
+#   - staging
+#   - prod
 ```
 
 ### 6. Implement Progressive Delivery
@@ -1215,7 +1214,7 @@ kubectl create namespace argo-rollouts
 kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
 
 # Add rollout strategy to spell
-cat > bookrack/my-book/applications/api-rollout.yaml <<'EOF'
+cat > bookrack/YOUR-BOOK-NAME/applications/api-rollout.yaml <<'EOF'
 name: api
 
 image:
@@ -1254,7 +1253,7 @@ helm install prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace
 
 # Add ServiceMonitor for applications
-cat > bookrack/my-book/infrastructure/service-monitor.yaml <<'EOF'
+cat > bookrack/YOUR-BOOK-NAME/infrastructure/service-monitor.yaml <<'EOF'
 name: app-metrics
 
 apiVersion: monitoring.coreos.com/v1
@@ -1275,7 +1274,7 @@ EOF
 
 #### Add NetworkPolicies
 ```yaml
-# bookrack/my-book/infrastructure/network-policy.yaml
+# bookrack/YOUR-BOOK-NAME/infrastructure/network-policy.yaml
 name: default-deny
 
 apiVersion: networking.k8s.io/v1
@@ -1322,7 +1321,7 @@ helm install velero vmware-tanzu/velero \
 
 **Documentation:**
 - [ArgoCD Official Docs](https://argo-cd.readthedocs.io/)
-- [runik-system docs/](../docs/)
+- [kast-system docs/](../docs/)
 - [GETTING_STARTED.md](./GETTING_STARTED.md) - Detailed bookrack usage
 - [LIBRARIAN.md](./LIBRARIAN.md) - Apps of Apps pattern
 - [SUMMON.md](./SUMMON.md) - Workload chart reference
@@ -1331,18 +1330,18 @@ helm install velero vmware-tanzu/velero \
 **Testing:**
 ```bash
 # TDD workflow
-cd vendor/runik-system
+cd vendor/kast-system
 make test              # Run comprehensive tests
 make test-status       # Check test coverage
 make list-glyphs       # List available glyphs
 ```
 
 **Community:**
-- GitHub Issues: https://github.com/runik-spells/runik-system/issues
+- GitHub Issues: https://github.com/kast-spells/kast-system/issues
 - Documentation: https://docs.runik.ing
 
 ---
 
-**Congratulations!** 🎉 You now have a fully functional GitOps workflow with ArgoCD and runik-system.
+**Congratulations!** 🎉 You now have a fully functional GitOps workflow with ArgoCD and kast-system.
 
 Your next commit to the bookrack repository will automatically trigger a deployment.
