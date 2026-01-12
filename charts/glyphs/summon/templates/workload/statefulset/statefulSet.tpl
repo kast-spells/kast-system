@@ -30,6 +30,9 @@ spec:
   {{- if not $root.Values.autoscaling.enabled }}
   replicas: {{ default 1 $root.Values.workload.replicas }}
   {{- end }}
+  {{- with $root.Values.workload.podManagementPolicy }}
+  podManagementPolicy: {{ . }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "common.selectorLabels" $root | nindent 6 }}

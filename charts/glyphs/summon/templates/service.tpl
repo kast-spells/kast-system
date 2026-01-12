@@ -49,6 +49,9 @@ spec:
   {{- if $serviceConfig.clusterIP }}
   clusterIP: {{ $serviceConfig.clusterIP }}
   {{- end }}
+  {{- if $serviceConfig.publishNotReadyAddresses }}
+  publishNotReadyAddresses: {{ $serviceConfig.publishNotReadyAddresses }}
+  {{- end }}
   ports:
   {{- if $serviceConfig.ports }}
     {{- range $serviceConfig.ports }}
