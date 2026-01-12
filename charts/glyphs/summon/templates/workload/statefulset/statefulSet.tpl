@@ -33,6 +33,7 @@ spec:
   {{- with $root.Values.workload.podManagementPolicy }}
   podManagementPolicy: {{ . }}
   {{- end }}
+  serviceName: {{ default (include "common.name" $root) $root.Values.workload.serviceName }}
   selector:
     matchLabels:
       {{- include "common.selectorLabels" $root | nindent 6 }}
