@@ -1,0 +1,26 @@
+spellbook:
+  name: test-postgresql-rds
+  chapters:
+    - rds-databases
+
+chapter:
+  name: rds-databases
+
+glyphs:
+  postgresql:
+    minimal-rds:
+      type: rds
+      description: Minimal AWS RDS PostgreSQL instance
+
+      # Required fields
+      dbInstanceClass: db.t3.micro
+      dbInstanceIdentifier: minimal-rds-postgres
+      engine: postgres
+
+      # Basic configuration
+      masterUsername: postgres
+      masterUserPassword:
+        name: rds-master-password
+        key: password
+
+      allocatedStorage: 20
