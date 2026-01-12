@@ -67,7 +67,7 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
   {{- if $root.Values.imagePullPolicy }}
     {{- $pullPolicy = $root.Values.imagePullPolicy }}
   {{- else if (($root.Values.image).pullPolicy) }}
-    {{- $pullPolicy = $root.Values.image.pullPolicy }}
+    {{- $pullPolicy = (($root.Values.image).pullPolicy) }}
   {{- end }}
   {{- if and $container.image (not (kindIs "string" $container.image)) }}
     {{- if $container.image.pullPolicy }}
