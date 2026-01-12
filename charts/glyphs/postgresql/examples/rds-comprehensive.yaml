@@ -9,18 +9,19 @@ chapter:
 glyphs:
   postgresql:
     production-rds:
-      type: rds
+      type: rds-instance-db
       description: Production AWS RDS PostgreSQL instance with comprehensive configuration
 
       # Required fields
-      dbInstanceClass: db.m5.large
-      dbInstanceIdentifier: production-rds-postgres
-      engine: postgres
+      dbInstanceClass: db.m5.large ##REQUERIDO
+      dbInstanceIdentifier: production-rds-postgres ##REQUERIDO
+      engine: postgres ##REQUERIDO
       engineVersion: "17.5"
+      parameterGroupName: production-postgres-params
 
-      # Master credentials
-      masterUsername: postgres
-      masterUserPassword:
+      # Master credentials (se puede usar secretRef?)
+      masterUsername: postgres ##REQUERIDO
+      masterUserPassword: ##REQUERIDO
         name: rds-master-password
         key: password
 
@@ -30,73 +31,10 @@ glyphs:
 
       # Networking
       networking:
-        dbSubnetGroupName: production-db-subnet-group
-        vpcSecurityGroupIDs:
+        dbSubnetGroupName: production-db-subnet-group  ##REQUERIDO
+        vpcSecurityGroupIDs: ##REQUERIDO
           - sg-12345678abcdef
-        publiclyAccessible: false
-        multiAZ: true
+        publiclyAccessible: false ##REQUERIDO (?)
+        multiAZ: true ##REQUERIDO (?)
         availabilityZone: us-east-1a
         port: 5432
-
-      # Storage configuration
-      storage:
-        storageType: gp3
-        iops: 3000
-        storageThroughput: 125
-        storageEncrypted: true
-        kmsKeyID: arn:aws:kms:us-east-1:123456789012:key/abcd1234-a123-456a-a12b-a123b4cd56ef
-
-      # Backup and maintenance
-      backup:
-        backupRetentionPeriod: 7
-        preferredBackupWindow: "03:00-04:00"
-        preferredMaintenanceWindow: "mon:04:00-mon:05:00"
-        copyTagsToSnapshot: true
-
-      # High availability and monitoring
-      autoMinorVersionUpgrade: true
-      deletionProtection: true
-
-      monitoring:
-        monitoringInterval: 60
-        monitoringRoleARN: arn:aws:iam::123456789012:role/rds-monitoring-role
-        enablePerformanceInsights: true
-        performanceInsightsRetentionPeriod: 7
-        performanceInsightsKMSKeyID: arn:aws:kms:us-east-1:123456789012:key/abcd1234-a123-456a-a12b-a123b4cd56ef
-
-      # Security and authentication
-      enableIAMDatabaseAuthentication: true
-      caCertificateIdentifier: rds-ca-rsa2048-g1
-
-      # Logging
-      enableCloudwatchLogsExports:
-        - postgresql
-        - upgrade
-
-      # Additional parameters
-      parameterGroupName: production-postgres-params
-      optionGroupName: production-postgres-options
-
-      # Tags
-      tags:
-        - key: Environment
-          value: production
-        - key: ManagedBy
-          value: runik-system
-        - key: Application
-          value: core-api
-        - key: CostCenter
-          value: engineering
-
-      # Labels and annotations for K8s resources
-      labels:
-        environment: production
-        tier: database
-        engine: postgresql
-        version: "17.5"
-        provider: aws-rds
-
-      annotations:
-        description: "Production PostgreSQL RDS instance"
-        managed-by: "runik-system"
-        aws-region: "us-east-1"
