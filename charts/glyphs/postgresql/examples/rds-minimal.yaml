@@ -1,39 +1,23 @@
-# ============================================================
-# Hardcoded RDS PostgreSQL via ACK
-# Self-contained Kast glyph
-# ============================================================
-
 appendix:
   lexicon:
     aws-secretsmanager-dev:
-      type: secret-store
-      mode: cluster
-      labels:
-        provider: aws
-        region: us-west-1
-        environment: dev
-        auth: irsa
+      type: cluster-secret-store
+      provider: aws
+      region: us-west-1
+      auth: irsa
 
-# ============================================================
-# External Secret (consume secret YA existente en AWS)
-# ============================================================
 glyphs:
   external-secrets:
     rds-postgres-master:
       type: external-secret
-      mode: namespace
       name: rds-postgres-master
       namespace: database
       secretStore: aws-secretsmanager-dev
-      refreshInterval: 1h
       data:
         - secretKey: password
           remoteRef:
             key: dev/security/external-secrets/publics/random-password-v2
 
-# ============================================================
-# ACK RDS PostgreSQL Instance
-# ============================================================
   postgresql:
     rds-comprehensive:
       type: aws-rds-instance
@@ -43,33 +27,17 @@ glyphs:
       namespace: database
       spec:
         dbInstanceIdentifier: postgres-dev
-
         engine: postgres
         engineVersion: "15.4"
-
         dbInstanceClass: db.t3.micro
         allocatedStorage: 20
         storageType: gp3
-
         masterUsername: postgres
         masterUserPassword:
-          namespace: database
           name: rds-postgres-master
           key: password
-
         dbSubnetGroupName: rds-private-subnets
         vpcSecurityGroupIDs:
           - sg-0123456789abcdef0
-
         publiclyAccessible: false
         backupRetentionPeriod: 7
-        multiAZ: false
-        deletionProtection: false
-
-        tags:
-          - key: Name
-            value: postgres-dev
-          - key: Environment
-            value: dev
-          - key: ManagedBy
-            value: kast-ack-rds
