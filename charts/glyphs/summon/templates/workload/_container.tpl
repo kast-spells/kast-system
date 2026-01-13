@@ -134,8 +134,20 @@ Licensed under the GNU GPL v3. See LICENSE file for details.
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- include "summon.common.volumeMounts" $root | nindent 2 }}
+  {{- /* Per-container envFrom (sidecars/initContainers) or global envFrom */ -}}
+  {{- if $container.envFrom }}
+  envFrom:
+    {{- toYaml $container.envFrom | nindent 4 }}
+  {{- else }}
   {{- include "summon.common.envs.envFrom" $root | nindent 2 }}
+  {{- end }}
+  {{- /* Per-container env (sidecars/initContainers) or global env */ -}}
+  {{- if $container.env }}
+  env:
+    {{- toYaml $container.env | nindent 4 }}
+  {{- else }}
   {{- include "summon.common.envs.env" $root | nindent 2 }}
+  {{- end }}
   {{- include "summon.container.ports" (list $root $container) | nindent 2 }}
 {{- end }}
 
