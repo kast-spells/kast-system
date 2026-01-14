@@ -1,40 +1,75 @@
-spellbook:
-  name: test-postgresql-rds
-  chapters:
-    - rds-databases
+# ============================================================
+# Hardcoded RDS PostgreSQL via ACK
+# Self-contained Kast glyph
+# ============================================================
 
-chapter:
-  name: rds-databases
+appendix:
+  lexicon:
+    aws-secretsmanager-dev:
+      type: secret-store
+      mode: cluster
+      labels:
+        provider: aws
+        region: us-west-1
+        environment: dev
+        auth: irsa
 
+# ============================================================
+# External Secret (consume secret YA existente en AWS)
+# ============================================================
 glyphs:
+  external-secrets:
+    rds-postgres-master:
+      type: external-secret
+      mode: namespace
+      name: rds-postgres-master
+      namespace: database
+      secretStore: aws-secretsmanager-dev
+      refreshInterval: 1h
+      data:
+        - secretKey: password
+          remoteRef:
+            key: dev/security/external-secrets/publics/random-password-v2
+
+# ============================================================
+# ACK RDS PostgreSQL Instance
+# ============================================================
   postgresql:
-    production-rds:
-      type: rds-instance-db
-      description: Production AWS RDS PostgreSQL instance with comprehensive configuration
+    rds-comprehensive:
+      type: aws-rds-instance
+      apiVersion: rds.services.k8s.aws/v1alpha1
+      kind: DBInstance
+      name: postgres-dev
+      namespace: database
+      spec:
+        dbInstanceIdentifier: postgres-dev
 
-      # Required fields
-      dbInstanceClass: db.m5.large ##REQUERIDO
-      dbInstanceIdentifier: production-rds-postgres ##REQUERIDO
-      engine: postgres ##REQUERIDO
-      engineVersion: "17.5"
-      parameterGroupName: production-postgres-params
+        engine: postgres
+        engineVersion: "15.4"
 
-      # Master credentials (se puede usar secretRef?)
-      masterUsername: postgres ##REQUERIDO
-      masterUserPassword: ##REQUERIDO
-        name: rds-master-password
-        key: password
+        dbInstanceClass: db.t3.micro
+        allocatedStorage: 20
+        storageType: gp3
 
-      # Database configuration
-      dbName: production_db
-      allocatedStorage: 100
+        masterUsername: postgres
+        masterUserPassword:
+          namespace: database
+          name: rds-postgres-master
+          key: password
 
-      # Networking
-      networking:
-        dbSubnetGroupName: production-db-subnet-group  ##REQUERIDO
-        vpcSecurityGroupIDs: ##REQUERIDO
-          - sg-12345678abcdef
-        publiclyAccessible: false ##REQUERIDO (?)
-        multiAZ: true ##REQUERIDO (?)
-        availabilityZone: us-east-1a
-        port: 5432
+        dbSubnetGroupName: rds-private-subnets
+        vpcSecurityGroupIDs:
+          - sg-0123456789abcdef0
+
+        publiclyAccessible: false
+        backupRetentionPeriod: 7
+        multiAZ: false
+        deletionProtection: false
+
+        tags:
+          - key: Name
+            value: postgres-dev
+          - key: Environment
+            value: dev
+          - key: ManagedBy
+            value: kast-ack-rds
