@@ -31,6 +31,7 @@ spec:
 
   # Networking
   dbSubnetGroupName: rwg-dev-gen-us-west-1
+  dbParameterGroupName: postgres-dev-params
   vpcSecurityGroupIDs:
     - sg-01692d6e6ddb9a72d
   publiclyAccessible: false
