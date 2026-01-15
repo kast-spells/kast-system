@@ -2,7 +2,7 @@
 Copyright (C) 2023 namenmalkv@gmail.com
 Licensed under the GNU GPL v3. See LICENSE file for details.
 */}}
-{{- define "aws.iam-role" }}
+{{- define "aws.iam-oidc-k8s-role" }}
 {{- $root := index . 0 -}}
 {{- $glyphDefinition := index . 1}}
 {{- $k8sClusters := get (include "runicIndexer.runicIndexer" (list $root.Values.lexicon (default dict $glyphDefinition.selector) "k8s-cluster" $root.Values.chapter.name ) | fromJson) "results" }}
@@ -41,9 +41,24 @@ spec:
         {
           "Effect": "Allow",
           "Principal": {
-            "Service": "{{ $glyphDefinition.service }}"
+            "Federated": "arn:aws:iam::{{ default $k8sCluster.accountID $glyphDefinition.accountID }}:oidc-provider/oidc.eks.{{ default $k8sCluster.region $glyphDefinition.region }}.amazonaws.com/id/{{ default $k8sCluster.oidcID $glyphDefinition.oidcID }}"
           },
-          "Action": "{{ $glyphDefinition.action }}"
+          "Action": "sts:AssumeRoleWithWebIdentity",
+          "Condition": {
+            "StringEquals": {
+              "oidc.eks.{{ $glyphDefinition.region }}.amazonaws.com/id/{{ default $k8sCluster.oidcID $glyphDefinition.oidcID }}:sub": [
+                {{- if $glyphDefinition.serviceAccounts }}
+                {{- range $index, $sa := $glyphDefinition.serviceAccounts }}
+                {{- if $index }},{{ end }}
+                "system:serviceaccount:{{ default $root.Release.Namespace $sa.namespace }}:{{ $sa.name }}"
+                {{- end }}
+                {{- else }}
+                "system:serviceaccount:{{ default $root.Release.Namespace  $glyphDefinition.namespace }}:{{ default (include "common.name" $root) $glyphDefinition.nameOverride }}"
+                {{- end }}
+              ],
+              "oidc.eks.{{ $glyphDefinition.region }}.amazonaws.com/id/{{ default $k8sCluster.oidcID $glyphDefinition.oidcID }}:aud": "sts.amazonaws.com"
+            }
+          }
         }
       ]
     }
