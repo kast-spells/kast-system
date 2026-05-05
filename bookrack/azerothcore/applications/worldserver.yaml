@@ -1,0 +1,114 @@
+# AzerothCore World Server
+# Main game server handling world simulation and player interactions
+
+name: azerothcore-worldserver
+namespace: azerothcore
+
+# AzerothCore worldserver image
+image:
+  repository: azerothcore/azerothcore
+  tag: worldserver-latest
+  pullPolicy: IfNotPresent
+
+# Workload configuration
+workload: Deployment
+replicaCount: 1
+
+# Container ports
+ports:
+  - containerPort: 8085
+    name: world
+    protocol: TCP
+  - containerPort: 7878
+    name: soap
+    protocol: TCP
+
+# Environment variables for world server
+envs:
+  AC_MYSQL_HOST: azerothcore-mysql
+  AC_MYSQL_PORT: "3306"
+  AC_MYSQL_USER: root
+  AC_MYSQL_PASSWORD: azerothcore-root-pass-change-me
+  AC_MYSQL_WORLD_DB: acore_world
+  AC_MYSQL_CHARACTERS_DB: acore_characters
+  AC_MYSQL_AUTH_DB: acore_auth
+  AC_LOG_LEVEL: info
+  AC_LOG_WORLDPLAYERS: "1"
+  AC_DATADIR: /app/data
+  AC_SCRIPTS_DIR: /app/scripts
+
+# Resource configuration - worldserver is resource intensive
+resources:
+  limits:
+    cpu: "4"
+    memory: 8Gi
+  requests:
+    cpu: "2"
+    memory: 4Gi
+
+# Service to expose world server
+service:
+  enabled: true
+  type: LoadBalancer
+  ports:
+    - port: 8085
+      targetPort: 8085
+      protocol: TCP
+      name: world
+    - port: 7878
+      targetPort: 7878
+      protocol: TCP
+      name: soap
+
+# Health checks
+livenessProbe:
+  tcpSocket:
+    port: 8085
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  tcpSocket:
+    port: 8085
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 2
+
+# Startup probe for slower startup
+startupProbe:
+  tcpSocket:
+    port: 8085
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+# Persistent volume for world data and scripts
+volumes:
+  world-data:
+    type: configMap
+    mountPath: /app/data
+    contentType: binary
+    optional: true
+  scripts:
+    type: configMap
+    mountPath: /app/scripts
+    contentType: binary
+    optional: true
+
+# Security context
+securityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# Labels
+labels:
+  app.kubernetes.io/name: azerothcore-worldserver
+  app.kubernetes.io/component: world
+  app.kubernetes.io/part-of: azerothcore

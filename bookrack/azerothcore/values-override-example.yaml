@@ -1,0 +1,57 @@
+# AzerothCore Values Override Example
+# Copy this file and customize for your deployment
+
+# MySQL Configuration
+mysql:
+  password: your-secure-password-here
+  storage: 50Gi
+  resources:
+    cpu: "2"
+    memory: 4Gi
+
+# Auth Server
+authserver:
+  replicas: 2
+  resources:
+    cpu: "1"
+    memory: 1Gi
+  # Expose as NodePort instead of LoadBalancer
+  serviceType: LoadBalancer  # Change to NodePort if needed
+  nodePort: 30724
+
+# World Server
+worldserver:
+  replicas: 1
+  resources:
+    cpu: "4"
+    memory: 8Gi
+  # Expose as NodePort instead of LoadBalancer
+  serviceType: LoadBalancer  # Change to NodePort if needed
+  nodePort: 30085
+  soapNodePort: 30878
+
+# Game Server Settings
+gameServer:
+  realmName: "AzerothCore"
+  realmDescription: "AzerothCore WotLK 3.3.5a"
+  language: 1
+  # Experience Rates
+  rates:
+    health: 1
+    mana: 1
+    power: 1
+    xpKill: 1
+    xpQuest: 1
+    questReward: 1
+    honor: 1
+    reputationGain: 1
+
+# Namespace
+namespace:
+  name: azerothcore
+  createNamespace: true
+
+# Cluster Configuration
+cluster:
+  storageClass: standard  # Your storage class name
+  environment: production

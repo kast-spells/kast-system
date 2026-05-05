@@ -1,0 +1,100 @@
+# AzerothCore Authentication Server
+# Handles player account authentication and login
+
+name: azerothcore-authserver
+namespace: azerothcore
+
+# AzerothCore authserver image
+image:
+  repository: azerothcore/azerothcore
+  tag: authserver-latest
+  pullPolicy: IfNotPresent
+
+# Workload configuration
+workload: Deployment
+replicaCount: 2
+
+# Container ports
+ports:
+  - containerPort: 3724
+    name: auth
+    protocol: TCP
+
+# Environment variables for auth server
+envs:
+  AC_MYSQL_HOST: azerothcore-mysql
+  AC_MYSQL_PORT: "3306"
+  AC_MYSQL_USER: root
+  AC_MYSQL_PASSWORD: azerothcore-root-pass-change-me
+  AC_MYSQL_AUTH_DB: acore_auth
+  AC_LOG_LEVEL: info
+  AC_LOG_WORLDPLAYERS: "1"
+
+# Resource configuration
+resources:
+  limits:
+    cpu: "1"
+    memory: 1Gi
+  requests:
+    cpu: "500m"
+    memory: 512Mi
+
+# Service to expose auth server
+service:
+  enabled: true
+  type: LoadBalancer
+  ports:
+    - port: 3724
+      targetPort: 3724
+      protocol: TCP
+      name: auth
+
+# Health checks
+livenessProbe:
+  tcpSocket:
+    port: 3724
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  tcpSocket:
+    port: 3724
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 2
+
+# Pod disruption budget for HA
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Affinity rules
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - azerothcore-authserver
+          topologyKey: kubernetes.io/hostname
+
+# Security context
+securityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# Labels
+labels:
+  app.kubernetes.io/name: azerothcore-authserver
+  app.kubernetes.io/component: auth
+  app.kubernetes.io/part-of: azerothcore

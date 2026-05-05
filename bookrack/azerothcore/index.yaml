@@ -1,0 +1,60 @@
+# AzerothCore WotLK Deployment Book
+# Kubernetes deployment for World of Warcraft private server emulator
+
+name: azerothcore
+description: "Complete AzerothCore WotLK deployment with database, auth server, and world server"
+
+# Deployment chapters in order
+chapters:
+  - infrastructure
+  - applications
+
+# ArgoCD configuration
+projectName: azerothcore-project
+argocdNamespace: argocd
+
+# Global parameters for all applications
+appParams:
+  cleanDefinition: false
+  noHelm: false
+  disableAutoSync: false
+  skipCrds: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+# Default trinket (summon) for workloads
+defaultTrinket:
+  repository: https://github.com/kast-spells/kast-system.git
+  path: ./charts/summon
+  revision: master
+
+# Trinkets registry
+trinkets:
+  kaster:
+    key: glyphs
+    repository: https://github.com/kast-spells/kast-system.git
+    path: ./charts/kaster
+    revision: master
+
+# Default cluster selector
+clusterSelector:
+  environment: production
+
+# Infrastructure registry
+appendix:
+  lexicon:
+    - name: azerothcore-namespace
+      type: namespace
+      namespace: azerothcore

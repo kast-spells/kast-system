@@ -1,0 +1,51 @@
+# AzerothCore Networking Configuration
+# Istio VirtualServices and Gateways for game server access
+
+name: azerothcore-networking
+namespace: azerothcore
+
+# Using Istio glyphs for service routing
+glyphs:
+  istio:
+    authserver-vs:
+      type: virtualService
+      hosts:
+        - auth.azerothcore.local
+      http:
+        - match:
+            - port: 3724
+          route:
+            - destination:
+                host: azerothcore-authserver
+                port:
+                  number: 3724
+      exportTo:
+        - "*"
+
+    worldserver-vs:
+      type: virtualService
+      hosts:
+        - world.azerothcore.local
+      tcp:
+        - match:
+            - port: 8085
+          route:
+            - destination:
+                host: azerothcore-worldserver
+                port:
+                  number: 8085
+      exportTo:
+        - "*"
+
+    soap-vs:
+      type: virtualService
+      hosts:
+        - soap.azerothcore.local
+      http:
+        - route:
+            - destination:
+                host: azerothcore-worldserver
+                port:
+                  number: 7878
+      exportTo:
+        - "*"

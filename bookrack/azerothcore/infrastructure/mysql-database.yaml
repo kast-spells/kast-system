@@ -1,0 +1,87 @@
+# AzerothCore MySQL Database
+# Deployment of MySQL 8.4 with persistent storage
+
+name: azerothcore-mysql
+namespace: azerothcore
+
+# Using official MySQL image
+image:
+  repository: mysql
+  tag: "8.4"
+  pullPolicy: IfNotPresent
+
+# Workload type
+workload: Deployment
+
+# Container configuration
+ports:
+  - containerPort: 3306
+    name: mysql
+    protocol: TCP
+
+# Environment variables for MySQL
+envs:
+  MYSQL_ROOT_PASSWORD: azerothcore-root-pass-change-me
+  MYSQL_DATABASE: acore_world
+  MYSQL_INITDB_SKIP_TZINFO: "1"
+
+# Resource limits
+resources:
+  limits:
+    cpu: "2"
+    memory: 4Gi
+  requests:
+    cpu: "1"
+    memory: 2Gi
+
+# Service configuration
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+      name: mysql
+
+# Persistent volume for database
+volumes:
+  mysql-data:
+    type: pvc
+    size: 50Gi
+    mountPath: /var/lib/mysql
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Health checks
+livenessProbe:
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - mysqladmin ping -h 127.0.0.1 || exit 1
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - mysqladmin ping -h 127.0.0.1 || exit 1
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 2
+
+# Security context
+securityContext:
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL

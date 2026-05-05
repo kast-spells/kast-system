@@ -1,0 +1,42 @@
+# AzerothCore Database Import Job
+# Initializes databases with game content
+
+name: azerothcore-db-import
+namespace: azerothcore
+
+# Using AzerothCore's database import image
+image:
+  repository: azerothcore/azerothcore
+  tag: db-import-latest
+  pullPolicy: IfNotPresent
+
+# Job configuration
+workload: Job
+
+# Environment for database connection
+envs:
+  MYSQL_HOST: azerothcore-mysql
+  MYSQL_PORT: "3306"
+  MYSQL_ROOT_PASSWORD: azerothcore-root-pass-change-me
+  MYSQL_DATABASE: acore_world
+
+# Resource configuration
+resources:
+  limits:
+    cpu: "2"
+    memory: 4Gi
+  requests:
+    cpu: "1"
+    memory: 2Gi
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Pod restart policy for job
+restartPolicy: OnFailure
+
+# Job-specific settings via labels
+labels:
+  app.kubernetes.io/component: database-init
+  app.kubernetes.io/part-of: azerothcore
