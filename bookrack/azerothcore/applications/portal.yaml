@@ -1,0 +1,100 @@
+# AzerothCore Web Portal
+# Player registration and account management
+
+name: azerothcore-portal
+namespace: azerothcore
+
+image:
+  repository: harbor.int.fwhq.com.ar/azerothcore/portal
+  tag: latest
+  pullPolicy: Always
+
+workload: Deployment
+replicaCount: 1
+
+ports:
+  - containerPort: 5000
+    name: http
+    protocol: TCP
+
+envs:
+  MYSQL_HOST: azerothcore-mysql
+  MYSQL_PORT: "3306"
+  MYSQL_USER: acore
+  MYSQL_DB: acore_auth
+  SOAP_HOST: azerothcore-worldserver
+  SOAP_PORT: "7878"
+  SOAP_USER: admin
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 5000
+      protocol: TCP
+      name: http
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: 256Mi
+  requests:
+    cpu: "100m"
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /login
+    port: 5000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /login
+    port: 5000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+serviceAccount:
+  enabled: true
+
+labels:
+  app.kubernetes.io/name: azerothcore-portal
+  app.kubernetes.io/component: portal
+  app.kubernetes.io/part-of: azerothcore
+
+# Mounts all keys from portal-credentials Secret as env vars
+# TODO #42: migrate to Vault
+secrets:
+  portal-credentials:
+    contentType: env
+    location: local
+
+glyphs:
+  freeForm:
+    portal-credentials:
+      type: manifest
+      enabled: true
+      definition:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: portal-credentials
+          namespace: azerothcore
+        type: Opaque
+        stringData:
+          MYSQL_PASSWORD: "acoreauthpass"
+          SOAP_PASSWORD: "admin"
+          SECRET_KEY: "0e3fa6b2ffd50ad39bf44ad17962e67f27be5bec9a8e1631b0a7473273c4e235"
+  istio:
+    portal-vs:
+      selector:
+        access: external
+      hosts:
+        - wowcr.fwhq.com.ar
+  certManager:
+    portal-cert:
+      dnsNames:
+        - wowcr.fwhq.com.ar
