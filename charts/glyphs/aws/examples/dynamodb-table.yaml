@@ -1,0 +1,89 @@
+# Example: DynamoDB Tables provisioned via ACK
+glyphs:
+  aws:
+    # Simple key-value table (on-demand billing)
+    user-sessions:
+      type: dynamodb-table
+      tableName: user-sessions
+      namespace: ack-system
+      keySchema:
+        - attributeName: sessionId
+          keyType: HASH
+      attributeDefinitions:
+        - attributeName: sessionId
+          attributeType: "S"
+      timeToLive:
+        attributeName: expiresAt
+        enabled: true
+      tags:
+        - key: Environment
+          value: production
+        - key: Team
+          value: platform
+
+    # Table with sort key and GSI
+    order-events:
+      type: dynamodb-table
+      tableName: order-events
+      namespace: ack-system
+      keySchema:
+        - attributeName: orderId
+          keyType: HASH
+        - attributeName: timestamp
+          keyType: RANGE
+      attributeDefinitions:
+        - attributeName: orderId
+          attributeType: "S"
+        - attributeName: timestamp
+          attributeType: "N"
+        - attributeName: customerId
+          attributeType: "S"
+      globalSecondaryIndexes:
+        - indexName: customer-index
+          keySchema:
+            - attributeName: customerId
+              keyType: HASH
+            - attributeName: timestamp
+              keyType: RANGE
+          projection:
+            projectionType: ALL
+      streamSpecification:
+        streamEnabled: true
+        streamViewType: NEW_AND_OLD_IMAGES
+      deletionProtectionEnabled: true
+      continuousBackups:
+        pointInTimeRecoveryEnabled: true
+      tags:
+        - key: Environment
+          value: production
+        - key: Team
+          value: ecommerce
+
+    # Provisioned throughput table
+    analytics-metrics:
+      type: dynamodb-table
+      tableName: analytics-metrics
+      namespace: ack-system
+      billingMode: PROVISIONED
+      keySchema:
+        - attributeName: metricName
+          keyType: HASH
+        - attributeName: timestamp
+          keyType: RANGE
+      attributeDefinitions:
+        - attributeName: metricName
+          attributeType: "S"
+        - attributeName: timestamp
+          attributeType: "N"
+      provisionedThroughput:
+        readCapacityUnits: 10
+        writeCapacityUnits: 5
+      sseSpecification:
+        enabled: true
+        sseType: KMS
+        kmsMasterKeyID: alias/dynamodb-key
+      tags:
+        - key: Environment
+          value: production
+        - key: Team
+          value: analytics

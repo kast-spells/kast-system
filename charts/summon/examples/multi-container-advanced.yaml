@@ -1,0 +1,177 @@
+# Multi-Container Advanced Example
+# Deployment with initContainers, sideCars, and multiple services
+# Replaces: test-port-multi-service, deployment-with-external-secrets
+
+name: api-gateway
+
+spellbook:
+  name: api-platform
+chapter:
+  name: production
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: myorg/api-gateway
+  tag: v3.0.0
+  pullPolicy: IfNotPresent
+
+# Init containers (run before main container)
+initContainers:
+  wait-for-db:
+    image:
+      repository: busybox
+      tag: latest
+    command:
+      - /bin/sh
+      - -c
+      - "until nc -z postgres-svc 5432; do echo 'Waiting for database...'; sleep 2; done; echo 'Database is ready'"
+  migrate-db:
+    image:
+      repository: myorg/api-gateway
+      tag: v3.0.0
+    command:
+      - /app/migrate
+    args:
+      - --direction=up
+
+# Sidecar containers (run alongside main container)
+sideCars:
+  envoy-proxy:
+    image:
+      repository: envoyproxy/envoy
+      tag: v1.28.0
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+    ports:
+      - containerPort: 9901
+        name: envoy-admin
+        protocol: TCP
+  prometheus-exporter:
+    image:
+      repository: prom/statsd-exporter
+      tag: v0.26.0
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    ports:
+      - containerPort: 9102
+        name: prom-metrics
+        protocol: TCP
+
+# Main container ports
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      - containerPort: 8443
+        name: https
+        protocol: TCP
+      - containerPort: 9090
+        name: grpc
+        protocol: TCP
+
+# Multiple services exposing different ports
+services:
+  public:
+    type: LoadBalancer
+    ports:
+      - port: 80
+        targetPort: http
+        name: http
+      - port: 443
+        targetPort: https
+        name: https
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+  grpc:
+    type: ClusterIP
+    ports:
+      - port: 9090
+        targetPort: grpc
+        name: grpc
+    annotations:
+      service.kubernetes.io/topology-aware-hints: auto
+
+  monitoring:
+    type: ClusterIP
+    ports:
+      - port: 9102
+        targetPort: 9102
+        name: prometheus
+      - port: 9901
+        targetPort: 9901
+        name: envoy-admin
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9102"
+
+# Health probes
+probes:
+  liveness:
+    type: httpGet
+    path: /healthz
+    port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    type: httpGet
+    path: /ready
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Resource limits
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Environment variables
+envs:
+  LOG_LEVEL: info
+  GRPC_ENABLED: "true"
+  METRICS_ENABLED: "true"
+
+# Secrets via envFrom
+secrets:
+  api-credentials:
+    contentType: env
+    location: local
+  db-credentials:
+    contentType: env
+    location: local
+
+# Pod annotations for monitoring
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9102"
+  prometheus.io/path: "/metrics"
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Labels
+labels:
+  finops:
+    enabled: true
+    team: api-platform
+    project: api-gateway
+    costCenter: platform

@@ -1,0 +1,142 @@
+# StatefulSet Database Example
+# Complete StatefulSet with persistent storage, headless service, and probes
+# Replaces: statefulset-with-storage, test-port-headless-service
+
+name: postgres-cluster
+
+spellbook:
+  name: data-services
+chapter:
+  name: production
+
+workload:
+  enabled: true
+  type: statefulset
+  replicas: 3
+  # StatefulSet pod management
+  podManagementPolicy: OrderedReady      # Sequential pod creation (default)
+  # Container-level security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false        # DB needs write access
+    capabilities:
+      drop:
+        - ALL
+  # Volume claim templates for persistent storage
+  volumeClaimTemplates:
+    data:
+      destinationPath: /var/lib/postgresql/data
+      storageClassName: fast-ssd
+      size: 100Gi
+      accessModes: ReadWriteOnce
+    wal:
+      destinationPath: /var/lib/postgresql/wal
+      storageClassName: fast-ssd
+      size: 20Gi
+      accessModes: ReadWriteOnce
+    backup:
+      destinationPath: /backups
+      storageClassName: standard
+      size: 200Gi
+      accessModes: ReadWriteOnce
+
+image:
+  repository: postgres
+  tag: "15-alpine"
+  pullPolicy: IfNotPresent
+
+# Headless service for StatefulSet pod discovery
+# Enables DNS: postgres-cluster-0.postgres-cluster.namespace.svc.cluster.local
+service:
+  enabled: true
+  type: ClusterIP
+  clusterIP: None                        # Headless service
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+
+# Container ports
+containers:
+  main:
+    ports:
+      - containerPort: 5432
+        name: postgres
+        protocol: TCP
+
+# Health probes
+probes:
+  liveness:
+    type: exec
+    command:
+      - /bin/sh
+      - -c
+      - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    type: exec
+    command:
+      - /bin/sh
+      - -c
+      - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 3
+
+# Resource limits
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Pod-level security context
+securityContext:
+  runAsUser: 999                         # postgres user
+  runAsGroup: 999
+  fsGroup: 999
+
+# Environment variables
+envs:
+  POSTGRES_DB: appdb
+  POSTGRES_USER: appuser
+  PGDATA: /var/lib/postgresql/data/pgdata
+  # From secret
+  POSTGRES_PASSWORD:
+    type: secret
+    name: postgres-credentials
+    key: password
+
+# Secrets via envFrom
+secrets:
+  postgres-credentials:
+    contentType: env
+    location: local
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/postgres-backup
+
+# Affinity to spread replicas across nodes
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+            app: postgres-cluster
+
+# Labels
+labels:
+  finops:
+    enabled: true
+    team: data-services
+    project: postgres-cluster
+    costCenter: databases

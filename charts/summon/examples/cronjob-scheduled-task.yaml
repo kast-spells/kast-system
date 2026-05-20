@@ -1,0 +1,89 @@
+# CronJob Scheduled Task Example
+# Complete scheduled job with all CronJob-specific settings
+# Replaces: basic-cronjob
+
+name: cleanup-expired-sessions
+
+spellbook:
+  name: platform-services
+chapter:
+  name: production
+
+workload:
+  enabled: true
+  type: cronjob
+  restartPolicy: OnFailure
+  # Cron schedule: Daily at 3:00 AM UTC
+  schedule: "0 3 * * *"
+  # CronJob-specific settings
+  concurrencyPolicy: Forbid              # Skip if previous run still active
+  successfulJobsHistoryLimit: 3          # Keep last 3 successful job records
+  failedJobsHistoryLimit: 3              # Keep last 3 failed job records
+  startingDeadlineSeconds: 300           # Allow start up to 5 min after scheduled time
+  # Job settings (inherited by spawned jobs)
+  backoffLimit: 2                        # Retry twice before failing
+  activeDeadlineSeconds: 1800            # Max 30 minutes per job run
+
+image:
+  repository: myorg/cleanup-tools
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+
+# Command and arguments
+command:
+  - /bin/sh
+  - -c
+args:
+  - |
+    echo "Starting session cleanup at $(date)"
+    /app/cleanup --ttl-hours $SESSION_TTL_HOURS
+    if [ $? -eq 0 ]; then
+      echo "Cleanup completed successfully"
+      exit 0
+    else
+      echo "Cleanup failed"
+      exit 1
+    fi
+
+# Resource limits (small footprint for maintenance tasks)
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Environment variables
+envs:
+  SESSION_TTL_HOURS: "24"
+  DRY_RUN: "false"
+  LOG_LEVEL: info
+  BATCH_SIZE: "1000"
+
+# Secrets via envFrom
+secrets:
+  cache-credentials:
+    contentType: env
+    location: local
+
+# Pod-level security context
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Labels
+labels:
+  finops:
+    enabled: true
+    team: platform
+    project: maintenance
+    costCenter: platform-ops
+
+podLabels:
+  maintenance: "true"
+  job-type: cleanup

@@ -1,0 +1,138 @@
+# Storage Volumes Showcase Example
+# Demonstrates all volume types: PVC, hostPath, NFS, emptyDir, CSI
+# Replaces: deployment-with-storage, deployment-with-s3-csi, pv-showcase, pv-pvc-naming-explained
+
+name: storage-showcase
+
+spellbook:
+  name: examples
+chapter:
+  name: demo
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 1
+
+image:
+  repository: busybox
+  tag: latest
+  pullPolicy: IfNotPresent
+
+command:
+  - /bin/sh
+  - -c
+  - "echo 'All volumes mounted successfully'; ls -la /data /cache /host-data /nfs-data /tmp-disk /tmp-memory; sleep infinity"
+
+service:
+  enabled: false
+
+volumes:
+  # ====== PVC Volumes ======
+
+  # PVC with dynamic provisioning (storageClass creates PV automatically)
+  data:
+    type: pvc
+    destinationPath: /data
+    size: 10Gi
+    storageClassName: standard
+    accessMode: ReadWriteOnce
+
+  # PVC with explicit CSI PV (S3 CSI example)
+  s3-storage:
+    type: pvc
+    destinationPath: /mnt/s3
+    size: 100Gi
+    storageClass: csi-s3
+    accessMode: ReadWriteMany
+    pv:
+      driver: ru.yandex.s3.csi
+      volumeHandle: my-s3-bucket/data
+      volumeAttributes:
+        mounter: geesefs
+        options: "--memory-limit 2000 --dir-mode 0755 --file-mode 0644"
+        bucket: my-s3-bucket
+        region: us-west-2
+
+  # PVC with Azure Files CSI
+  azure-files:
+    type: pvc
+    destinationPath: /mnt/azure
+    size: 50Gi
+    storageClass: azurefile-csi
+    accessMode: ReadWriteMany
+    pv:
+      driver: file.csi.azure.com
+      volumeHandle: azure-share-001
+      volumeAttributes:
+        resourceGroup: myResourceGroup
+        storageAccount: mystorageaccount
+        shareName: myshare
+      nodeStageSecretRef:
+        name: azure-secret
+
+  # PVC referencing existing PVC (no creation)
+  existing-data:
+    type: pvc
+    destinationPath: /existing
+    pvcName: pre-existing-pvc
+    readOnly: true
+
+  # ====== EmptyDir Volumes ======
+
+  # EmptyDir on disk (ephemeral, deleted when pod stops)
+  cache:
+    type: emptyDir
+    destinationPath: /cache
+    sizeLimit: 1Gi
+
+  # EmptyDir on memory (tmpfs - faster but uses RAM)
+  tmp-memory:
+    type: emptyDir
+    destinationPath: /tmp-memory
+    medium: Memory
+    sizeLimit: 256Mi
+
+  # EmptyDir on disk (no size limit)
+  tmp-disk:
+    type: emptyDir
+    destinationPath: /tmp-disk
+
+  # ====== HostPath Volumes ======
+
+  # HostPath (mount path from node filesystem)
+  host-data:
+    type: hostPath
+    destinationPath: /host-data
+    path: /var/lib/app-data
+    readOnly: false
+
+  # HostPath with specific type
+  host-socket:
+    type: hostPath
+    destinationPath: /var/run/docker.sock
+    path: /var/run/docker.sock
+    hostPathType: Socket
+
+  # ====== NFS Volumes ======
+
+  # NFS (network file system)
+  nfs-data:
+    type: nfs
+    destinationPath: /nfs-data
+    server: nfs-server.example.com
+    path: /exports/data
+    readOnly: false
+
+# Resource limits
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# ServiceAccount
+serviceAccount:
+  enabled: true

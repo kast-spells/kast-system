@@ -1,0 +1,162 @@
+# Ports and Services Showcase Example
+# Demonstrates all port/service configurations: ClusterIP, NodePort, LoadBalancer, headless
+# Replaces: test-port-* (9 files)
+
+name: ports-showcase
+
+spellbook:
+  name: examples
+chapter:
+  name: demo
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 2
+
+image:
+  repository: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+# Container ports with names (referenced by services)
+containers:
+  main:
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      - containerPort: 8443
+        name: https
+        protocol: TCP
+      - containerPort: 9090
+        name: metrics
+        protocol: TCP
+      - containerPort: 9091
+        name: admin
+        protocol: TCP
+      - containerPort: 5432
+        name: postgres
+        protocol: TCP
+
+# Multiple services demonstrating different types
+services:
+  # ClusterIP service (internal only, default)
+  internal:
+    type: ClusterIP
+    ports:
+      - port: 80
+        targetPort: http              # Reference by name
+        name: http
+      - port: 443
+        targetPort: https
+        name: https
+
+  # NodePort service (accessible via node IP:nodePort)
+  nodeport:
+    type: NodePort
+    ports:
+      - port: 80
+        targetPort: http
+        nodePort: 30080               # Explicit nodePort (30000-32767)
+        name: http-nodeport
+      - port: 443
+        targetPort: https
+        nodePort: 30443
+        name: https-nodeport
+
+  # LoadBalancer service (external access via cloud LB)
+  loadbalancer:
+    type: LoadBalancer
+    ports:
+      - port: 80
+        targetPort: http
+        name: http
+      - port: 443
+        targetPort: https
+        name: https
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+  # Monitoring service (Prometheus scraping)
+  monitoring:
+    type: ClusterIP
+    ports:
+      - port: 9090
+        targetPort: metrics
+        name: prometheus
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+      prometheus.io/path: "/metrics"
+
+  # Admin service (internal management)
+  admin:
+    type: ClusterIP
+    ports:
+      - port: 9091
+        targetPort: admin
+        name: admin-console
+    labels:
+      access: internal
+
+# Alternative: Single service using root-level 'service' (backward compatible)
+# Uncomment below and comment 'services' above to test single service mode
+#
+# service:
+#   enabled: true
+#   type: ClusterIP
+#   ports:
+#     - port: 80
+#       targetPort: 8080
+#       protocol: TCP
+#       name: http
+
+# ====== Headless Service Example ======
+# For StatefulSet pod discovery (DNS-based)
+# Uncomment workload.type: statefulset to use headless service properly
+#
+# services:
+#   headless:
+#     type: ClusterIP
+#     clusterIP: None                   # Makes it headless
+#     ports:
+#       - port: 5432
+#         targetPort: postgres
+#         name: postgres
+#     # Enables DNS: <pod-name>.<service-name>.<namespace>.svc.cluster.local
+
+# Health probes
+probes:
+  liveness:
+    type: httpGet
+    path: /
+    port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 15
+  readiness:
+    type: httpGet
+    path: /
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Resource limits
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Pod annotations for service discovery
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"

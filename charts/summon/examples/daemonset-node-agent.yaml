@@ -1,0 +1,134 @@
+# DaemonSet Node Agent Example
+# Complete DaemonSet for node-level monitoring/agent with privileged access
+# NEW: First DaemonSet example in summon
+
+name: node-exporter
+
+spellbook:
+  name: monitoring
+chapter:
+  name: production
+
+workload:
+  enabled: true
+  type: daemonset
+  # Container-level security context (privileged for node access)
+  securityContext:
+    privileged: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: true
+    capabilities:
+      add:
+        - SYS_TIME
+        - NET_ADMIN
+
+image:
+  repository: prom/node-exporter
+  tag: v1.7.0
+  pullPolicy: IfNotPresent
+
+# Command with arguments
+args:
+  - --path.procfs=/host/proc
+  - --path.sysfs=/host/sys
+  - --path.rootfs=/host/root
+  - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+
+# Service for Prometheus scraping
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 9100
+      targetPort: 9100
+      protocol: TCP
+      name: metrics
+
+# Container ports
+containers:
+  main:
+    ports:
+      - containerPort: 9100
+        name: metrics
+        protocol: TCP
+
+# HostPath volumes for node metrics
+volumes:
+  proc:
+    type: hostPath
+    path: /proc
+    destinationPath: /host/proc
+    readOnly: true
+  sys:
+    type: hostPath
+    path: /sys
+    destinationPath: /host/sys
+    readOnly: true
+  root:
+    type: hostPath
+    path: /
+    destinationPath: /host/root
+    readOnly: true
+
+# Health probes
+probes:
+  liveness:
+    type: httpGet
+    path: /
+    port: 9100
+    initialDelaySeconds: 10
+    periodSeconds: 15
+  readiness:
+    type: httpGet
+    path: /
+    port: 9100
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Resource limits (minimal footprint per node)
+resources:
+  limits:
+    cpu: 250m
+    memory: 180Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Pod-level security context
+securityContext:
+  runAsUser: 0                           # Root for node access
+  runAsNonRoot: false
+
+# Tolerations to run on ALL nodes (including masters/control-plane)
+tolerations:
+  - operator: Exists                     # Tolerate all taints
+    effect: NoSchedule
+  - operator: Exists
+    effect: NoExecute
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+
+# Node selector (optional, remove to run on all nodes)
+# nodeSelector:
+#   kubernetes.io/os: linux
+
+# Pod annotations for Prometheus discovery
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9100"
+
+# ServiceAccount
+serviceAccount:
+  enabled: true
+
+# Labels
+labels:
+  finops:
+    enabled: true
+    team: platform
+    project: monitoring
+    costCenter: infrastructure

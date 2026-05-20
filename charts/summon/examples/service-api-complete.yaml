@@ -1,0 +1,169 @@
+# Service API Complete Example
+# Production-ready REST API with all features: autoscaling, probes, security, finops labels
+# Replaces: basic-deployment, complex-production, deployment-with-finops-labels
+
+name: order-api
+component: backend
+
+spellbook:
+  name: ecommerce-platform
+chapter:
+  name: production
+
+# FinOps labels for cost allocation (Kubecost-compatible)
+labels:
+  finops:
+    enabled: true
+    team: platform-team
+    owner: john.doe
+    costCenter: engineering-dept
+    department: platform
+    project: core-api
+    environment: production
+
+workload:
+  enabled: true
+  type: deployment
+  replicas: 3
+
+image:
+  repository: myorg/order-api
+  tag: v2.1.0
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: registry-credentials
+
+# Service configuration
+service:
+  enabled: true
+  type: ClusterIP
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 9090
+      protocol: TCP
+      name: metrics
+
+# ServiceAccount with IAM annotations
+serviceAccount:
+  enabled: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/order-api-role
+  labels:
+    app.kubernetes.io/managed-by: summon
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Health probes (liveness, readiness, startup)
+probes:
+  liveness:
+    type: httpGet
+    path: /healthz
+    port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    type: httpGet
+    path: /ready
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+  startup:
+    type: tcpSocket
+    port: 8080
+    failureThreshold: 30
+    periodSeconds: 10
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 60
+
+# Pod-level security context
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 3000
+  fsGroup: 2000
+  runAsNonRoot: true
+
+# Pod annotations and labels
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podLabels:
+  version: v2.1.0
+  tier: backend
+
+# Node scheduling
+nodeSelector:
+  node.kubernetes.io/instance-type: t3.large
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "api"
+    effect: "NoSchedule"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: order-api
+
+# Environment variables (plain and from secrets/configmaps)
+envs:
+  LOG_LEVEL: info
+  APP_ENV: production
+  ENABLE_METRICS: "true"
+  MAX_CONNECTIONS: "100"
+  # From secret
+  DB_PASSWORD:
+    type: secret
+    name: db-credentials
+    key: password
+  # From configMap
+  API_ENDPOINT:
+    type: configmap
+    name: app-config
+    key: api.endpoint
+
+# Secrets injection via envFrom (reference existing secrets)
+secrets:
+  api-credentials:
+    contentType: env
+    location: local
+  payment-gateway-keys:
+    contentType: env
+    location: local

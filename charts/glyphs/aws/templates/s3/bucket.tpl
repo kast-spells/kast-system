@@ -81,7 +81,7 @@ spec:
 
   {{- /* Lifecycle Configuration */}}
   {{- with $glyphDefinition.lifecycleConfiguration }}
-  lifecycleConfiguration:
+  lifecycle:
     rules:
       {{- toYaml .rules | nindent 6 }}
   {{- end }}

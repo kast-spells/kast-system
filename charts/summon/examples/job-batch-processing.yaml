@@ -1,0 +1,91 @@
+# Job Batch Processing Example
+# Complete batch job with retries, parallelism, and runtime isolation
+# Replaces: basic-job, job-with-runtime-class
+
+name: data-import-job
+
+spellbook:
+  name: data-platform
+chapter:
+  name: production
+
+workload:
+  enabled: true
+  type: job
+  restartPolicy: OnFailure
+  # Job retry and timeout configuration
+  backoffLimit: 3                 # Number of retries before marking job as failed
+  activeDeadlineSeconds: 7200     # Maximum time (2 hours) before job is terminated
+  # Parallelism settings
+  parallelism: 5                  # Run 5 pods concurrently
+  completions: 100                # Total successful completions required
+
+# Runtime class for enhanced isolation (gVisor, Kata Containers)
+runtimeClassName: gvisor
+
+image:
+  repository: myorg/data-importer
+  tag: v1.5.2
+  pullPolicy: IfNotPresent
+
+# Command and arguments
+command:
+  - /bin/sh
+  - -c
+args:
+  - |
+    echo "Starting data import job"
+    /app/import --source $SOURCE_BUCKET --dest $DEST_DB
+    exit_code=$?
+    echo "Job completed with exit code: $exit_code"
+    exit $exit_code
+
+# Resource limits
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Environment variables
+envs:
+  LOG_LEVEL: info
+  IMPORT_DATE: "2025-01-08"
+  VALIDATION_MODE: strict
+  SOURCE_BUCKET: s3://data-lake/raw
+  # From secret
+  DEST_DB:
+    type: secret
+    name: database-credentials
+    key: connection_string
+
+# Secrets via envFrom
+secrets:
+  database-credentials:
+    contentType: env
+    location: local
+  encryption-keys:
+    contentType: env
+    location: local
+
+# Pod-level security context
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  fsGroup: 2000
+
+# ServiceAccount for IAM permissions
+serviceAccount:
+  enabled: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/data-import-role
+
+# Labels for tracking
+labels:
+  finops:
+    enabled: true
+    team: data-platform
+    project: data-import
+    costCenter: data-engineering
