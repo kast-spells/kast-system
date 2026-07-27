@@ -84,6 +84,10 @@ affinity:
 tolerations:
     {{- toYaml . | nindent 2 }}
   {{- end }}
+  {{- with $root.Values.hostAliases }}
+hostAliases:
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
   {{- with $root.Values.imagePullSecrets }}
 imagePullSecrets:
     {{- toYaml . | nindent 2 }}
@@ -140,6 +144,10 @@ affinity:
   {{- end }}
   {{- with $root.Values.tolerations }}
 tolerations:
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- with $root.Values.hostAliases }}
+hostAliases:
     {{- toYaml . | nindent 2 }}
   {{- end }}
   {{- with $root.Values.imagePullSecrets }}
